@@ -1,62 +1,63 @@
 const axios = require('axios');
-const { generateThreeCardReading } = require('./tarot');
-const { updateSession, getSession } = require('./tarot-session');
+const { getTarotCard } = require('./tarot');
+const { sessionStore } = require('./tarot-session');
 
-const token = process.env.BOT_TOKEN;
-const apiUrl = `https://api.telegram.org/bot${token}`;
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const telegramAPI = `https://api.telegram.org/bot${token}`;
 
-async function sendMessage(chatId, text, buttons) {
-  const payload = {
+// 发送普通文本消息
+async function sendMessage(chatId, text, replyMarkup = null) {
+  await axios.post(`${telegramAPI}/sendMessage`, {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown',
+    ...(replyMarkup && { reply_markup: replyMarkup }),
+  });
+}
+
+// 发送塔罗抽牌按钮
+async function sendTarotButtons(chatId) {
+  sessionStore[chatId] = { drawn: [] };
+
+  const replyMarkup = {
+    inline_keyboard: [[
+      { text: 'Draw First Card', callback_data: 'draw_1' },
+      { text: 'Draw Second Card', callback_data: 'draw_2' },
+      { text: 'Draw Third Card', callback_data: 'draw_3' },
+    ]]
   };
 
-  if (buttons) {
-    payload.reply_markup = {
-      inline_keyboard: [buttons.map(btn => ({
-        text: btn.label,
-        callback_data: btn.data,
-      }))]
-    };
+  await sendMessage(chatId,
+    `🧿 Please focus your energy and draw 3 cards...\n\n👇 Tap the buttons to reveal your Tarot Reading:`,
+    replyMarkup
+  );
+}
+
+// 处理用户点击的抽牌按钮
+async function handleDrawCard(chatId, data) {
+  if (!sessionStore[chatId]) {
+    sessionStore[chatId] = { drawn: [] };
   }
 
-  try {
-    await axios.post(`${apiUrl}/sendMessage`, payload);
-    console.log(`[INFO] Message sent to ${chatId}`);
-  } catch (err) {
-    console.error('[ERROR] Failed to send Telegram message:', err.message);
+  const drawn = sessionStore[chatId].drawn;
+
+  const position = {
+    'draw_1': 'Past',
+    'draw_2': 'Present',
+    'draw_3': 'Future'
+  }[data];
+
+  if (!position || drawn.includes(position)) return;
+
+  const card = getTarotCard();
+  drawn.push(position);
+
+  await sendMessage(chatId, `🃏 *${position}* — ${card.name}\n_${card.meaning}_`, null);
+
+  if (drawn.length === 3) {
+    await sendMessage(chatId, `✨ Your divine message is complete. Trust the path ahead.`);
+    delete sessionStore[chatId];
   }
 }
 
-async function handleDrawCard(req, res) {
-  const callback = req.body.callback_query;
-  if (!callback) return res.sendStatus(200);
-
-  const chatId = callback.message.chat.id;
-  const action = callback.data;
-
-  const cardIndex = {
-    draw_card_1: 0,
-    draw_card_2: 1,
-    draw_card_3: 2
-  }[action];
-
-  if (cardIndex === undefined) return res.sendStatus(200);
-
-  const currentSession = getSession(chatId);
-  if (!currentSession || currentSession.drawn[cardIndex]) return res.sendStatus(200);
-
-  const card = currentSession.cards[cardIndex];
-  updateSession(chatId, cardIndex);
-
-  const cardText = `🃏 *${['Past', 'Present', 'Future'][cardIndex]}* – ${card.name}\n_${card.keywords}_\n`;
-
-  await sendMessage(chatId, cardText);
-  res.sendStatus(200);
-}
-
-module.exports = {
-  sendMessage,
-  handleDrawCard
-};
+module.exports = { sendMessage, sendTarotButtons, handleDrawCard };
