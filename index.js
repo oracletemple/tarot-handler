@@ -1,3 +1,5 @@
+require('./utils/keep-alive');
+
 // 📁 index.js
 require('dotenv').config();
 const express = require('express');
