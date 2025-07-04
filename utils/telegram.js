@@ -1,51 +1,52 @@
-// v1.1.0
+// v1.1.2
 const axios = require('axios');
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-function sendMessage(chatId, text, extra = {}) {
+function sendMessage(userId, text) {
   return axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
+    chat_id: userId,
     text,
     parse_mode: 'Markdown',
-    ...extra,
   });
 }
 
-function sendTarotButtons(chatId) {
+function sendTarotButtons(userId) {
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: '🃏 Card 1', callback_data: 'card_1' },
+        { text: '🃏 Card 2', callback_data: 'card_2' },
+        { text: '🃏 Card 3', callback_data: 'card_3' },
+      ],
+    ],
+  };
+
   return axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
-    text: '✨ Draw your 3 cards by tapping below:',
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'Card 1 🃏', callback_data: 'card_1' },
-          { text: 'Card 2 🃏', callback_data: 'card_2' },
-          { text: 'Card 3 🃏', callback_data: 'card_3' }
-        ]
-      ]
-    }
+    chat_id: userId,
+    text: '✨ Tap a card to reveal your message:',
+    reply_markup: keyboard,
   });
 }
 
-function simulateButtonClick(userId, cardId) {
-  if (!WEBHOOK_URL) {
-    console.error('[ERROR] Missing WEBHOOK_URL in .env');
-    return;
-  }
+function simulateButtonClick(userId, buttonId) {
+  const url = 'https://tarot-handler.onrender.com/simulate-click';
+  return axios.post(url, { userId, buttonId });
+}
 
-  return axios.post(`${WEBHOOK_URL}/webhook`, {
-    message: { chat: { id: userId } },
-    data: cardId
-  }).then(res => {
-    console.log('[INFO] Simulate click success:', res.data);
-  }).catch(err => {
-    console.error('[ERROR] Simulate click failed:', err.message);
-  });
+function handleDrawCard(userId, buttonId) {
+  const card = {
+    card_1: '🌟 Card 1: A new journey begins. Trust your path.',
+    card_2: '🔥 Card 2: Action is needed. Don’t hesitate.',
+    card_3: '💧 Card 3: Embrace emotions. Healing is near.',
+  }[buttonId] || 'Unknown card.';
+
+  return sendMessage(userId, card);
 }
 
 module.exports = {
   sendMessage,
   sendTarotButtons,
   simulateButtonClick,
+  handleDrawCard,
 };
