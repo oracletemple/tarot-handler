@@ -1,9 +1,14 @@
-// v1.0.4
-module.exports = [
-  "The Fool", "The Magician", "The High Priestess", "The Empress",
-  "The Emperor", "The Hierophant", "The Lovers", "The Chariot",
-  "Strength", "The Hermit", "Wheel of Fortune", "Justice",
-  "The Hanged Man", "Death", "Temperance", "The Devil",
-  "The Tower", "The Star", "The Moon", "The Sun",
-  "Judgement", "The World"
-];
+// v1.0.11 - Tarot 卡片图片和名称生成器
+function getCardImage(cardNumber) {
+  const padded = String(cardNumber).padStart(2, '0');
+  return `https://yourdomain.com/cards/${padded}.jpg`;
+}
+
+function getCardName(cardNumber) {
+  return `Tarot Card #${cardNumber}`;
+}
+
+module.exports = {
+  getCardImage,
+  getCardName,
+};
