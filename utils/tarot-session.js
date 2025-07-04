@@ -1,45 +1,34 @@
-// utils/tarot-session.js
-
-const { generateThreeCardReading } = require('./tarot');
-
-const sessionMap = new Map();
+// v1.1.0
+const sessions = new Map();
 
 function startSession(userId) {
-  const reading = generateThreeCardReading();
-  sessionMap.set(userId, {
-    cards: reading,
-    revealed: [false, false, false],
+  sessions.set(userId, {
+    cards: [],
+    current: 0,
+    completed: false
   });
 }
 
 function getCard(userId, index) {
-  const session = sessionMap.get(userId);
-  if (!session || session.revealed[index]) return null;
-  session.revealed[index] = true;
+  const session = sessions.get(userId);
+  if (!session || session.completed || index > 2) return null;
+  if (!session.cards.length) {
+    session.cards = generateCards();
+  }
+  session.current = index;
+  if (index === 2) session.completed = true;
   return session.cards[index];
 }
 
 function isSessionComplete(userId) {
-  const session = sessionMap.get(userId);
-  return session && session.revealed.every(Boolean);
+  const session = sessions.get(userId);
+  return session ? session.completed : false;
 }
 
-function getFullReading(userId) {
-  const session = sessionMap.get(userId);
-  if (!session) return null;
-  const [card1, card2, card3] = session.cards;
-  return (
-    `🔮 Your Full Tarot Reading:\n\n` +
-    `🃏 Past – ${card1.name} (${card1.orientation})\n${card1.meaning}\n\n` +
-    `🃏 Present – ${card2.name} (${card2.orientation})\n${card2.meaning}\n\n` +
-    `🃏 Future – ${card3.name} (${card3.orientation})\n${card3.meaning}\n\n` +
-    `✨ Trust the path ahead. You are being divinely guided.`
-  );
+function generateCards() {
+  const tarot = require('./tarot');
+  const shuffled = tarot.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
 }
 
-module.exports = {
-  startSession,
-  getCard,
-  isSessionComplete,
-  getFullReading,
-};
+module.exports = { startSession, getCard, isSessionComplete };
