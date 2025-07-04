@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 
 // ✅ Webhook 接收按钮互动请求
-app.post('/webhook', async (req, res) => {
+app.post('/', async (req, res) => {
   const body = req.body;
 
   if (body.callback_query) {
