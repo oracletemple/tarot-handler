@@ -1,5 +1,4 @@
-// ✅ tarot-handler/index.js
-
+// index.js - v1.0.6
 const express = require('express');
 const bodyParser = require('body-parser');
 const { handleDrawCard } = require('./utils/telegram');
@@ -27,7 +26,7 @@ app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
-// ✅ 模拟按钮点击测试接口
+// ✅ 模拟按钮点击测试接口（线上可调用）
 app.post('/simulate-click', async (req, res) => {
   const { chatId, cardIndex } = req.body;
 
@@ -44,14 +43,14 @@ app.post('/simulate-click', async (req, res) => {
 
   try {
     await handleDrawCard(callbackQuery);
-    return res.send({ ok: true, message: 'Simulated card draw sent.' });
+    res.send({ ok: true, message: 'Simulated card draw sent.' });
   } catch (err) {
     console.error('[ERROR] Simulate button click failed:', err.message);
-    return res.status(500).send({ ok: false, error: err.message });
+    res.status(502).send({ ok: false, error: err.message });
   }
 });
 
-// ✅ Root 路由测试
+// ✅ Root 测试路由
 app.get('/', (req, res) => {
   res.send('Tarot Webhook Server is running.');
 });
