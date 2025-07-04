@@ -1,87 +1,71 @@
-// v1.1.4
+// v1.0.11 - 主入口，处理 webhook 与按钮模拟点击
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
 const bodyParser = require('body-parser');
-const { sendTarotButtons, handleDrawCard, sendCustomReadingPrompt } = require('./utils/telegram');
+const axios = require('axios');
+const { sendMessage } = require('./utils/telegram');
+const { getCardImage, getCardName } = require('./utils/tarot');
+const { startSession, getCard, isSessionComplete } = require('./utils/tarot-session');
 
 const app = express();
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
-let testExecuted = false;
-
-// Telegram webhook
 app.post('/webhook', async (req, res) => {
-  const msg = req.body.message;
-  const callback = req.body.callback_query;
+  const body = req.body;
+  if (body.callback_query) {
+    const { id, data, message, from } = body.callback_query;
+    const userId = from.id;
+    const cardIndex = parseInt(data.split('_')[1]);
 
-  if (msg) {
-    const chatId = msg.chat.id;
-    if (msg.text && msg.text.toLowerCase().includes('/start')) {
-      await sendTarotButtons(chatId);
+    const cardNumber = getCard(userId, cardIndex);
+    if (!cardNumber) {
+      return res.sendStatus(200);
     }
-  }
 
-  if (callback) {
-    const chatId = callback.message.chat.id;
-    const data = callback.data;
-    if (data.startsWith('draw_')) {
-      const index = parseInt(data.split('_')[1], 10);
-      try {
-        await handleDrawCard(chatId, index);
-      } catch (err) {
-        console.error('[ERROR]', err.message);
-      }
+    const image = getCardImage(cardNumber);
+    const name = getCardName(cardNumber);
+    await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendPhoto`, {
+      chat_id: userId,
+      photo: image,
+      caption: `🃏 You drew: *${name}*`,
+      parse_mode: 'Markdown',
+    });
+
+    res.sendStatus(200);
+  } else if (body.message) {
+    const { chat, text } = body.message;
+    if (text.startsWith('/start')) {
+      await sendMessage(chat.id, '🔮 Welcome to Tarot Oracle!');
     }
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(200);
   }
-
-  res.sendStatus(200);
 });
 
-// 测试交易模拟，仅执行一次
-async function testTransactions() {
-  if (testExecuted) return;
-  testExecuted = true;
-
-  const testTxs = [
-    { hash: 'test_tx_001', amount: 12 },
-    { hash: 'test_tx_002', amount: 12 },
-    { hash: 'test_tx_003', amount: 12 },
-    { hash: 'test_tx_004', amount: 30 },
-    { hash: 'test_tx_005', amount: 30 },
-    { hash: 'test_tx_006', amount: 30 }
-  ];
-
-  for (const tx of testTxs) {
-    await axios.post(`${process.env.WEBHOOK_URL}`, {
-      message: {
-        chat: { id: process.env.RECEIVER_ID },
-        text: `[TEST] Simulated Tx: ${tx.hash} -> ${tx.amount} USDT`
-      }
+app.post('/simulate-click', async (req, res) => {
+  const { userId, messageId, index } = req.body;
+  try {
+    await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/answerCallbackQuery`, {
+      callback_query_id: 'simulate',
     });
-    console.log(`[INFO] Message sent for ${tx.hash}`);
 
-    if (['test_tx_001', 'test_tx_002', 'test_tx_004', 'test_tx_005'].includes(tx.hash)) {
-      const cardIndex = tx.amount === 12 ? (tx.hash.endsWith('001') ? 0 : 1) : (tx.hash.endsWith('004') ? 0 : 1);
-      await axios.post(`${process.env.WEBHOOK_URL}`, {
-        callback_query: {
-          message: { chat: { id: process.env.RECEIVER_ID } },
-          data: `draw_${cardIndex}`
-        }
-      }).then(() => {
-        console.log('[INFO] Simulate click success: OK');
-      }).catch(err => {
-        console.error('[ERROR] Simulate click failed:', err.message);
-      });
-    }
+    await axios.post(`https://tarot-handler.onrender.com/webhook`, {
+      callback_query: {
+        id: 'simulate',
+        from: { id: userId },
+        message: { message_id: messageId },
+        data: `card_${index}`,
+      },
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[ERROR] simulateClick failed:', err.message);
+    res.status(500).json({ error: err.message });
   }
+});
 
-  console.log('[INFO] Test mode complete. Now entering live mode.');
-}
-
-// 启动服务
-app.listen(PORT, async () => {
-  console.log(`🚀 Tarot Webhook Server running at http://localhost:${PORT}`);
-  await testTransactions();
+app.listen(3000, () => {
+  console.log('🚀 Tarot Webhook Server running at http://localhost:3000');
 });
