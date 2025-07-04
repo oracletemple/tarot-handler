@@ -1,34 +1,42 @@
-// v1.1.0
-const sessions = new Map();
+// v1.0.11 - Session 模式：支持多轮抽牌与状态判断
+const sessions = {};
 
-function startSession(userId) {
-  sessions.set(userId, {
+function startSession(userId, isPremium = false) {
+  sessions[userId] = {
     cards: [],
-    current: 0,
-    completed: false
-  });
+    complete: false,
+    premium: isPremium,
+  };
 }
 
 function getCard(userId, index) {
-  const session = sessions.get(userId);
-  if (!session || session.completed || index > 2) return null;
-  if (!session.cards.length) {
-    session.cards = generateCards();
+  const session = sessions[userId];
+  if (!session || index < 0 || index > 2) return null;
+
+  const existing = session.cards[index];
+  if (existing) return existing;
+
+  const newCard = Math.floor(Math.random() * 78) + 1;
+  session.cards[index] = newCard;
+
+  if (session.cards.filter(Boolean).length === 3) {
+    session.complete = true;
   }
-  session.current = index;
-  if (index === 2) session.completed = true;
-  return session.cards[index];
+
+  return newCard;
 }
 
 function isSessionComplete(userId) {
-  const session = sessions.get(userId);
-  return session ? session.completed : false;
+  return sessions[userId]?.complete || false;
 }
 
-function generateCards() {
-  const tarot = require('./tarot');
-  const shuffled = tarot.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 3);
+function isPremium(userId) {
+  return sessions[userId]?.premium || false;
 }
 
-module.exports = { startSession, getCard, isSessionComplete };
+module.exports = {
+  startSession,
+  getCard,
+  isSessionComplete,
+  isPremium,
+};
