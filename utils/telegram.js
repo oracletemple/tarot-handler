@@ -1,17 +1,11 @@
-// utils/telegram.js (Session-based version)
-
+// utils/telegram.js - v1.0.6
 const axios = require('axios');
-const {
-  startSession,
-  getCard,
-  isSessionComplete,
-  getFullReading
-} = require('./tarot-session');
+const { getCard, startSession } = require('./tarot-session');
 
 const token = process.env.BOT_TOKEN;
 const apiUrl = `https://api.telegram.org/bot${token}`;
 
-// ✅ 通用发消息函数
+// ✅ 发送文字消息（通用）
 async function sendMessage(chatId, text, options = {}) {
   try {
     await axios.post(`${apiUrl}/sendMessage`, {
@@ -25,17 +19,17 @@ async function sendMessage(chatId, text, options = {}) {
   }
 }
 
-// ✅ 发送按钮交互消息
+// ✅ 发送按钮
 async function sendTarotButtons(chatId) {
   try {
-    startSession(chatId);
+    startSession(chatId); // 初始化新占卜 session
 
     const keyboard = {
       inline_keyboard: [[
-        { text: 'Draw First Card', callback_data: 'draw_0' },
-        { text: 'Draw Second Card', callback_data: 'draw_1' },
-        { text: 'Draw Third Card', callback_data: 'draw_2' },
-      ]],
+        { text: 'Draw First Card', callback_data: 'draw_1' },
+        { text: 'Draw Second Card', callback_data: 'draw_2' },
+        { text: 'Draw Third Card', callback_data: 'draw_3' },
+      ]]
     };
 
     await axios.post(`${apiUrl}/sendMessage`, {
@@ -48,21 +42,20 @@ async function sendTarotButtons(chatId) {
   }
 }
 
-// ✅ 处理按钮回调函数
+// ✅ 处理按钮点击交互
 async function handleDrawCard(callbackQuery) {
-  const { message, data, from, id } = callbackQuery;
+  const { message, data, from } = callbackQuery;
   const chatId = message.chat.id;
   const userId = from.id;
 
-  const index = parseInt(data.split('_')[1]);
-  if (isNaN(index)) return;
+  const index = { draw_1: 0, draw_2: 1, draw_3: 2 }[data];
+  if (index === undefined) return;
 
   const card = getCard(userId, index);
   if (!card) return;
 
-  const label = ['Past', 'Present', 'Future'][index];
-
-  const text = `🃏 *${label}* – *${card.name}* (${card.orientation})\n_${card.meaning}_`;
+  const labels = ['Past', 'Present', 'Future'];
+  const text = `🃏 *${labels[index]}* – *${card.name}* ${card.orientation === 'Reversed' ? '(Reversed)' : ''}\n_${card.meaning}_`;
 
   await axios.post(`${apiUrl}/sendMessage`, {
     chat_id: chatId,
@@ -70,14 +63,10 @@ async function handleDrawCard(callbackQuery) {
     parse_mode: 'Markdown',
   });
 
+  // 清除按钮 loading 状态
   await axios.post(`${apiUrl}/answerCallbackQuery`, {
-    callback_query_id: id,
+    callback_query_id: callbackQuery.id,
   });
-
-  if (isSessionComplete(userId)) {
-    const fullText = getFullReading(userId);
-    await sendMessage(chatId, fullText);
-  }
 }
 
 module.exports = {
