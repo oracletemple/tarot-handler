@@ -1,38 +1,37 @@
-require('./utils/keep-alive');
-
-// 📁 index.js
-require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const { handleDrawCard, sendTarotButtons } = require('./utils/telegram');
+const { handleDrawCard } = require('./utils/telegram');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-  res.send('🔮 Tarot Webhook is running');
+app.post('/webhook', async (req, res) => {
+  try {
+    const body = req.body;
+
+    console.log('[Webhook Received]', JSON.stringify(body, null, 2));
+
+    // Only process callback queries
+    if (body.callback_query) {
+      const chatId = body.callback_query.message.chat.id;
+      const data = body.callback_query.data;
+
+      console.log('[Callback Query]', data);
+
+      await handleDrawCard(chatId, data);
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('[Webhook Error]', error);
+    res.sendStatus(500);
+  }
 });
 
-app.post('/webhook', async (req, res) => {
-  const body = req.body;
-
-  if (body.message && body.message.text) {
-    const userId = body.message.chat.id;
-    if (body.message.text.toLowerCase().includes('draw')) {
-      await sendTarotButtons(userId);
-    }
-  }
-
-  if (body.callback_query) {
-    const callback = body.callback_query;
-    const userId = callback.from.id;
-    const data = callback.data;
-    await handleDrawCard(userId, data);
-  }
-
-  res.sendStatus(200);
+app.get('/', (req, res) => {
+  res.send('🔮 Tarot Webhook Server is running');
 });
 
 app.listen(PORT, () => {
