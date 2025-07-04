@@ -1,44 +1,43 @@
-// v1.1.2
+// v1.0.11 - Telegram 工具封装
 const axios = require('axios');
-const { startSession, getCard, isSessionComplete } = require('./tarot-session');
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
-
-async function sendTarotButtons(chatId) {
-  startSession(chatId);
-  const buttons = [
-    [{ text: 'Draw Card 1', callback_data: 'draw_0' }],
-    [{ text: 'Draw Card 2', callback_data: 'draw_1' }],
-    [{ text: 'Draw Card 3', callback_data: 'draw_2' }]
-  ];
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
+async function sendMessage(chatId, text, buttons) {
+  const payload = {
     chat_id: chatId,
-    text: "🔮 Please focus your energy and draw 3 cards...\n👇 Tap the buttons to reveal your Tarot Reading:",
-    reply_markup: { inline_keyboard: buttons }
-  });
+    text,
+    parse_mode: 'Markdown',
+  };
+
+  if (buttons) {
+    payload.reply_markup = {
+      inline_keyboard: [buttons],
+    };
+  }
+
+  try {
+    const res = await axios.post(`${TELEGRAM_API}/sendMessage`, payload);
+    return res.data;
+  } catch (err) {
+    console.error('[ERROR] Telegram sendMessage failed:', err.message);
+  }
 }
 
-async function handleDrawCard(chatId, index) {
-  const card = getCard(chatId, index);
-  if (!card) throw new Error("handleDrawCard failed: invalid session or card index");
-
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
-    text: `✨ Card ${index + 1}: ${card}`
-  });
-}
-
-async function sendCustomReadingPrompt(chatId) {
-  const msg = `🧠 You have unlocked the Custom Oracle Reading.\nPlease reply with your question – we will begin your spiritual decoding.\n\n🔮 Bonus: You also receive a 3-card Tarot Reading below:`;
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
-    text: msg
-  });
-  await sendTarotButtons(chatId);
+async function editMessage(chatId, messageId, text) {
+  try {
+    await axios.post(`${TELEGRAM_API}/editMessageText`, {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      parse_mode: 'Markdown',
+    });
+  } catch (err) {
+    console.error('[ERROR] Telegram editMessage failed:', err.message);
+  }
 }
 
 module.exports = {
-  sendTarotButtons,
-  handleDrawCard,
-  sendCustomReadingPrompt
+  sendMessage,
+  editMessage,
 };
