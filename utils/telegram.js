@@ -1,63 +1,59 @@
+// 📁 文件1：utils/telegram.js
+// ✅ 上传至：GitHub 仓库 tarot-handler 的 /utils/ 目录下
+
 const axios = require('axios');
-const { getTarotCard } = require('./tarot');
-const { sessionStore } = require('./tarot-session');
+const { getCardMeaning } = require('./tarot');
+const { getSession, updateSession } = require('./tarot-session');
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const telegramAPI = `https://api.telegram.org/bot${token}`;
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
-// 发送普通文本消息
-async function sendMessage(chatId, text, replyMarkup = null) {
-  await axios.post(`${telegramAPI}/sendMessage`, {
+// 通用发送消息
+async function sendMessage(chatId, text, buttons = null) {
+  const payload = {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown',
-    ...(replyMarkup && { reply_markup: replyMarkup }),
-  });
-}
-
-// 发送塔罗抽牌按钮
-async function sendTarotButtons(chatId) {
-  sessionStore[chatId] = { drawn: [] };
-
-  const replyMarkup = {
-    inline_keyboard: [[
-      { text: 'Draw First Card', callback_data: 'draw_1' },
-      { text: 'Draw Second Card', callback_data: 'draw_2' },
-      { text: 'Draw Third Card', callback_data: 'draw_3' },
-    ]]
   };
 
-  await sendMessage(chatId,
-    `🧿 Please focus your energy and draw 3 cards...\n\n👇 Tap the buttons to reveal your Tarot Reading:`,
-    replyMarkup
-  );
-}
-
-// 处理用户点击的抽牌按钮
-async function handleDrawCard(chatId, data) {
-  if (!sessionStore[chatId]) {
-    sessionStore[chatId] = { drawn: [] };
+  if (buttons) {
+    payload.reply_markup = {
+      inline_keyboard: [buttons],
+    };
   }
 
-  const drawn = sessionStore[chatId].drawn;
-
-  const position = {
-    'draw_1': 'Past',
-    'draw_2': 'Present',
-    'draw_3': 'Future'
-  }[data];
-
-  if (!position || drawn.includes(position)) return;
-
-  const card = getTarotCard();
-  drawn.push(position);
-
-  await sendMessage(chatId, `🃏 *${position}* — ${card.name}\n_${card.meaning}_`, null);
-
-  if (drawn.length === 3) {
-    await sendMessage(chatId, `✨ Your divine message is complete. Trust the path ahead.`);
-    delete sessionStore[chatId];
+  try {
+    await axios.post(`${TELEGRAM_API}/sendMessage`, payload);
+  } catch (err) {
+    console.error('[ERROR] Failed to send Telegram message:', err.message);
   }
 }
 
-module.exports = { sendMessage, sendTarotButtons, handleDrawCard };
+// 👉 处理按钮点击
+async function handleDrawCard(req, res) {
+  const callback = req.body.callback_query;
+  const userId = callback.from.id;
+  const messageId = callback.message.message_id;
+  const data = callback.data; // 如 draw_1, draw_2, draw_3
+
+  const session = getSession(userId);
+  if (!session) return res.sendStatus(200);
+
+  const cardIndex = parseInt(data.split('_')[1], 10);
+  const card = session.cards[cardIndex - 1];
+  const title = ['Past', 'Present', 'Future'][cardIndex - 1];
+
+  const text = `🃏 *${title}* – ${card.name}\n${getCardMeaning(card.name)}`;
+  await sendMessage(userId, text);
+
+  session.revealed.push(cardIndex);
+  updateSession(userId, session);
+
+  // ✅ 可选：更新按钮 UI（隐藏已点击按钮）
+  res.sendStatus(200);
+}
+
+module.exports = {
+  sendMessage,
+  handleDrawCard,
+};
