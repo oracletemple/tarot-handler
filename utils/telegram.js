@@ -1,70 +1,64 @@
-// v1.1.0
+// v1.1.2
 const axios = require('axios');
-const { getCard } = require('./tarot-session');
 
-const token = process.env.BOT_TOKEN;
-const apiUrl = `https://api.telegram.org/bot${token}`;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function sendMessage(chatId, text, options = {}) {
+async function sendMessage(chatId, text) {
   try {
-    await axios.post(`${apiUrl}/sendMessage`, {
+    const res = await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
       text,
       parse_mode: 'Markdown',
-      ...options,
     });
-  } catch (error) {
-    console.error('[ERROR] Failed to send message:', error.message);
+    return res.data;
+  } catch (err) {
+    console.error('[ERROR] Failed to send message:', err.response?.data || err.message);
+    throw err;
   }
 }
 
 async function sendTarotButtons(chatId) {
   try {
-    const keyboard = {
-      inline_keyboard: [[
-        { text: 'Draw First Card', callback_data: 'draw_1' },
-        { text: 'Draw Second Card', callback_data: 'draw_2' },
-        { text: 'Draw Third Card', callback_data: 'draw_3' },
-      ]]
+    const buttons = {
+      inline_keyboard: [
+        [
+          { text: '🃏 Draw Card 1', callback_data: 'card_1' },
+          { text: '🃏 Draw Card 2', callback_data: 'card_2' },
+          { text: '🃏 Draw Card 3', callback_data: 'card_3' },
+        ],
+      ],
     };
 
-    await axios.post(`${apiUrl}/sendMessage`, {
+    const res = await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
-      text: '🔮 Please focus your energy and draw 3 cards...\n\n👇 Tap the buttons to reveal your Tarot Reading:',
-      reply_markup: keyboard,
+      text: '🧘 Focus your energy and choose a card:',
+      reply_markup: buttons,
     });
+
+    return res.data;
   } catch (err) {
-    console.error('[ERROR] Failed to send tarot buttons:', err.message);
+    console.error('[ERROR] Failed to send tarot buttons:', err.response?.data || err.message);
+    throw err;
   }
 }
 
-async function handleDrawCard(callbackQuery) {
-  const { message, data, from } = callbackQuery;
-  const chatId = message.chat.id;
-  const userId = from.id;
-
-  const cardIndex = {
-    draw_1: 0,
-    draw_2: 1,
-    draw_3: 2,
-  }[data];
-
-  if (cardIndex === undefined) return;
-
-  const card = getCard(userId, cardIndex);
-  if (!card) return;
-
-  const label = ['Past', 'Present', 'Future'][cardIndex];
-  const text = `🃏 *${label}* – *${card.name}* ${card.reversed ? '(Reversed)' : ''}\n_${card.meaning}_`;
-
-  await sendMessage(chatId, text);
-  await axios.post(`${apiUrl}/answerCallbackQuery`, {
-    callback_query_id: callbackQuery.id,
-  });
+async function simulateButtonClick(chatId, card) {
+  try {
+    const res = await axios.post(`https://tarot-handler.onrender.com/webhook`, {
+      message: {
+        chat: { id: chatId },
+      },
+      data: card,
+    });
+    console.log('[INFO] Simulate click success:', res.data?.ok ? 'OK' : res.data);
+  } catch (err) {
+    console.error('[ERROR] Simulate button click failed:', err.response?.data || err.message);
+  }
 }
 
 module.exports = {
   sendMessage,
   sendTarotButtons,
-  handleDrawCard,
+  simulateButtonClick,
 };
