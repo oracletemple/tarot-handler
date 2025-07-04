@@ -1,60 +1,49 @@
-// utils/telegram.js · v1.1.2
+// v1.0.11
 const axios = require('axios');
-require('dotenv').config();
+const { getSession, startSession, getCard } = require('./tarot-session');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function sendMessage(chatId, text) {
-  try {
-    const res = await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: 'Markdown',
-    });
-    return res.data;
-  } catch (err) {
-    console.error('[ERROR] Failed to send message:', err.message);
-    throw err;
-  }
-}
+async function sendTarotButtons(userId, hash, isTest = false) {
+  const testTag = isTest ? '🧪 TEST MODE\n\n' : '';
+  const text = `${testTag}💸 Payment received:\n\n💰 Amount: 12 USDT (TRC20)\n🔗 Tx Hash: ${hash}\n\n🔮 Please focus your energy and draw 3 cards...\n👇 Tap the buttons to reveal your Tarot Reading:`;
 
-async function sendTarotButtons(chatId) {
-  try {
-    const res = await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text: '👇 Tap to reveal your Tarot Reading:',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: '🃏 Card 1', callback_data: 'card_1' },
-            { text: '🃏 Card 2', callback_data: 'card_2' },
-            { text: '🃏 Card 3', callback_data: 'card_3' },
-          ],
+  await axios.post(`${API_URL}/sendMessage`, {
+    chat_id: userId,
+    text,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🔮 Draw Card 1', callback_data: 'draw_0' },
+          { text: '🔮 Draw Card 2', callback_data: 'draw_1' },
+          { text: '🔮 Draw Card 3', callback_data: 'draw_2' },
         ],
-      },
-    });
-    return res.data;
-  } catch (err) {
-    console.error('[ERROR] Failed to send tarot buttons:', err.message);
-    throw err;
-  }
+      ],
+    },
+  });
 }
 
-async function simulateButtonClick(userId, cardId) {
-  try {
-    const res = await axios.post(`https://tarot-handler.onrender.com/simulate-click`, {
-      userId,
-      cardId,
-    });
-    console.log('[INFO] Simulate click success:', res.data);
-  } catch (err) {
-    console.error('[ERROR] Simulate click failed:', err.message);
-  }
+async function sendCustomReading(userId, hash, amount, isTest = false) {
+  const testTag = isTest ? '🧪 TEST MODE\n\n' : '';
+  const text = `${testTag}💸 Payment received:\n\n💰 Amount: ${amount} USDT (TRC20)\n🔗 Tx Hash: ${hash}\n\n🧠 You have unlocked the Custom Oracle Reading.\nPlease reply with your question – we will begin your spiritual decoding.\n\n🔮 Bonus: You also receive a 3-card Tarot Reading below:`;
+
+  await axios.post(`${API_URL}/sendMessage`, {
+    chat_id: userId,
+    text,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🔮 Draw Card 1', callback_data: 'draw_0' },
+          { text: '🔮 Draw Card 2', callback_data: 'draw_1' },
+          { text: '🔮 Draw Card 3', callback_data: 'draw_2' },
+        ],
+      ],
+    },
+  });
 }
 
 module.exports = {
-  sendMessage,
   sendTarotButtons,
-  simulateButtonClick,
+  sendCustomReading,
 };
