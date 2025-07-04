@@ -1,4 +1,4 @@
-// 📁 tarot-handler/index.js
+// ✅ tarot-handler/index.js
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 
 // ✅ Webhook 接收按钮互动请求
-app.post('/', async (req, res) => {
+app.post('/webhook', async (req, res) => {
   const body = req.body;
 
   if (body.callback_query) {
@@ -44,10 +44,10 @@ app.post('/simulate-click', async (req, res) => {
 
   try {
     await handleDrawCard(callbackQuery);
-    res.send({ ok: true, message: 'Simulated card draw sent.' });
+    return res.send({ ok: true, message: 'Simulated card draw sent.' });
   } catch (err) {
     console.error('[ERROR] Simulate button click failed:', err.message);
-    res.status(500).send({ ok: false, error: err.message });
+    return res.status(500).send({ ok: false, error: err.message });
   }
 });
 
