@@ -1,37 +1,59 @@
+// 📁 tarot-handler/index.js
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const { handleDrawCard } = require('./utils/telegram');
+require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(bodyParser.json());
 
+const PORT = process.env.PORT || 3000;
+
+// ✅ Webhook 接收按钮互动请求
 app.post('/webhook', async (req, res) => {
-  try {
-    const body = req.body;
+  const body = req.body;
 
-    console.log('[Webhook Received]', JSON.stringify(body, null, 2));
-
-    // Only process callback queries
-    if (body.callback_query) {
-      const chatId = body.callback_query.message.chat.id;
-      const data = body.callback_query.data;
-
-      console.log('[Callback Query]', data);
-
-      await handleDrawCard(chatId, data);
+  if (body.callback_query) {
+    try {
+      await handleDrawCard(body.callback_query);
+      return res.sendStatus(200);
+    } catch (err) {
+      console.error('[ERROR] handleDrawCard failed:', err.message);
+      return res.sendStatus(500);
     }
+  }
 
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('[Webhook Error]', error);
-    res.sendStatus(500);
+  res.sendStatus(200);
+});
+
+// ✅ 模拟按钮点击测试接口
+app.post('/simulate-click', async (req, res) => {
+  const { chatId, cardIndex } = req.body;
+
+  if (![0, 1, 2].includes(cardIndex)) {
+    return res.status(400).send('Invalid cardIndex. Must be 0, 1, or 2.');
+  }
+
+  const callbackQuery = {
+    id: 'simulate_' + Date.now(),
+    from: { id: chatId },
+    message: { chat: { id: chatId } },
+    data: ['draw_1', 'draw_2', 'draw_3'][cardIndex],
+  };
+
+  try {
+    await handleDrawCard(callbackQuery);
+    res.send({ ok: true, message: 'Simulated card draw sent.' });
+  } catch (err) {
+    console.error('[ERROR] Simulate button click failed:', err.message);
+    res.status(500).send({ ok: false, error: err.message });
   }
 });
 
+// ✅ Root 路由测试
 app.get('/', (req, res) => {
-  res.send('🔮 Tarot Webhook Server is running');
+  res.send('Tarot Webhook Server is running.');
 });
 
 app.listen(PORT, () => {
