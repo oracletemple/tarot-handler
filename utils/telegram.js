@@ -1,52 +1,60 @@
-// v1.1.2
+// utils/telegram.js · v1.1.2
 const axios = require('axios');
+require('dotenv').config();
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-function sendMessage(userId, text) {
-  return axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: userId,
-    text,
-    parse_mode: 'Markdown',
-  });
+async function sendMessage(chatId, text) {
+  try {
+    const res = await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+    });
+    return res.data;
+  } catch (err) {
+    console.error('[ERROR] Failed to send message:', err.message);
+    throw err;
+  }
 }
 
-function sendTarotButtons(userId) {
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: '🃏 Card 1', callback_data: 'card_1' },
-        { text: '🃏 Card 2', callback_data: 'card_2' },
-        { text: '🃏 Card 3', callback_data: 'card_3' },
-      ],
-    ],
-  };
-
-  return axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: userId,
-    text: '✨ Tap a card to reveal your message:',
-    reply_markup: keyboard,
-  });
+async function sendTarotButtons(chatId) {
+  try {
+    const res = await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: '👇 Tap to reveal your Tarot Reading:',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '🃏 Card 1', callback_data: 'card_1' },
+            { text: '🃏 Card 2', callback_data: 'card_2' },
+            { text: '🃏 Card 3', callback_data: 'card_3' },
+          ],
+        ],
+      },
+    });
+    return res.data;
+  } catch (err) {
+    console.error('[ERROR] Failed to send tarot buttons:', err.message);
+    throw err;
+  }
 }
 
-function simulateButtonClick(userId, buttonId) {
-  const url = 'https://tarot-handler.onrender.com/simulate-click';
-  return axios.post(url, { userId, buttonId });
-}
-
-function handleDrawCard(userId, buttonId) {
-  const card = {
-    card_1: '🌟 Card 1: A new journey begins. Trust your path.',
-    card_2: '🔥 Card 2: Action is needed. Don’t hesitate.',
-    card_3: '💧 Card 3: Embrace emotions. Healing is near.',
-  }[buttonId] || 'Unknown card.';
-
-  return sendMessage(userId, card);
+async function simulateButtonClick(userId, cardId) {
+  try {
+    const res = await axios.post(`https://tarot-handler.onrender.com/simulate-click`, {
+      userId,
+      cardId,
+    });
+    console.log('[INFO] Simulate click success:', res.data);
+  } catch (err) {
+    console.error('[ERROR] Simulate click failed:', err.message);
+  }
 }
 
 module.exports = {
   sendMessage,
   sendTarotButtons,
   simulateButtonClick,
-  handleDrawCard,
 };
