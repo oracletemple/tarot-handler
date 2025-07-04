@@ -1,60 +1,47 @@
-// v1.1.2
+// v1.1.0
 const axios = require('axios');
+const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-async function sendMessage(chatId, text) {
-  try {
-    const res = await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: 'Markdown',
-    });
-    return res.data;
-  } catch (err) {
-    console.error('[ERROR] Failed to send message:', err.response?.data || err.message);
-    throw err;
-  }
+function sendMessage(chatId, text, extra = {}) {
+  return axios.post(`${TELEGRAM_API}/sendMessage`, {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+    ...extra,
+  });
 }
 
-async function sendTarotButtons(chatId) {
-  try {
-    const buttons = {
+function sendTarotButtons(chatId) {
+  return axios.post(`${TELEGRAM_API}/sendMessage`, {
+    chat_id: chatId,
+    text: '✨ Draw your 3 cards by tapping below:',
+    reply_markup: {
       inline_keyboard: [
         [
-          { text: '🃏 Draw Card 1', callback_data: 'card_1' },
-          { text: '🃏 Draw Card 2', callback_data: 'card_2' },
-          { text: '🃏 Draw Card 3', callback_data: 'card_3' },
-        ],
-      ],
-    };
-
-    const res = await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text: '🧘 Focus your energy and choose a card:',
-      reply_markup: buttons,
-    });
-
-    return res.data;
-  } catch (err) {
-    console.error('[ERROR] Failed to send tarot buttons:', err.response?.data || err.message);
-    throw err;
-  }
+          { text: 'Card 1 🃏', callback_data: 'card_1' },
+          { text: 'Card 2 🃏', callback_data: 'card_2' },
+          { text: 'Card 3 🃏', callback_data: 'card_3' }
+        ]
+      ]
+    }
+  });
 }
 
-async function simulateButtonClick(chatId, card) {
-  try {
-    const res = await axios.post(`https://tarot-handler.onrender.com/webhook`, {
-      message: {
-        chat: { id: chatId },
-      },
-      data: card,
-    });
-    console.log('[INFO] Simulate click success:', res.data?.ok ? 'OK' : res.data);
-  } catch (err) {
-    console.error('[ERROR] Simulate button click failed:', err.response?.data || err.message);
+function simulateButtonClick(userId, cardId) {
+  if (!WEBHOOK_URL) {
+    console.error('[ERROR] Missing WEBHOOK_URL in .env');
+    return;
   }
+
+  return axios.post(`${WEBHOOK_URL}/webhook`, {
+    message: { chat: { id: userId } },
+    data: cardId
+  }).then(res => {
+    console.log('[INFO] Simulate click success:', res.data);
+  }).catch(err => {
+    console.error('[ERROR] Simulate click failed:', err.message);
+  });
 }
 
 module.exports = {
