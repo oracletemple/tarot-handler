@@ -1,81 +1,58 @@
-// utils/telegram.js
-// v1.1.4
-
+// v1.0.13
 const axios = require("axios");
 
-// 内嵌环境变量
-const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const RECEIVER_ID = process.env.RECEIVER_ID;
 
-/**
- * 发送纯文本消息
- */
-async function sendMessage(chatId, text, options = {}) {
+async function sendTelegramMessage(text, options = {}) {
   try {
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
+    const payload = {
+      chat_id: RECEIVER_ID,
       text,
-      parse_mode: "HTML",
+      parse_mode: "Markdown",
       ...options,
-    });
+    };
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, payload);
   } catch (err) {
-    console.error("❌ sendMessage error:", err?.response?.data || err.message);
+    console.error("[Telegram] Failed to send message:", err.message);
   }
 }
 
-/**
- * 编辑原消息文本
- */
-async function editMessageText(chatId, messageId, text, options = {}) {
+async function sendCardButtons() {
   try {
-    await axios.post(`${TELEGRAM_API}/editMessageText`, {
-      chat_id: chatId,
-      message_id: messageId,
-      text,
-      parse_mode: "HTML",
-      ...options,
-    });
-  } catch (err) {
-    console.error("❌ editMessageText error:", err?.response?.data || err.message);
-  }
-}
-
-/**
- * 发送带按钮的消息
- */
-async function sendMessageWithButtons(chatId, text, buttons = []) {
-  try {
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: RECEIVER_ID,
+      text: "You have received a divine reading. Please choose your first card:",
       reply_markup: {
-        inline_keyboard: buttons,
-      },
+        inline_keyboard: [
+          [
+            { text: "🃏 Card 1", callback_data: "card_1" },
+            { text: "🃏 Card 2", callback_data: "card_2" },
+            { text: "🃏 Card 3", callback_data: "card_3" }
+          ]
+        ]
+      }
     });
   } catch (err) {
-    console.error("❌ sendMessageWithButtons error:", err?.response?.data || err.message);
+    console.error("[Telegram] Failed to send card buttons:", err.message);
   }
 }
 
-/**
- * 模拟用户点击按钮
- */
-async function simulateClick(chatId, messageId, data) {
-  try {
-    await axios.post(`${TELEGRAM_API}/callbackQuery`, {
-      chat_id: chatId,
-      message_id: messageId,
-      data,
-    });
-  } catch (err) {
-    console.error("❌ simulateClick error:", err?.response?.data || err.message);
+async function handleTransaction({ amount, hash }) {
+  console.log(`[Webhook] Received transaction: ${amount} USDT from ${hash}`);
+  if (amount >= 30) {
+    await sendTelegramMessage(`🌟 High-tier payment of ${amount} USDT received.\nYou will receive a custom divine session.`);
+    await sendCardButtons();
+  } else if (amount >= 12) {
+    await sendTelegramMessage(`🔮 Basic tarot payment of ${amount} USDT received.`);
+    await sendCardButtons();
+  } else {
+    await sendTelegramMessage(`⚠️ Received ${amount} USDT, which is below the minimum threshold.`);
   }
 }
 
 module.exports = {
-  sendMessage,
-  sendMessageWithButtons,
-  editMessageText,
-  simulateClick,
+  sendTelegramMessage,
+  sendCardButtons,
+  handleTransaction,
 };
