@@ -1,24 +1,38 @@
-// ✅ tarot-session.js (v1.0.11)
-
+// v1.1.2
 const sessions = new Map();
 
 function startSession(userId) {
-  sessions.set(userId, { cards: [] });
+  sessions.set(userId, {
+    drawn: [],
+    complete: false
+  });
 }
 
 function getCard(userId, index) {
   const session = sessions.get(userId);
-  if (!session || session.cards.length === 0) {
-    // Generate 3 random cards
-    session.cards = Array.from({ length: 3 }, () => Math.floor(Math.random() * 78) + 1);
-    sessions.set(userId, session);
+  if (!session || session.drawn.length >= 3 || session.complete) return null;
+
+  const card = generateCard();
+  session.drawn.push(card);
+
+  if (session.drawn.length === 3) {
+    session.complete = true;
   }
-  return session.cards[index - 1];
+
+  return card;
 }
 
 function isSessionComplete(userId) {
   const session = sessions.get(userId);
-  return session && session.cards.length === 3;
+  return session?.complete || false;
+}
+
+function generateCard() {
+  const suits = ['Cups', 'Wands', 'Swords', 'Pentacles'];
+  const values = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Page', 'Knight', 'Queen', 'King'];
+  const suit = suits[Math.floor(Math.random() * suits.length)];
+  const value = values[Math.floor(Math.random() * values.length)];
+  return `${value} of ${suit}`;
 }
 
 module.exports = {
