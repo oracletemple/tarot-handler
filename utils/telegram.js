@@ -1,102 +1,60 @@
-// utils/telegram.js
-// v1.1.3 - 修复 getUpdates 冲突、模拟按钮点击失败、基础与高阶逻辑统一
+// v1.1.5
+const { Telegraf, Markup } = require('telegraf');
+const axios = require('axios'); // ✅ 修复 axios 未定义
 
-const { Telegraf } = require('telegraf');
-const express = require('express');
-const { getCard, isSessionComplete, startSession } = require('./tarot-session');
-const tarot = require('./tarot');
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const RECEIVER_ID = process.env.RECEIVER_ID;
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
-const app = express();
-app.use(express.json());
+const bot = new Telegraf(BOT_TOKEN);
 
-// ✅ 防止重复执行 bot.launch()
+// 避免重复 launch 冲突（如多服务部署时）
 if (!global.telegramStarted) {
   bot.launch().then(() => {
-    console.log('✅ Telegram Bot started');
+    console.log('✅ Telegram bot launched');
     global.telegramStarted = true;
   }).catch((err) => {
     console.error('❌ Telegram launch failed:', err.message);
   });
 }
 
-// 📩 发送普通消息
-async function sendMessage(userId, text) {
-  await bot.telegram.sendMessage(userId, text, { parse_mode: 'Markdown' });
-}
+function sendTarotMessage({ amount, txid, tier }) {
+  let message = `💸 Payment received:\n\n💰 Amount: ${amount} USDT\n🔗 Tx Hash: ${txid}`;
 
-// 📮 发送塔罗按钮
-async function sendTarotButtons(userId) {
-  await bot.telegram.sendMessage(userId, '👇 Tap to reveal your Tarot Reading:', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: '🔮 Card 1', callback_data: 'card_1' },
-          { text: '🔮 Card 2', callback_data: 'card_2' },
-          { text: '🔮 Card 3', callback_data: 'card_3' }
-        ]
-      ]
-    }
+  if (tier === 'basic') {
+    message += `\n\n✨ You unlocked Divine Oracle Basic.\nReceive a 3-card Tarot Reading below:`;
+  } else if (tier === 'custom') {
+    message += `\n\n🧠 You unlocked Custom Oracle Reading.\nPlease reply with your question.\n\n🔮 Also receive a 3-card Tarot Reading:`;
+  }
+
+  const buttons = [
+    Markup.button.callback('🃏 Draw Card 1', 'card_1'),
+    Markup.button.callback('🃏 Draw Card 2', 'card_2'),
+    Markup.button.callback('🃏 Draw Card 3', 'card_3'),
+  ];
+
+  bot.telegram.sendMessage(RECEIVER_ID, message, {
+    reply_markup: Markup.inlineKeyboard(buttons, { columns: 1 }),
+  }).then(() => {
+    console.log('[INFO] Message sent for', txid);
+  }).catch(err => {
+    console.error('[ERROR] Failed to send message:', err.message);
   });
 }
 
-// 🎯 按钮点击响应逻辑
-bot.on('callback_query', async (ctx) => {
-  try {
-    const userId = ctx.from.id;
-    const data = ctx.callbackQuery.data;
-
-    if (!['card_1', 'card_2', 'card_3'].includes(data)) return;
-
-    const index = parseInt(data.split('_')[1]);
-    const card = getCard(userId, index);
-
-    if (!card) {
-      await ctx.answerCbQuery('❌ Failed to draw card.');
-      return;
-    }
-
-    await ctx.reply(`🔮 You drew: ${card.name}\n${tarot.getMeaning(card)}`);
-    await ctx.answerCbQuery();
-  } catch (err) {
-    console.error('[ERROR] handleDrawCard failed:', err.message);
-    if (ctx.answerCbQuery) await ctx.answerCbQuery('❌ Failed to draw card.');
-  }
-});
-
-// 🔁 支持模拟点击接口（用于自动测试）
-app.post('/simulate-click', async (req, res) => {
-  const { userId, buttonId } = req.body;
-  if (!userId || !buttonId) return res.status(400).send('Missing parameters');
-
-  try {
-    const index = parseInt(buttonId.split('_')[1]);
-    const card = getCard(userId, index);
-
-    if (!card) return res.status(500).send('No card found');
-
-    await sendMessage(userId, `🔮 You drew: ${card.name}\n${tarot.getMeaning(card)}`);
-    res.send('OK');
-  } catch (err) {
+function simulateButtonClick(userId, buttonIndex) {
+  const button = `card_${buttonIndex}`;
+  return axios.post('http://localhost:3000/simulate-click', {
+    userId,
+    callbackData: button,
+  }).then(() => {
+    console.log('[INFO] Simulate click success:', button);
+  }).catch(err => {
     console.error('[ERROR] Simulate click failed:', err.message);
-    res.status(500).send(err.message);
-  }
-});
-
-// 🚀 启动 webhook 服务
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Tarot Webhook Server running at http://localhost:${PORT}`);
-});
+  });
+}
 
 module.exports = {
-  sendMessage,
-  sendTarotButtons,
-  simulateButtonClick: async (userId, buttonId) => {
-    try {
-      await axios.post(`http://localhost:${PORT}/simulate-click`, { userId, buttonId });
-    } catch (err) {
-      console.error('[ERROR] Simulate click failed:', err.message);
-    }
-  }
+  bot,
+  sendTarotMessage,
+  simulateButtonClick,
 };
