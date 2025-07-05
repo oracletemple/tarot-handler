@@ -1,42 +1,39 @@
-// v1.1.2
-const sessions = new Map();
+// utils/tarot-session.js
+// v1.1.3 - 抽牌状态管理，支持基础与高级一致逻辑
+
+const tarot = require('./tarot');
+
+const sessions = {};
 
 function startSession(userId) {
-  sessions.set(userId, {
-    drawn: [],
-    complete: false
-  });
+  if (!sessions[userId]) {
+    const cards = tarot.drawCards(3);
+    sessions[userId] = { cards, drawn: {} };
+  }
 }
 
 function getCard(userId, index) {
-  const session = sessions.get(userId);
-  if (!session || session.drawn.length >= 3 || session.complete) return null;
+  const session = sessions[userId];
+  if (!session || !session.cards || index < 1 || index > 3) return null;
 
-  const card = generateCard();
-  session.drawn.push(card);
+  const alreadyDrawn = session.drawn[index];
+  if (alreadyDrawn) return null;
 
-  if (session.drawn.length === 3) {
-    session.complete = true;
-  }
-
+  const card = session.cards[index - 1];
+  session.drawn[index] = true;
   return card;
 }
 
 function isSessionComplete(userId) {
-  const session = sessions.get(userId);
-  return session?.complete || false;
-}
+  const session = sessions[userId];
+  if (!session) return false;
 
-function generateCard() {
-  const suits = ['Cups', 'Wands', 'Swords', 'Pentacles'];
-  const values = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Page', 'Knight', 'Queen', 'King'];
-  const suit = suits[Math.floor(Math.random() * suits.length)];
-  const value = values[Math.floor(Math.random() * values.length)];
-  return `${value} of ${suit}`;
+  const drawn = session.drawn;
+  return drawn[1] && drawn[2] && drawn[3];
 }
 
 module.exports = {
   startSession,
   getCard,
-  isSessionComplete
+  isSessionComplete,
 };
