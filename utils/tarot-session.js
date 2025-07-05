@@ -1,39 +1,31 @@
-// utils/tarot-session.js
-// v1.1.3 - 抽牌状态管理，支持基础与高级一致逻辑
-
-const tarot = require('./tarot');
+// v1.1.0 - utils/tarot-session.js
 
 const sessions = {};
 
 function startSession(userId) {
   if (!sessions[userId]) {
-    const cards = tarot.drawCards(3);
-    sessions[userId] = { cards, drawn: {} };
+    const cardPool = Array.from({ length: 22 }, (_, i) => i);
+    const shuffled = cardPool.sort(() => Math.random() - 0.5);
+    sessions[userId] = shuffled.slice(0, 3); // Store only 3 cards
   }
 }
 
 function getCard(userId, index) {
-  const session = sessions[userId];
-  if (!session || !session.cards || index < 1 || index > 3) return null;
-
-  const alreadyDrawn = session.drawn[index];
-  if (alreadyDrawn) return null;
-
-  const card = session.cards[index - 1];
-  session.drawn[index] = true;
-  return card;
+  startSession(userId);
+  return sessions[userId]?.[index];
 }
 
 function isSessionComplete(userId) {
-  const session = sessions[userId];
-  if (!session) return false;
+  return !!sessions[userId];
+}
 
-  const drawn = session.drawn;
-  return drawn[1] && drawn[2] && drawn[3];
+function clearSession(userId) {
+  delete sessions[userId];
 }
 
 module.exports = {
   startSession,
   getCard,
   isSessionComplete,
+  clearSession
 };
