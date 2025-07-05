@@ -1,52 +1,41 @@
-// v1.1.9
-const sessions = {};
-
-const allCards = [
-  { name: "The Fool", meaning: "New beginnings, spontaneity, free spirit" },
-  { name: "The Magician", meaning: "Power, skill, concentration" },
-  { name: "The High Priestess", meaning: "Intuition, mystery, subconscious mind" },
-  { name: "The Empress", meaning: "Femininity, beauty, nature" },
-  { name: "The Emperor", meaning: "Authority, structure, control" },
-  { name: "The Hierophant", meaning: "Tradition, conformity, morality" },
-  { name: "The Lovers", meaning: "Love, harmony, relationships" },
-  { name: "The Chariot", meaning: "Control, willpower, determination" },
-  { name: "Strength", meaning: "Courage, patience, inner strength" },
-  { name: "The Hermit", meaning: "Introspection, soul-searching, inner guidance" },
-  { name: "Wheel of Fortune", meaning: "Luck, karma, life cycles" },
-  { name: "Justice", meaning: "Truth, fairness, law" },
-  { name: "The Hanged Man", meaning: "Sacrifice, release, new perspective" },
-  { name: "Death", meaning: "Endings, change, transformation" },
-  { name: "Temperance", meaning: "Balance, moderation, purpose" },
-  { name: "The Devil", meaning: "Addiction, materialism, playfulness" },
-  { name: "The Tower", meaning: "Disaster, upheaval, sudden change" },
-  { name: "The Star", meaning: "Hope, faith, rejuvenation" },
-  { name: "The Moon", meaning: "Illusion, fear, anxiety" },
-  { name: "The Sun", meaning: "Joy, success, vitality" },
-  { name: "Judgement", meaning: "Reflection, reckoning, awakening" },
-  { name: "The World", meaning: "Completion, celebration, accomplishment" },
-];
+// v1.0.9 - tarot-session.js
+const sessions = new Map();
 
 function startSession(userId) {
-  if (!sessions[userId]) {
-    const shuffled = [...allCards].sort(() => 0.5 - Math.random());
-    sessions[userId] = {
-      cards: shuffled.slice(0, 3),
-      drawn: [],
-    };
-  }
+  sessions.set(userId, {
+    cardsDrawn: [],
+  });
 }
 
 function getCard(userId, index) {
-  const session = sessions[userId];
-  if (!session || session.drawn.includes(index)) return { name: "❌", meaning: "Card already drawn." };
+  const session = sessions.get(userId);
 
-  session.drawn.push(index);
-  return session.cards[index];
+  if (!session) {
+    return { error: "Session not found. Please try again later." };
+  }
+
+  if (session.cardsDrawn.includes(index)) {
+    return { error: `You've already drawn card ${index}.` };
+  }
+
+  if (session.cardsDrawn.length >= 3) {
+    return { error: "You have already drawn 3 cards." };
+  }
+
+  // ✅ 模拟牌面文本，可后续替换为真实牌义逻辑
+  const cardText = `✨ You have drawn card ${index}. (Placeholder card meaning here.)`;
+
+  session.cardsDrawn.push(index);
+  return { text: cardText };
 }
 
 function isSessionComplete(userId) {
-  const session = sessions[userId];
-  return session && session.drawn.length >= 3;
+  const session = sessions.get(userId);
+  return session && session.cardsDrawn.length >= 3;
 }
 
-module.exports = { startSession, getCard, isSessionComplete };
+module.exports = {
+  startSession,
+  getCard,
+  isSessionComplete,
+};
