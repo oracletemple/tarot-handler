@@ -1,26 +1,30 @@
-// v1.1.4
+// index.js (Webhook 版) · v1.1.5
+
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
-const { processTransaction } = require('./utils/processor');
-require('./utils/telegram'); // ensure bot is launched
+const bot = require('./utils/telegram');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-app.use(bodyParser.json());
+// 设置 Telegram Webhook
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_PATH = `/bot${BOT_TOKEN}`;
 
-app.post('/webhook', async (req, res) => {
-  try {
-    const tx = req.body;
-    await processTransaction(tx);
-    res.status(200).send('OK');
-  } catch (error) {
-    console.error('[ERROR] /webhook failed:', error.message);
-    res.status(500).send('Internal Server Error');
-  }
+app.use(TELEGRAM_PATH, bot.webhookCallback());
+
+app.get('/', (req, res) => {
+  res.send('Tarot Handler Webhook is running.');
 });
 
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
   console.log(`🚀 Tarot Webhook Server running at http://localhost:${PORT}`);
+  try {
+    const webhookUrl = process.env.RENDER_EXTERNAL_URL || `https://tarot-handler.onrender.com${TELEGRAM_PATH}`;
+    await bot.telegram.setWebhook(webhookUrl);
+    console.log(`📡 Webhook set to: ${webhookUrl}`);
+  } catch (err) {
+    console.error('❌ Failed to set webhook:', err);
+  }
 });
