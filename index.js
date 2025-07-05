@@ -1,6 +1,5 @@
-// v1.1.0 - tarot-handler/index.js
+// v1.1.0 - tarot-handler/index.js (auto-filled with PORT/Webhook)
 
-require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const { handleCardClick } = require("./utils/tarot");
@@ -22,7 +21,7 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000; // ✅ 自动注入，无需 process.env.PORT
 app.listen(PORT, () => {
   console.log(`Tarot service running on port ${PORT}`);
 });
