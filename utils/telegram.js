@@ -1,7 +1,9 @@
-// v1.1.0 - utils/telegram.js
+// v1.1.0 - utils/telegram.js (auto-filled with project .env values)
 
 const axios = require("axios");
-const BOT_TOKEN = process.env.BOT_TOKEN;
+
+// ✅ 自动注入配置变量，无需 .env 设置
+const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function sendMessage(chatId, text) {
