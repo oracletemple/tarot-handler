@@ -1,42 +1,42 @@
-// v1.0.11 - Session 模式：支持多轮抽牌与状态判断
+// v1.0.11
 const sessions = {};
 
-function startSession(userId, isPremium = false) {
+function startSession(userId) {
   sessions[userId] = {
     cards: [],
-    complete: false,
-    premium: isPremium,
+    drawn: [false, false, false],
   };
 }
 
 function getCard(userId, index) {
-  const session = sessions[userId];
-  if (!session || index < 0 || index > 2) return null;
+  if (!sessions[userId]) return null;
+  if (sessions[userId].drawn[index]) return null;
 
-  const existing = session.cards[index];
-  if (existing) return existing;
-
-  const newCard = Math.floor(Math.random() * 78) + 1;
-  session.cards[index] = newCard;
-
-  if (session.cards.filter(Boolean).length === 3) {
-    session.complete = true;
-  }
-
-  return newCard;
+  const card = drawRandomCard();
+  sessions[userId].cards[index] = card;
+  sessions[userId].drawn[index] = true;
+  return card;
 }
 
 function isSessionComplete(userId) {
-  return sessions[userId]?.complete || false;
+  return sessions[userId]?.drawn.every(Boolean);
 }
 
-function isPremium(userId) {
-  return sessions[userId]?.premium || false;
+function drawRandomCard() {
+  const cards = [
+    'The Fool', 'The Magician', 'The High Priestess', 'The Empress',
+    'The Emperor', 'The Hierophant', 'The Lovers', 'The Chariot',
+    'Strength', 'The Hermit', 'Wheel of Fortune', 'Justice',
+    'The Hanged Man', 'Death', 'Temperance', 'The Devil',
+    'The Tower', 'The Star', 'The Moon', 'The Sun',
+    'Judgement', 'The World'
+  ];
+  const index = Math.floor(Math.random() * cards.length);
+  return cards[index];
 }
 
 module.exports = {
   startSession,
   getCard,
   isSessionComplete,
-  isPremium,
 };
