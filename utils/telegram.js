@@ -1,8 +1,7 @@
-// v1.1.0 - utils/telegram.js (auto-filled with project .env values)
+// v1.1.3 - utils/telegram.js (with sendButtons)
 
 const axios = require("axios");
 
-// ✅ 自动注入配置变量，无需 .env 设置
 const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
@@ -31,4 +30,22 @@ async function sendPhoto(chatId, imageUrl, caption = "") {
   }
 }
 
-module.exports = { sendMessage, sendPhoto };
+async function sendButtons(chatId, prompt) {
+  try {
+    await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: prompt,
+      reply_markup: {
+        keyboard: [
+          [{ text: "🃏 Card 1" }, { text: "🃏 Card 2" }, { text: "🃏 Card 3" }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+  } catch (error) {
+    console.error("Error sending buttons:", error.response?.data || error.message);
+  }
+}
+
+module.exports = { sendMessage, sendPhoto, sendButtons };
