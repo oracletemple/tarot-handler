@@ -1,52 +1,49 @@
-// v1.1.3 - 主入口文件（Webhook + 模拟交易支持）
-
+// v1.1.3 - index.js
 const express = require("express");
 const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const { handleTransaction } = require("./utils/telegram");
-dotenv.config();
+const { sendCardButtons, handleTransaction } = require("./utils/telegram");
+const { startSession, getCard, isSessionComplete } = require("./utils/tarot-session");
 
 const app = express();
 app.use(bodyParser.json());
 
-app.get("/", (req, res) => {
-  res.send("Tarot Webhook Service running.");
-});
+const PORT = process.env.PORT || 3000;
 
-// ✅ Webhook 主入口
+// ✅ Webhook 接口入口：处理交易通知或按钮点击
 app.post("/webhook", async (req, res) => {
   const body = req.body;
 
-  // 确认是交易通知（来自链监听器）
-  if (body && body.hash && body.amount) {
-    await handleTransaction(body);
-    return res.status(200).send("Transaction handled");
-  }
-
-  // 确认是 Telegram 回调按钮点击
+  // 🧾 情况一：按钮点击事件
   if (body.callback_query) {
     await handleTransaction({ callback_query: body.callback_query });
-    return res.status(200).send("Callback handled");
+
+    const userId = body.callback_query.from.id;
+    const data = body.callback_query.data;
+
+    const cardIndex = parseInt(data.replace("card_", ""));
+    if (isNaN(cardIndex)) return res.sendStatus(200);
+
+    const result = await getCard(userId, cardIndex);
+    console.log("Card Drawn:", result.text);
+    return res.sendStatus(200);
   }
 
-  res.status(400).send("Invalid request");
+  // 💸 情况二：链上转账成功，启动新会话并发送按钮
+  if (body.transaction && body.transaction.to === "TYQQ3QigecskEi4B41BKDoTsmZf9BaFTbU") {
+    const { amount, from } = body.transaction;
+    const userId = body.transaction.user_id; // 后续模拟或真实交易中需携带
+
+    if (amount >= 10) {
+      await startSession(userId);
+      await sendCardButtons(userId);
+    }
+    return res.sendStatus(200);
+  }
+
+  res.sendStatus(200);
 });
 
-// ✅ 支持 curl 模拟测试
-app.post("/simulate-click", async (req, res) => {
-  const { amount, hash } = req.body;
-  if (!amount || !hash) return res.status(400).send("Missing params");
-
-  const tx = {
-    amount,
-    hash,
-    sender: "simulate_user_" + amount,
-  };
-  await handleTransaction(tx);
-  res.send("Simulated transaction processed");
-});
-
-const PORT = process.env.PORT || 3000;
+// ✅ 启动服务
 app.listen(PORT, () => {
-  console.log("Tarot service running on port", PORT);
+  console.log(`Tarot service running on port ${PORT}`);
 });
