@@ -1,39 +1,43 @@
-// 📁 文件：utils/tarot-session.js  (v1.1.3)
+// utils/tarot-session.js
+// v1.0.9 - 会话控制模块
 
-const sessions = new Map();
+const sessions = {};
 
+// ✅ 启动新会话
 function startSession(userId) {
-  sessions.set(userId, {
-    drawnCards: [],
-  });
-}
-
-function getCard(userId, index) {
-  const session = sessions.get(userId);
-  if (!session || session.drawnCards.includes(index)) return null;
-
-  session.drawnCards.push(index);
-
-  // ✅ 模拟生成牌面内容
-  const card = {
-    image: `https://example.com/tarot/card_${index}.jpg`,
-    text: `This is the meaning of Card ${index}.`,
+  sessions[userId] = {
+    drawn: [],
+    startedAt: Date.now(),
   };
-  return card;
 }
 
+// ✅ 获取指定编号的牌，并记录
+function getCard(userId, index) {
+  const session = sessions[userId];
+  if (!session || session.drawn.includes(index)) return null;
+
+  session.drawn.push(index);
+  return {
+    index,
+    text: `You drew card ${index}. 🃏`, // 后续替换为真实解读
+  };
+}
+
+// ✅ 判断是否抽完3张
 function isSessionComplete(userId) {
-  const session = sessions.get(userId);
-  return session && session.drawnCards.length >= 3;
+  const session = sessions[userId];
+  return session && session.drawn.length >= 3;
 }
 
-function endSession(userId) {
-  sessions.delete(userId);
+// ✅ 获取已抽张数（用于按钮更新）
+function getDrawnCards(userId) {
+  const session = sessions[userId];
+  return session ? session.drawn : [];
 }
 
 module.exports = {
   startSession,
   getCard,
   isSessionComplete,
-  endSession,
+  getDrawnCards,
 };
