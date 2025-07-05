@@ -1,42 +1,28 @@
-// v1.0.11
-const sessions = {};
+// ✅ tarot-session.js (v1.0.11)
+
+const sessions = new Map();
 
 function startSession(userId) {
-  sessions[userId] = {
-    cards: [],
-    drawn: [false, false, false],
-  };
+  sessions.set(userId, { cards: [] });
 }
 
 function getCard(userId, index) {
-  if (!sessions[userId]) return null;
-  if (sessions[userId].drawn[index]) return null;
-
-  const card = drawRandomCard();
-  sessions[userId].cards[index] = card;
-  sessions[userId].drawn[index] = true;
-  return card;
+  const session = sessions.get(userId);
+  if (!session || session.cards.length === 0) {
+    // Generate 3 random cards
+    session.cards = Array.from({ length: 3 }, () => Math.floor(Math.random() * 78) + 1);
+    sessions.set(userId, session);
+  }
+  return session.cards[index - 1];
 }
 
 function isSessionComplete(userId) {
-  return sessions[userId]?.drawn.every(Boolean);
-}
-
-function drawRandomCard() {
-  const cards = [
-    'The Fool', 'The Magician', 'The High Priestess', 'The Empress',
-    'The Emperor', 'The Hierophant', 'The Lovers', 'The Chariot',
-    'Strength', 'The Hermit', 'Wheel of Fortune', 'Justice',
-    'The Hanged Man', 'Death', 'Temperance', 'The Devil',
-    'The Tower', 'The Star', 'The Moon', 'The Sun',
-    'Judgement', 'The World'
-  ];
-  const index = Math.floor(Math.random() * cards.length);
-  return cards[index];
+  const session = sessions.get(userId);
+  return session && session.cards.length === 3;
 }
 
 module.exports = {
   startSession,
   getCard,
-  isSessionComplete,
+  isSessionComplete
 };
