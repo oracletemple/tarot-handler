@@ -1,80 +1,84 @@
-// utils/telegram.js
-// v1.1.9 修复 callback userId 与 session 不一致的问题 + 按钮动态减少
+// v1.1.9
 const axios = require("axios");
+const {
+  getCard,
+  isSessionComplete,
+  startSession,
+} = require("./tarot-session");
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const RECEIVER_ID = process.env.RECEIVER_ID;
 const AMOUNT_THRESHOLD = parseFloat(process.env.AMOUNT_THRESHOLD || "10");
 
-const { getCard, isSessionComplete, startSession } = require("./tarot-session");
+const apiUrl = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-function sendMessage(chat_id, text, buttons = null) {
+async function sendMessage(chatId, text, buttons) {
   const payload = {
-    chat_id,
+    chat_id: chatId,
     text,
     parse_mode: "Markdown",
   };
-
   if (buttons) {
     payload.reply_markup = {
-      inline_keyboard: [buttons],
+      inline_keyboard: [buttons.map((label, i) => ({
+        text: label,
+        callback_data: `card_${i + 1}`,
+      }))],
     };
   }
-
-  return axios.post(`${TELEGRAM_API}/sendMessage`, payload);
+  await axios.post(`${apiUrl}/sendMessage`, payload);
 }
 
-async function handleTransaction(tx) {
-  const { amount } = tx;
-  const tier = amount >= 30 ? "premium" : amount >= 12 ? "basic" : "below";
+async function handleTransaction(data) {
+  const { amount, sender } = data;
+  const chatId = RECEIVER_ID;
 
-  if (tier === "below") {
-    await sendMessage(process.env.RECEIVER_ID, `⚠️ Received ${amount || "undefined"} USDT, which is below the minimum threshold.`);
+  if (!amount || isNaN(amount)) {
+    await sendMessage(chatId, `⚠️ Received *undefined USDT*, which is below the minimum threshold.`);
     return;
   }
 
-  await startSession(process.env.RECEIVER_ID);
+  if (amount >= 30) {
+    await sendMessage(chatId, `✨ *Custom GPT Reading of 30 USDT received.*\nYou will receive an extended interpretation shortly.`);
+    await sendMessage(chatId, `🔮 Also including your 12 USDT tarot session below:`); // 包含基础卡牌互动
+  }
 
-  const intro = tier === "premium"
-    ? "🌟 Premium tarot payment of 30 USDT received."
-    : "🔮 Basic tarot payment of 12 USDT received.";
-
-  await sendMessage(process.env.RECEIVER_ID, intro);
-  await sendMessage(process.env.RECEIVER_ID, "You have received a divine reading. Please choose your first card:", [
-    { text: "🃏 Card 1", callback_data: "draw_1" },
-    { text: "🃏 Card 2", callback_data: "draw_2" },
-    { text: "🃏 Card 3", callback_data: "draw_3" },
-  ]);
+  if (amount >= AMOUNT_THRESHOLD) {
+    await sendMessage(chatId, `🔮 *Basic tarot payment of ${amount} USDT received.*`);
+    await startSession(chatId); // 初始化用户 session
+    await sendMessage(chatId, `You have received a divine reading. Please choose your first card:`, [
+      "🃏 Card 1", "🃏 Card 2", "🃏 Card 3",
+    ]);
+  } else {
+    await sendMessage(chatId, `⚠️ Received *${amount} USDT*, which is below the minimum threshold.`);
+  }
 }
 
 async function handleCallbackQuery(query) {
-  const userId = query.from.id;
-  const data = query.data;
+  const chatId = query.message.chat.id;
   const messageId = query.message.message_id;
+  const data = query.data;
 
-  const match = data.match(/^draw_(\d)$/);
+  const match = data.match(/^card_(\d)$/);
   if (!match) return;
 
-  const index = parseInt(match[1]);
-  const card = await getCard(userId, index);
+  const index = parseInt(match[1], 10) - 1;
+  const card = getCard(chatId, index);
 
-  await sendMessage(userId, `✨ Your card ${index}: ${card}`);
-
-  const buttons = [];
-  for (let i = 1; i <= 3; i++) {
-    const drawn = await getCard(userId, i);
-    if (!drawn) {
-      buttons.push({ text: `🃏 Card ${i}`, callback_data: `draw_${i}` });
-    }
-  }
-
-  await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-    chat_id: userId,
-    message_id: messageId,
-    reply_markup: buttons.length > 0 ? { inline_keyboard: [buttons] } : { inline_keyboard: [] }
+  await axios.post(`${apiUrl}/sendMessage`, {
+    chat_id: chatId,
+    text: `✨ *Your Card ${index + 1}:* ${card.meaning}`,
+    parse_mode: "Markdown",
   });
+
+  if (isSessionComplete(chatId)) {
+    // 删除原按钮消息
+    await axios.post(`${apiUrl}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: { inline_keyboard: [] },
+    });
+  }
 }
 
-module.exports = {
-  handleTransaction,
-  handleCallbackQuery,
-};
+module.exports = { handleTransaction, handleCallbackQuery };
