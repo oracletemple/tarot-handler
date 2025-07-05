@@ -1,43 +1,62 @@
-// utils/tarot-session.js
-// v1.0.9 - 会话控制模块
+// tarot-session.js v1.1.0
 
-const sessions = {};
+const sessionMap = new Map();
 
-// ✅ 启动新会话
 function startSession(userId) {
-  sessions[userId] = {
+  sessionMap.set(userId, {
     drawn: [],
     startedAt: Date.now(),
-  };
+  });
+  console.log("✅ Session started for", userId);
 }
 
-// ✅ 获取指定编号的牌，并记录
-function getCard(userId, index) {
-  const session = sessions[userId];
-  if (!session || session.drawn.includes(index)) return null;
-
-  session.drawn.push(index);
-  return {
-    index,
-    text: `You drew card ${index}. 🃏`, // 后续替换为真实解读
-  };
-}
-
-// ✅ 判断是否抽完3张
 function isSessionComplete(userId) {
-  const session = sessions[userId];
+  const session = sessionMap.get(userId);
   return session && session.drawn.length >= 3;
 }
 
-// ✅ 获取已抽张数（用于按钮更新）
-function getDrawnCards(userId) {
-  const session = sessions[userId];
-  return session ? session.drawn : [];
+function getCard(userId, index) {
+  const session = sessionMap.get(userId);
+
+  if (!session) {
+    console.warn("⚠️ Session not found for", userId);
+    return {
+      text: "⚠️ Session not found. Please try again later.",
+      done: false,
+    };
+  }
+
+  if (session.drawn.includes(index)) {
+    return {
+      text: "⚠️ You already drew this card.",
+      done: false,
+    };
+  }
+
+  session.drawn.push(index);
+  console.log("🎴 Card", index, "drawn by", userId);
+
+  // 临时示意内容，后续接入正式塔罗文本
+  const cardText = `You drew Card ${index}. 🌟 Meaning: Divine insight.`;
+
+  const done = session.drawn.length >= 3;
+  if (done) {
+    console.log("✅ Session complete for", userId);
+  }
+
+  return {
+    text: cardText,
+    done,
+  };
+}
+
+function getSession(userId) {
+  return sessionMap.get(userId);
 }
 
 module.exports = {
   startSession,
   getCard,
   isSessionComplete,
-  getDrawnCards,
+  getSession,
 };
