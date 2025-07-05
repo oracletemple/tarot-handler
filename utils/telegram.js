@@ -31,4 +31,4 @@ async function sendPhoto(chatId, imageUrl, caption = "") {
   }
 }
 
-module.exports = { sendMessage, sendPhoto };
+module.exports = { sendMessage, sendPhoto,handleTransaction, };
