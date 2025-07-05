@@ -1,43 +1,50 @@
-// v1.0.11 - Telegram 工具封装
+// v1.0.11
 const axios = require('axios');
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function sendMessage(chatId, text, buttons) {
-  const payload = {
+async function sendMessage(chatId, text) {
+  return axios.post(`${BASE_URL}/sendMessage`, {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown',
-  };
-
-  if (buttons) {
-    payload.reply_markup = {
-      inline_keyboard: [buttons],
-    };
-  }
-
-  try {
-    const res = await axios.post(`${TELEGRAM_API}/sendMessage`, payload);
-    return res.data;
-  } catch (err) {
-    console.error('[ERROR] Telegram sendMessage failed:', err.message);
-  }
+  });
 }
 
-async function editMessage(chatId, messageId, text) {
+async function sendTarotButtons(chatId) {
+  return axios.post(`${BASE_URL}/sendMessage`, {
+    chat_id: chatId,
+    text: '👇 Tap a card to reveal your Tarot Reading:',
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🃏 Card 1', callback_data: 'card_1' },
+          { text: '🃏 Card 2', callback_data: 'card_2' },
+          { text: '🃏 Card 3', callback_data: 'card_3' },
+        ],
+      ],
+    },
+  });
+}
+
+async function simulateButtonClick(chatId, callbackData) {
   try {
-    await axios.post(`${TELEGRAM_API}/editMessageText`, {
-      chat_id: chatId,
-      message_id: messageId,
-      text,
-      parse_mode: 'Markdown',
+    const url = `${process.env.WEBHOOK_URL}/webhook`;
+    const res = await axios.post(url, {
+      callback_query: {
+        message: { chat: { id: chatId } },
+        from: { id: chatId },
+        data: callbackData,
+      },
     });
+    console.log('[INFO] Simulate click success:', res.data);
   } catch (err) {
-    console.error('[ERROR] Telegram editMessage failed:', err.message);
+    console.error('[ERROR] Simulate click failed:', err.message);
   }
 }
 
 module.exports = {
   sendMessage,
-  editMessage,
+  sendTarotButtons,
+  simulateButtonClick,
 };
