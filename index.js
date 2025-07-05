@@ -1,91 +1,98 @@
-// ✅ index.js（v1.1.3）支持按钮点击抽牌逻辑
+// v1.1.2 - Webhook入口主模块（不再依赖 dotenv）
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const { sendMessage } = require("./utils/telegram");
-const { startSession, getCard, isSessionComplete } = require("./utils/tarot-session");
-require("dotenv").config();
+const { startSession, isSessionComplete, getCard } = require("./utils/tarot-session");
 
 const app = express();
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 10000;
-const RECEIVER_ID = "7685088782"; // 用户 Telegram ID
+// ✅ 自动注入配置变量（无需dotenv）
+const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
+const RECEIVER_ID = "7685088782";
 const AMOUNT_THRESHOLD = 10;
 
+// ✅ 模拟测试标记（Render部署后自动触发）
+let testCount = 0;
+
+// 🔔 主 webhook 接口
 app.post("/webhook", async (req, res) => {
-  const { amount } = req.body;
+  const body = req.body;
 
-  if (typeof amount !== "number") {
-    return res.status(400).json({ error: "Missing amount" });
-  }
-
-  try {
-    if (amount >= 30) {
-      await sendMessage(RECEIVER_ID, `✨ *We've received your 30 USDT payment!*
-
-You now have access to a *personalized spiritual reading*, including:
-- Full Tarot spread
-- Spirit guide interpretation
-- Lunar influence analysis
-- GPT-based deep interpretation
-
-We'll follow up with your reading shortly.`);
-    }
-
-    if (amount >= AMOUNT_THRESHOLD) {
-      await startSession(RECEIVER_ID);
-
-      await sendMessage(
-        RECEIVER_ID,
-        `🎉 *We've received your payment.*\n\nPlease choose a card below to begin your reading:`,
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: "🃏 Card 1", callback_data: "card_1" },
-                { text: "🃏 Card 2", callback_data: "card_2" },
-                { text: "🃏 Card 3", callback_data: "card_3" }
-              ]
-            ]
-          }
+  // ✅ 交易监听逻辑
+  if (body.type === "transaction") {
+    const { amount, sender, receiver } = body.data;
+    if (
+      receiver === RECEIVER_ID &&
+      parseFloat(amount) >= AMOUNT_THRESHOLD
+    ) {
+      await startSession(sender);
+      await sendMessage(sender, `🔔 We've received your payment.\n\nPlease choose a card below to begin your reading:`, {
+        reply_markup: {
+          inline_keyboard: [[
+            { text: "🃏 Card 1", callback_data: "card_1" },
+            { text: "🃏 Card 2", callback_data: "card_2" },
+            { text: "🃏 Card 3", callback_data: "card_3" }
+          ]]
         }
-      );
+      });
     }
-
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Webhook error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.sendStatus(200);
   }
-});
 
-app.post("/callback", async (req, res) => {
-  const { callback_query } = req.body;
+  // ✅ 按钮点击逻辑
+  if (body.callback_query) {
+    const userId = body.callback_query.from.id;
+    const data = body.callback_query.data;
+    const messageId = body.callback_query.message.message_id;
 
-  if (!callback_query) return res.sendStatus(200);
+    if (data.startsWith("card_")) {
+      const index = parseInt(data.split("_")[1]) - 1;
+      const result = await getCard(userId, index);
+      await sendMessage(userId, result);
 
-  const userId = callback_query.from.id;
-  const data = callback_query.data;
-  const indexMap = { card_1: 0, card_2: 1, card_3: 2 };
-
-  if (data in indexMap) {
-    const cardIndex = indexMap[data];
-    const card = await getCard(userId, cardIndex);
-
-    if (card) {
-      await sendMessage(userId, `🔮 *Card ${cardIndex + 1}:* ${card.title}\n\n_${card.description}_`);
-    } else {
-      await sendMessage(userId, `Card already drawn or invalid.`);
+      if (await isSessionComplete(userId)) {
+        await sendMessage(userId, `🌟 You've drawn all three cards. Your reading is complete. Thank you!`);
+      }
     }
-
-    if (await isSessionComplete(userId)) {
-      await sendMessage(userId, `✅ Your tarot reading is complete. Trust your intuition and stay aligned.`);
-    }
+    return res.sendStatus(200);
   }
 
   res.sendStatus(200);
 });
 
+// ✅ 首页测试
+app.get("/", (req, res) => {
+  res.send("Tarot Webhook Running ✅");
+});
+
+// ✅ 自动模拟交易测试（首次部署后运行一次）
+setTimeout(async () => {
+  if (testCount === 0) {
+    testCount++;
+    await simulatePayment("12", RECEIVER_ID);
+    await simulatePayment("30", RECEIVER_ID);
+  }
+}, 5000);
+
+// ✅ 模拟函数
+async function simulatePayment(amount, receiver) {
+  await fetch("http://localhost:3000/webhook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "transaction",
+      data: {
+        sender: "999999999",
+        receiver,
+        amount
+      }
+    })
+  });
+}
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`USDT listener running on port ${PORT}`);
+  console.log(`Tarot service running on port ${PORT}`);
 });
