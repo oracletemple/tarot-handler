@@ -1,56 +1,76 @@
 // v1.1.3
-const { Telegraf } = require('telegraf');
-const { getTarotButtons, handleDrawCard } = require('./tarot');
-const { startSession } = require('./tarot-session');
 require('dotenv').config();
+const { Telegraf, Markup } = require('telegraf');
+const { handleDrawCard } = require('./tarot');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✅ 避免重复启动（防止冲突）
-if (!process.env.TELEGRAM_STARTED) {
-  bot.launch().then(() => {
-    console.log('✅ Telegram bot launched');
-    process.env.TELEGRAM_STARTED = 'true';
-  }).catch(err => {
-    console.error('❌ Telegram launch failed:', err.message);
-  });
+// 👇 初始化全局标志，避免重复启动
+if (!global.telegramStarted) {
+  global.telegramStarted = false;
 }
 
-// ✅ 按钮交互逻辑：处理点击 card_1、card_2、card_3
-bot.on('callback_query', async (ctx) => {
-  const action = ctx.callbackQuery.data;
-  const userId = ctx.from.id;
-
+// 🧠 按钮回调逻辑
+bot.action(/^card_\d+$/, async (ctx) => {
   try {
-    const result = handleDrawCard(userId, parseInt(action.split('_')[1]));
-    await ctx.answerCbQuery();
-    await ctx.replyWithMarkdown(result);
-  } catch (error) {
-    await ctx.answerCbQuery('⚠️ Failed to draw card.');
-    await ctx.reply('❌ Failed to draw card.');
-    console.error('[ERROR] handleDrawCard failed:', error.message);
+    const userId = ctx.from.id;
+    const cardIndex = parseInt(ctx.callbackQuery.data.split('_')[1], 10);
+    const card = await handleDrawCard(userId, cardIndex);
+    if (card) {
+      await ctx.reply(`🔮 You drew: ${card}`);
+    } else {
+      await ctx.reply('❌ Failed to draw card.');
+    }
+  } catch (err) {
+    console.error('[ERROR] handleDrawCard failed:', err.message);
+    await ctx.reply('❌ Error processing your card.');
   }
 });
 
-// ✅ 发消息
-function sendMessage(userId, message) {
-  return bot.telegram.sendMessage(userId, message, { parse_mode: 'Markdown' });
+// 📨 发消息
+async function sendMessage(userId, text) {
+  return bot.telegram.sendMessage(userId, text, { parse_mode: 'Markdown' });
 }
 
-// ✅ 发出占卜按钮
-function sendTarotButtons(userId) {
-  return bot.telegram.sendMessage(userId, '👇 Tap to reveal your Tarot Reading:', getTarotButtons());
+// 🎴 发送塔罗牌按钮
+async function sendTarotButtons(userId) {
+  const buttons = Markup.inlineKeyboard([
+    Markup.button.callback('🔮 Draw Card 1', 'card_0'),
+    Markup.button.callback('🔮 Draw Card 2', 'card_1'),
+    Markup.button.callback('🔮 Draw Card 3', 'card_2'),
+  ]);
+  return bot.telegram.sendMessage(userId, '👇 Tap to reveal your Tarot Reading:', buttons);
 }
 
-// ✅ 模拟按钮点击
-function simulateButtonClick(userId, action) {
-  const cardIndex = parseInt(action.split('_')[1]);
-  const result = handleDrawCard(userId, cardIndex);
-  return sendMessage(userId, result);
+// 🤖 模拟点击按钮（用于测试）
+async function simulateButtonClick(userId, action) {
+  try {
+    const ctx = {
+      from: { id: userId },
+      callbackQuery: { data: action },
+      reply: (msg) => bot.telegram.sendMessage(userId, msg),
+    };
+    await bot.handleUpdate({ callback_query: ctx.callbackQuery, from: ctx.from });
+    console.log('[INFO] Simulate click success: OK');
+  } catch (err) {
+    console.error('[ERROR] Simulate click failed:', err.message);
+  }
+}
+
+// ✅ 启动 bot（仅运行一次）
+if (!global.telegramStarted) {
+  bot.launch()
+    .then(() => {
+      console.log('[INFO] Telegram bot launched ✅');
+      global.telegramStarted = true;
+    })
+    .catch((err) => {
+      console.error('❌ Telegram launch failed:', err.message);
+    });
 }
 
 module.exports = {
   sendMessage,
   sendTarotButtons,
-  simulateButtonClick
+  simulateButtonClick,
 };
