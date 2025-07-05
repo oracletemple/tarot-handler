@@ -1,60 +1,38 @@
-// v1.1.5
+// v1.1.4
+require('dotenv').config();
 const { Telegraf, Markup } = require('telegraf');
-const axios = require('axios'); // ✅ 修复 axios 未定义
+const { handleDrawCard } = require('./tarot');
+const { isSessionComplete } = require('./tarot-session');
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const RECEIVER_ID = process.env.RECEIVER_ID;
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const bot = new Telegraf(BOT_TOKEN);
+bot.start((ctx) => {
+  ctx.reply('Welcome! You will receive your divine message soon.');
+});
 
-// 避免重复 launch 冲突（如多服务部署时）
-if (!global.telegramStarted) {
-  bot.launch().then(() => {
-    console.log('✅ Telegram bot launched');
-    global.telegramStarted = true;
-  }).catch((err) => {
-    console.error('❌ Telegram launch failed:', err.message);
-  });
-}
+bot.on('callback_query', async (ctx) => {
+  try {
+    const userId = ctx.from.id;
+    const data = ctx.callbackQuery.data;
 
-function sendTarotMessage({ amount, txid, tier }) {
-  let message = `💸 Payment received:\n\n💰 Amount: ${amount} USDT\n🔗 Tx Hash: ${txid}`;
-
-  if (tier === 'basic') {
-    message += `\n\n✨ You unlocked Divine Oracle Basic.\nReceive a 3-card Tarot Reading below:`;
-  } else if (tier === 'custom') {
-    message += `\n\n🧠 You unlocked Custom Oracle Reading.\nPlease reply with your question.\n\n🔮 Also receive a 3-card Tarot Reading:`;
+    if (data.startsWith('card_')) {
+      const cardIndex = parseInt(data.split('_')[1]);
+      if (!isSessionComplete(userId)) {
+        await handleDrawCard(userId, cardIndex, ctx);
+      }
+    }
+  } catch (err) {
+    console.error('[ERROR] handleDrawCard failed:', err.message);
+    console.error('Unhandled error while processing', ctx.update.callback_query);
   }
+});
 
-  const buttons = [
-    Markup.button.callback('🃏 Draw Card 1', 'card_1'),
-    Markup.button.callback('🃏 Draw Card 2', 'card_2'),
-    Markup.button.callback('🃏 Draw Card 3', 'card_3'),
-  ];
-
-  bot.telegram.sendMessage(RECEIVER_ID, message, {
-    reply_markup: Markup.inlineKeyboard(buttons, { columns: 1 }),
-  }).then(() => {
-    console.log('[INFO] Message sent for', txid);
-  }).catch(err => {
-    console.error('[ERROR] Failed to send message:', err.message);
-  });
+if (!global.telegramStarted) {
+  bot.launch();
+  global.telegramStarted = true;
+  console.log('✅ Telegram bot launched');
+} else {
+  console.log('ℹ️ Telegram bot already started');
 }
 
-function simulateButtonClick(userId, buttonIndex) {
-  const button = `card_${buttonIndex}`;
-  return axios.post('http://localhost:3000/simulate-click', {
-    userId,
-    callbackData: button,
-  }).then(() => {
-    console.log('[INFO] Simulate click success:', button);
-  }).catch(err => {
-    console.error('[ERROR] Simulate click failed:', err.message);
-  });
-}
-
-module.exports = {
-  bot,
-  sendTarotMessage,
-  simulateButtonClick,
-};
+module.exports = bot;
