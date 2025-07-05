@@ -1,23 +1,18 @@
-// v1.1.4
-const axios = require('axios');
+// v1.1.0 - utils/simulate-click.js
+
+const axios = require("axios");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const simulateUrl = `https://api.telegram.org/bot${BOT_TOKEN}/simulateClick`;
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function simulateClick(userId, cardNumber = 3) {
+async function simulateClick(userId, label) {
   try {
-    const res = await axios.post(simulateUrl, {
-      user_id: userId,
-      data: `card_${cardNumber}`
+    await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: userId,
+      text: label
     });
-
-    if (res.data && res.data.ok) {
-      console.log(`[SIMULATE] Clicked card_${cardNumber} for user ${userId}`);
-    } else {
-      throw new Error(res.data.description || 'Telegram API failed');
-    }
-  } catch (err) {
-    throw new Error(`Simulate click failed: ${err.message}`);
+  } catch (error) {
+    console.error("Simulate click failed:", error.response?.data || error.message);
   }
 }
 
