@@ -1,5 +1,5 @@
 // utils/telegram.js
-// v1.1.7
+// v1.1.8
 const axios = require("axios");
 
 const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
@@ -25,7 +25,7 @@ function sendMessage(text, buttons = null) {
 }
 
 async function handleTransaction(tx) {
-  const { amount, hash } = tx;
+  const { amount } = tx;
   const tier = amount >= 30 ? "premium" : amount >= 12 ? "basic" : "below";
 
   if (tier === "below") {
@@ -37,7 +37,7 @@ async function handleTransaction(tx) {
 
   if (tier === "basic") {
     await sendMessage("🔮 Basic tarot payment of 12 USDT received.");
-  } else if (tier === "premium") {
+  } else {
     await sendMessage("🌟 Premium tarot payment of 30 USDT received.");
   }
 
@@ -59,29 +59,24 @@ async function handleCallbackQuery(query) {
   const index = parseInt(match[1]);
   const card = await getCard(userId, index);
 
-  const followUp = await axios.post(`${TELEGRAM_API}/sendMessage`, {
+  await axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: userId,
     text: `✨ Your card ${index}: ${card}`,
   });
 
-  // 清除按钮或继续显示未抽完的按钮
-  const stillActive = !await isSessionComplete(userId);
+  const buttons = [];
 
-  const nextButtons = [];
-
-  if (stillActive) {
-    for (let i = 1; i <= 3; i++) {
-      const tryCard = await getCard(userId, i);
-      if (!tryCard) {
-        nextButtons.push({ text: `🃏 Card ${i}`, callback_data: `draw_${i}` });
-      }
+  for (let i = 1; i <= 3; i++) {
+    const cardCheck = await getCard(userId, i);
+    if (!cardCheck) {
+      buttons.push({ text: `🃏 Card ${i}`, callback_data: `draw_${i}` });
     }
   }
 
   await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
     chat_id: userId,
     message_id: messageId,
-    reply_markup: stillActive ? { inline_keyboard: [nextButtons] } : { inline_keyboard: [] }
+    reply_markup: buttons.length > 0 ? { inline_keyboard: [buttons] } : { inline_keyboard: [] }
   });
 }
 
