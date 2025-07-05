@@ -1,14 +1,21 @@
-// v1.0.11 - Tarot 卡片图片和名称生成器
-function getCardImage(cardNumber) {
-  const padded = String(cardNumber).padStart(2, '0');
-  return `https://yourdomain.com/cards/${padded}.jpg`;
-}
+// v1.0.11
+const { getCard, isSessionComplete } = require('./tarot-session');
+const { sendMessage } = require('./telegram');
 
-function getCardName(cardNumber) {
-  return `Tarot Card #${cardNumber}`;
+async function handleDrawCard(userId, index) {
+  const card = getCard(userId, index);
+  if (!card) {
+    return sendMessage(userId, `❗️Card ${index + 1} has already been drawn or session not found.`);
+  }
+
+  const message = `🔮 *Card ${index + 1}:* ${card}`;
+  await sendMessage(userId, message);
+
+  if (isSessionComplete(userId)) {
+    await sendMessage(userId, `✨ Your 3-card reading is complete. Thank you for your energy.`);
+  }
 }
 
 module.exports = {
-  getCardImage,
-  getCardName,
+  handleDrawCard,
 };
