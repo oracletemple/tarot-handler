@@ -1,5 +1,5 @@
 // utils/telegram.js
-// v1.1.5 - Added global.telegramStarted protection
+// v1.1.6 - add safe launchOnce protection to prevent conflict
 
 const { Telegraf, Markup } = require('telegraf');
 const { startSession, getCard, isSessionComplete } = require('./tarot-session');
@@ -7,7 +7,7 @@ const { WALLET_ADDRESS, BOT_TOKEN } = process.env;
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// 样式按钮生成
+// 按钮 UI
 function generateButtons(userId) {
   return Markup.inlineKeyboard([
     [
@@ -18,17 +18,19 @@ function generateButtons(userId) {
   ]);
 }
 
-// 发送三张塔罗牌选择按钮
+// 发出选择按钮
 async function sendTarotOptions(chatId, userId) {
   await bot.telegram.sendMessage(chatId, 'Please choose a card to begin your tarot reading:', generateButtons(userId));
 }
 
-// 发送抽牌结果（可扩展图像等）
+// 发出抽牌结果
 async function sendCardResult(chatId, card) {
-  await bot.telegram.sendMessage(chatId, `🃏 Your card: *${card.name}*\n_${card.description}_`, { parse_mode: 'Markdown' });
+  await bot.telegram.sendMessage(chatId, `🃏 Your card: *${card.name}*\n_${card.description}_`, {
+    parse_mode: 'Markdown',
+  });
 }
 
-// 注册互动逻辑
+// 注册按钮回调
 bot.on('callback_query', async (ctx) => {
   try {
     const data = ctx.callbackQuery.data;
@@ -38,7 +40,7 @@ bot.on('callback_query', async (ctx) => {
     const userId = match[1];
     const cardIndex = parseInt(match[2], 10);
 
-    await ctx.answerCbQuery(); // 优化用户体验
+    await ctx.answerCbQuery(); // 反馈已响应
     const card = getCard(userId, cardIndex);
 
     await sendCardResult(ctx.chat.id, card);
@@ -51,14 +53,24 @@ bot.on('callback_query', async (ctx) => {
   }
 });
 
-// ✅ 启动保护：防止重复 bot.launch()
-if (!global.telegramStarted) {
-  bot.launch();
-  global.telegramStarted = true;
-  console.log('✅ Telegram bot launched');
+// ✅ 安全启动封装：防止重复 bot.launch()，且更稳定
+function launchOnce() {
+  if (global.__telegram_bot_launched__) {
+    console.log('⚠️ Telegram bot already launched, skipping...');
+    return;
+  }
+  bot.launch().then(() => {
+    global.__telegram_bot_launched__ = true;
+    console.log('✅ Telegram bot launched');
+  }).catch((err) => {
+    console.error('❌ Telegram launch failed:', err);
+  });
 }
 
-// 导出主接口
+// 调用安全启动
+launchOnce();
+
+// 导出模块
 module.exports = {
   sendTarotOptions,
   sendCardResult,
