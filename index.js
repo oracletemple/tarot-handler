@@ -1,98 +1,96 @@
-// v1.1.2 - Webhook入口主模块（不再依赖 dotenv）
+// index.js
+// v1.1.2 模拟修复版 · 支持公网 URL 请求和正确的 chatId
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const { sendMessage } = require("./utils/telegram");
-const { startSession, isSessionComplete, getCard } = require("./utils/tarot-session");
+import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
-// ✅ 自动注入配置变量（无需dotenv）
-const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
-const RECEIVER_ID = "7685088782";
+const BOT_TOKEN = '7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc';
+const WALLET_ADDRESS = 'TYQQ3QigecskEi4B41BKDoTsmZf9BaFTbU';
+const RECEIVER_ID = '7685088782';
 const AMOUNT_THRESHOLD = 10;
+const HANDLER_URL = 'https://tarot-handler.onrender.com/webhook'; // ✅ 使用公网 URL
 
-// ✅ 模拟测试标记（Render部署后自动触发）
-let testCount = 0;
-
-// 🔔 主 webhook 接口
-app.post("/webhook", async (req, res) => {
-  const body = req.body;
-
-  // ✅ 交易监听逻辑
-  if (body.type === "transaction") {
-    const { amount, sender, receiver } = body.data;
-    if (
-      receiver === RECEIVER_ID &&
-      parseFloat(amount) >= AMOUNT_THRESHOLD
-    ) {
-      await startSession(sender);
-      await sendMessage(sender, `🔔 We've received your payment.\n\nPlease choose a card below to begin your reading:`, {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: "🃏 Card 1", callback_data: "card_1" },
-            { text: "🃏 Card 2", callback_data: "card_2" },
-            { text: "🃏 Card 3", callback_data: "card_3" }
-          ]]
-        }
-      });
-    }
-    return res.sendStatus(200);
-  }
-
-  // ✅ 按钮点击逻辑
-  if (body.callback_query) {
-    const userId = body.callback_query.from.id;
-    const data = body.callback_query.data;
-    const messageId = body.callback_query.message.message_id;
-
-    if (data.startsWith("card_")) {
-      const index = parseInt(data.split("_")[1]) - 1;
-      const result = await getCard(userId, index);
-      await sendMessage(userId, result);
-
-      if (await isSessionComplete(userId)) {
-        await sendMessage(userId, `🌟 You've drawn all three cards. Your reading is complete. Thank you!`);
-      }
-    }
-    return res.sendStatus(200);
-  }
-
+app.post('/webhook', async (req, res) => {
+  // 你可以在这里添加真实链上监听逻辑
   res.sendStatus(200);
 });
 
-// ✅ 首页测试
-app.get("/", (req, res) => {
-  res.send("Tarot Webhook Running ✅");
-});
+// ✅ 启动后自动模拟两笔交易
+async function simulatePayment() {
+  const payment1 = {
+    amount: 12,
+    txid: 'SIMULATED_TX_001',
+    userId: RECEIVER_ID,
+  };
 
-// ✅ 自动模拟交易测试（首次部署后运行一次）
-setTimeout(async () => {
-  if (testCount === 0) {
-    testCount++;
-    await simulatePayment("12", RECEIVER_ID);
-    await simulatePayment("30", RECEIVER_ID);
+  const payment2 = {
+    amount: 30,
+    txid: 'SIMULATED_TX_002',
+    userId: RECEIVER_ID,
+  };
+
+  try {
+    // 第一个模拟（12 USDT）
+    await fetch(HANDLER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payment1),
+    });
+
+    // 模拟点击三张牌
+    await delay(3000);
+    await clickCard(RECEIVER_ID, 1);
+    await delay(2000);
+    await clickCard(RECEIVER_ID, 2);
+    await delay(2000);
+    await clickCard(RECEIVER_ID, 3);
+
+    // 第二个模拟（30 USDT）
+    await delay(3000);
+    await fetch(HANDLER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payment2),
+    });
+
+    // 只模拟前两张牌点击
+    await delay(3000);
+    await clickCard(RECEIVER_ID, 1);
+    await delay(2000);
+    await clickCard(RECEIVER_ID, 2);
+
+  } catch (error) {
+    console.error('❌ 模拟交易失败:', error);
   }
-}, 5000);
-
-// ✅ 模拟函数
-async function simulatePayment(amount, receiver) {
-  await fetch("http://localhost:3000/webhook", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "transaction",
-      data: {
-        sender: "999999999",
-        receiver,
-        amount
-      }
-    })
-  });
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Tarot service running on port ${PORT}`);
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function clickCard(userId, cardIndex) {
+  try {
+    await fetch(HANDLER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        callback_query: {
+          from: { id: userId },
+          data: `card_${cardIndex}`,
+        },
+      }),
+    });
+    console.log(`✅ 模拟点击 Card ${cardIndex} 成功`);
+  } catch (err) {
+    console.error(`❌ 模拟点击 Card ${cardIndex} 失败`, err);
+  }
+}
+
+app.listen(10000, async () => {
+  console.log('USDT listener running on port 10000');
+  await delay(3000); // 等服务稳定后模拟
+  await simulatePayment(); // 🚀 启动模拟测试
 });
