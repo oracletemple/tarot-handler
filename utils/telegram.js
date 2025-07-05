@@ -1,53 +1,81 @@
 // utils/telegram.js
-// v1.0.11
+// v1.1.4
+
 const axios = require("axios");
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const RECEIVER_ID = process.env.RECEIVER_ID;
+// 内嵌环境变量
+const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// 发送文本消息
-async function sendMessage(text, buttons = null) {
-  const payload = {
-    chat_id: RECEIVER_ID,
-    text,
-    parse_mode: "Markdown",
-  };
-
-  if (buttons) {
-    payload.reply_markup = {
-      inline_keyboard: [buttons.map((btn) => ({
-        text: btn.text,
-        callback_data: btn.callback_data,
-      }))],
-    };
+/**
+ * 发送纯文本消息
+ */
+async function sendMessage(chatId, text, options = {}) {
+  try {
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      ...options,
+    });
+  } catch (err) {
+    console.error("❌ sendMessage error:", err?.response?.data || err.message);
   }
-
-  return axios.post(`${API_URL}/sendMessage`, payload);
 }
 
-// 发送牌按钮（用于12/30 USDT档）
-function sendTarotButtons() {
-  return sendMessage("🃏 Please choose your card:", [
-    { text: "Card 1", callback_data: "card_1" },
-    { text: "Card 2", callback_data: "card_2" },
-    { text: "Card 3", callback_data: "card_3" },
-  ]);
+/**
+ * 编辑原消息文本
+ */
+async function editMessageText(chatId, messageId, text, options = {}) {
+  try {
+    await axios.post(`${TELEGRAM_API}/editMessageText`, {
+      chat_id: chatId,
+      message_id: messageId,
+      text,
+      parse_mode: "HTML",
+      ...options,
+    });
+  } catch (err) {
+    console.error("❌ editMessageText error:", err?.response?.data || err.message);
+  }
 }
 
-// 模拟点击按钮
-function simulateClick(index) {
-  const data = {
-    callback_query: {
-      from: { id: RECEIVER_ID },
-      data: `card_${index}`,
-    },
-  };
-  return axios.post(`${process.env.WEBHOOK_URL}`, data);
+/**
+ * 发送带按钮的消息
+ */
+async function sendMessageWithButtons(chatId, text, buttons = []) {
+  try {
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: buttons,
+      },
+    });
+  } catch (err) {
+    console.error("❌ sendMessageWithButtons error:", err?.response?.data || err.message);
+  }
+}
+
+/**
+ * 模拟用户点击按钮
+ */
+async function simulateClick(chatId, messageId, data) {
+  try {
+    await axios.post(`${TELEGRAM_API}/callbackQuery`, {
+      chat_id: chatId,
+      message_id: messageId,
+      data,
+    });
+  } catch (err) {
+    console.error("❌ simulateClick error:", err?.response?.data || err.message);
+  }
 }
 
 module.exports = {
   sendMessage,
-  sendTarotButtons,
+  sendMessageWithButtons,
+  editMessageText,
   simulateClick,
 };
