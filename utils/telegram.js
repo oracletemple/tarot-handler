@@ -1,62 +1,76 @@
-// v1.1.5 - telegram.js
+// v1.1.9 - telegram.js
 const axios = require("axios");
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const RECEIVER_ID = process.env.RECEIVER_ID;
+const { getCard, isSessionComplete, startSession } = require("./tarot-session");
+
+const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-const { getCard, isSessionComplete, startSession, clearSession } = require("./tarot-session");
-
-// ✅ 按钮数组（每次都创建新副本）
-function getCardButtons() {
-  return {
-    inline_keyboard: [
-      [
-        { text: "🃏 Card 1", callback_data: "card_1" },
-        { text: "🃏 Card 2", callback_data: "card_2" },
-        { text: "🃏 Card 3", callback_data: "card_3" },
-      ],
-    ],
-  };
+async function sendMessage(chatId, text, options = {}) {
+  try {
+    await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      ...options,
+    });
+  } catch (error) {
+    console.error("❌ Failed to send message:", error?.response?.data || error.message);
+  }
 }
 
-// ✅ 推送塔罗牌抽取按钮
-async function sendCardButtons(userId) {
-  return axios.post(`${API_URL}/sendMessage`, {
-    chat_id: userId,
-    text: "You have received a divine reading. Please choose your first card:",
-    reply_markup: getCardButtons(),
+async function editMessageReplyMarkup(chatId, messageId, replyMarkup) {
+  try {
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: replyMarkup,
+    });
+  } catch (error) {
+    console.error("❌ Failed to edit reply markup:", error?.response?.data || error.message);
+  }
+}
+
+async function sendCardButtons(userId, clear = false) {
+  if (clear) {
+    await editMessageReplyMarkup(userId, undefined, { inline_keyboard: [] });
+    return;
+  }
+
+  const buttons = [
+    [{ text: "🃏 Card 1", callback_data: "card_1" }],
+    [{ text: "🃏 Card 2", callback_data: "card_2" }],
+    [{ text: "🃏 Card 3", callback_data: "card_3" }],
+  ];
+
+  await sendMessage(userId, "Please choose your card:", {
+    reply_markup: { inline_keyboard: buttons },
   });
 }
 
-// ✅ 处理交易或按钮事件
 async function handleTransaction({ callback_query }) {
   const userId = callback_query.from.id;
   const data = callback_query.data;
+  const messageId = callback_query.message.message_id;
 
   const cardIndex = parseInt(data.replace("card_", ""));
   if (isNaN(cardIndex)) return;
 
   const result = await getCard(userId, cardIndex);
-  await axios.post(`${API_URL}/sendMessage`, {
-    chat_id: userId,
-    text: result.text,
-  });
+
+  if (result.error) {
+    await sendMessage(userId, `⚠️ ${result.error}`);
+    return;
+  }
+
+  await sendMessage(userId, result.text);
 
   if (isSessionComplete(userId)) {
-    await clearButtons(callback_query.message.message_id, userId);
+    await editMessageReplyMarkup(userId, messageId, { inline_keyboard: [] });
   }
 }
 
-// ✅ 清除按钮（抽完三张牌）
-async function clearButtons(messageId, userId) {
-  return axios.post(`${API_URL}/editMessageReplyMarkup`, {
-    chat_id: userId,
-    message_id: messageId,
-    reply_markup: { inline_keyboard: [] },
-  });
-}
-
 module.exports = {
+  sendMessage,
   sendCardButtons,
   handleTransaction,
 };
