@@ -1,75 +1,102 @@
-// v1.1.5
-require('dotenv').config();
-const { Telegraf, Markup } = require('telegraf');
-const { handleDrawCard } = require('./tarot');
+// utils/telegram.js
+// v1.1.3 - 修复 getUpdates 冲突、模拟按钮点击失败、基础与高阶逻辑统一
+
+const { Telegraf } = require('telegraf');
+const express = require('express');
+const { getCard, isSessionComplete, startSession } = require('./tarot-session');
+const tarot = require('./tarot');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-if (!global.telegramStarted) global.telegramStarted = false;
+const app = express();
+app.use(express.json());
 
-// ✅ 真正用户点击按钮时调用
-bot.action(/^card_\d+$/, async (ctx) => {
-  try {
-    const userId = ctx.from?.id;
-    const cardIndex = parseInt(ctx.callbackQuery.data.split('_')[1], 10);
-    const card = await handleDrawCard(userId, cardIndex);
-    if (card) {
-      await ctx.reply(`🔮 You drew: ${card}`);
-    } else {
-      await ctx.reply('❌ Failed to draw card.');
+// ✅ 防止重复执行 bot.launch()
+if (!global.telegramStarted) {
+  bot.launch().then(() => {
+    console.log('✅ Telegram Bot started');
+    global.telegramStarted = true;
+  }).catch((err) => {
+    console.error('❌ Telegram launch failed:', err.message);
+  });
+}
+
+// 📩 发送普通消息
+async function sendMessage(userId, text) {
+  await bot.telegram.sendMessage(userId, text, { parse_mode: 'Markdown' });
+}
+
+// 📮 发送塔罗按钮
+async function sendTarotButtons(userId) {
+  await bot.telegram.sendMessage(userId, '👇 Tap to reveal your Tarot Reading:', {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🔮 Card 1', callback_data: 'card_1' },
+          { text: '🔮 Card 2', callback_data: 'card_2' },
+          { text: '🔮 Card 3', callback_data: 'card_3' }
+        ]
+      ]
     }
+  });
+}
+
+// 🎯 按钮点击响应逻辑
+bot.on('callback_query', async (ctx) => {
+  try {
+    const userId = ctx.from.id;
+    const data = ctx.callbackQuery.data;
+
+    if (!['card_1', 'card_2', 'card_3'].includes(data)) return;
+
+    const index = parseInt(data.split('_')[1]);
+    const card = getCard(userId, index);
+
+    if (!card) {
+      await ctx.answerCbQuery('❌ Failed to draw card.');
+      return;
+    }
+
+    await ctx.reply(`🔮 You drew: ${card.name}\n${tarot.getMeaning(card)}`);
+    await ctx.answerCbQuery();
   } catch (err) {
     console.error('[ERROR] handleDrawCard failed:', err.message);
-    try {
-      await ctx.reply('❌ Error processing your card.');
-    } catch {}
+    if (ctx.answerCbQuery) await ctx.answerCbQuery('❌ Failed to draw card.');
   }
 });
 
-// ✉️ 普通发送消息
-async function sendMessage(userId, text) {
-  return bot.telegram.sendMessage(userId, text, { parse_mode: 'Markdown' });
-}
+// 🔁 支持模拟点击接口（用于自动测试）
+app.post('/simulate-click', async (req, res) => {
+  const { userId, buttonId } = req.body;
+  if (!userId || !buttonId) return res.status(400).send('Missing parameters');
 
-// 🎴 塔罗抽牌按钮
-async function sendTarotButtons(userId) {
-  const buttons = Markup.inlineKeyboard([
-    Markup.button.callback('🔮 Draw Card 1', 'card_0'),
-    Markup.button.callback('🔮 Draw Card 2', 'card_1'),
-    Markup.button.callback('🔮 Draw Card 3', 'card_2'),
-  ]);
-  return bot.telegram.sendMessage(userId, '👇 Tap to reveal your Tarot Reading:', buttons);
-}
-
-// 🧪 模拟按钮点击：直接调用逻辑函数，不再伪造 ctx
-async function simulateButtonClick(userId, action) {
   try {
-    const index = parseInt(action.split('_')[1], 10);
-    const card = await handleDrawCard(userId, index);
-    if (card) {
-      await sendMessage(userId, `🔮 You drew: ${card}`);
-    } else {
-      await sendMessage(userId, '❌ Failed to draw card.');
-    }
-    console.log(`[INFO] Simulate click success: ${action}`);
+    const index = parseInt(buttonId.split('_')[1]);
+    const card = getCard(userId, index);
+
+    if (!card) return res.status(500).send('No card found');
+
+    await sendMessage(userId, `🔮 You drew: ${card.name}\n${tarot.getMeaning(card)}`);
+    res.send('OK');
   } catch (err) {
     console.error('[ERROR] Simulate click failed:', err.message);
+    res.status(500).send(err.message);
   }
-}
+});
 
-// 🟢 启动 bot（只运行一次）
-if (!global.telegramStarted) {
-  bot.launch()
-    .then(() => {
-      console.log('[INFO] Telegram bot launched ✅');
-      global.telegramStarted = true;
-    })
-    .catch((err) => {
-      console.error('❌ Telegram launch failed:', err.message);
-    });
-}
+// 🚀 启动 webhook 服务
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Tarot Webhook Server running at http://localhost:${PORT}`);
+});
 
 module.exports = {
   sendMessage,
   sendTarotButtons,
-  simulateButtonClick,
+  simulateButtonClick: async (userId, buttonId) => {
+    try {
+      await axios.post(`http://localhost:${PORT}/simulate-click`, { userId, buttonId });
+    } catch (err) {
+      console.error('[ERROR] Simulate click failed:', err.message);
+    }
+  }
 };
