@@ -1,76 +1,66 @@
-// v1.1.9 - telegram.js
-const axios = require("axios");
-const { getCard, isSessionComplete, startSession } = require("./tarot-session");
+// ✅ telegram.js - v1.2.0
+const TelegramBot = require("node-telegram-bot-api");
+const { getCard, isSessionComplete, startSession, sessionStore } = require("./tarot-session");
 
-const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
 
-async function sendMessage(chatId, text, options = {}) {
-  try {
-    await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      ...options,
-    });
-  } catch (error) {
-    console.error("❌ Failed to send message:", error?.response?.data || error.message);
-  }
-}
-
-async function editMessageReplyMarkup(chatId, messageId, replyMarkup) {
-  try {
-    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup: replyMarkup,
-    });
-  } catch (error) {
-    console.error("❌ Failed to edit reply markup:", error?.response?.data || error.message);
-  }
-}
-
-async function sendCardButtons(userId, clear = false) {
-  if (clear) {
-    await editMessageReplyMarkup(userId, undefined, { inline_keyboard: [] });
-    return;
-  }
-
-  const buttons = [
-    [{ text: "🃏 Card 1", callback_data: "card_1" }],
-    [{ text: "🃏 Card 2", callback_data: "card_2" }],
-    [{ text: "🃏 Card 3", callback_data: "card_3" }],
-  ];
-
-  await sendMessage(userId, "Please choose your card:", {
-    reply_markup: { inline_keyboard: buttons },
+// ✅ 发送按钮
+async function sendCardButtons(userId) {
+  await bot.sendMessage(userId, "Please choose your card:", {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "🃏 Card 1", callback_data: "card_0" },
+          { text: "🃏 Card 2", callback_data: "card_1" },
+          { text: "🃏 Card 3", callback_data: "card_2" },
+        ],
+      ],
+    },
   });
 }
 
-async function handleTransaction({ callback_query }) {
-  const userId = callback_query.from.id;
-  const data = callback_query.data;
-  const messageId = callback_query.message.message_id;
+// ✅ 处理点击与转账
+async function handleTransaction({ callback_query, transaction }) {
+  if (callback_query) {
+    const userId = callback_query.from.id;
+    const messageId = callback_query.message.message_id;
+    const data = callback_query.data;
 
-  const cardIndex = parseInt(data.replace("card_", ""));
-  if (isNaN(cardIndex)) return;
+    const index = parseInt(data.replace("card_", ""));
+    if (isNaN(index)) return;
 
-  const result = await getCard(userId, cardIndex);
+    const result = await getCard(userId, index);
 
-  if (result.error) {
-    await sendMessage(userId, `⚠️ ${result.error}`);
+    if (!result) {
+      await bot.sendMessage(userId, "⚠️ Session not found. Please try again later.");
+      return;
+    }
+
+    await bot.sendMessage(userId, result.text);
+
+    // 如果抽完三张牌，禁用按钮
+    if (isSessionComplete(userId)) {
+      await bot.editMessageReplyMarkup({
+        chat_id: userId,
+        message_id: messageId,
+        reply_markup: { inline_keyboard: [] },
+      });
+    }
     return;
   }
 
-  await sendMessage(userId, result.text);
+  if (transaction) {
+    const { amount, to, user_id } = transaction;
+    if (to !== process.env.WALLET_ADDRESS) return;
+    if (amount < Number(process.env.AMOUNT_THRESHOLD)) return;
 
-  if (isSessionComplete(userId)) {
-    await editMessageReplyMarkup(userId, messageId, { inline_keyboard: [] });
+    await startSession(user_id);
+    await sendCardButtons(user_id);
   }
 }
 
 module.exports = {
-  sendMessage,
+  bot,
   sendCardButtons,
   handleTransaction,
 };
