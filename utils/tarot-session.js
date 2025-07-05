@@ -1,33 +1,31 @@
-const sessions = new Map();
+// v1.1.0 - utils/tarot-session.js
+
+const sessions = {};
 
 function startSession(userId) {
-  sessions.set(userId, { cards: [] });
+  if (!sessions[userId]) {
+    const cardPool = Array.from({ length: 22 }, (_, i) => i);
+    const shuffled = cardPool.sort(() => Math.random() - 0.5);
+    sessions[userId] = shuffled.slice(0, 3); // Store only 3 cards
+  }
 }
 
 function getCard(userId, index) {
-  const session = sessions.get(userId);
-  if (!session || session.cards.length >= 3) return null;
-  const card = drawCard();
-  session.cards.push(card);
-  return card;
+  startSession(userId);
+  return sessions[userId]?.[index];
 }
 
 function isSessionComplete(userId) {
-  const session = sessions.get(userId);
-  return session && session.cards.length === 3;
+  return !!sessions[userId];
 }
 
-function drawCard() {
-  const cards = ["The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor"];
-  const meanings = [
-    "New beginnings, spontaneity, innocence",
-    "Willpower, creation, manifestation",
-    "Intuition, mystery, subconscious mind",
-    "Fertility, beauty, nature, nurturing",
-    "Authority, structure, control"
-  ];
-  const index = Math.floor(Math.random() * cards.length);
-  return { name: cards[index], meaning: meanings[index] };
+function clearSession(userId) {
+  delete sessions[userId];
 }
 
-module.exports = { startSession, getCard, isSessionComplete };
+module.exports = {
+  startSession,
+  getCard,
+  isSessionComplete,
+  clearSession
+};
