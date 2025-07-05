@@ -1,21 +1,22 @@
-// v1.0.11
+// v1.1.2
+const { Markup } = require('telegraf');
 const { getCard, isSessionComplete } = require('./tarot-session');
-const { sendMessage } = require('./telegram');
 
-async function handleDrawCard(userId, index) {
-  const card = getCard(userId, index);
-  if (!card) {
-    return sendMessage(userId, `❗️Card ${index + 1} has already been drawn or session not found.`);
-  }
+function getTarotButtons() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('🃏 Card 1', 'card_1')],
+    [Markup.button.callback('🃏 Card 2', 'card_2')],
+    [Markup.button.callback('🃏 Card 3', 'card_3')]
+  ]);
+}
 
-  const message = `🔮 *Card ${index + 1}:* ${card}`;
-  await sendMessage(userId, message);
-
-  if (isSessionComplete(userId)) {
-    await sendMessage(userId, `✨ Your 3-card reading is complete. Thank you for your energy.`);
-  }
+function handleDrawCard(userId, cardIndex) {
+  if (isSessionComplete(userId)) return '✅ All cards have been drawn.';
+  const card = getCard(userId, cardIndex);
+  return card ? `🔮 You drew: *${card}*` : '❌ Failed to draw card.';
 }
 
 module.exports = {
-  handleDrawCard,
+  getTarotButtons,
+  handleDrawCard
 };
