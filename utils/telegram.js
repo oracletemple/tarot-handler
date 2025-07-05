@@ -1,17 +1,32 @@
-// utils/telegram.js · v1.1.5
-const { Telegraf } = require('telegraf');
-const { createWebhook } = require('telegraf/lib/server/express');
+// v1.1.0 - utils/telegram.js
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const axios = require("axios");
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// ➕ 可根据需要添加 bot.command 或 bot.action 等指令
-bot.start((ctx) => ctx.reply('🔮 Welcome to the Tarot Bot!'));
-bot.hears(/hi|hello/i, (ctx) => ctx.reply('👋 Hello! Ask me for a tarot reading.'));
+async function sendMessage(chatId, text) {
+  try {
+    await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text: text,
+      parse_mode: "Markdown"
+    });
+  } catch (error) {
+    console.error("Error sending message:", error.response?.data || error.message);
+  }
+}
 
-const webhookCallback = createWebhook(bot);
+async function sendPhoto(chatId, imageUrl, caption = "") {
+  try {
+    await axios.post(`${API_URL}/sendPhoto`, {
+      chat_id: chatId,
+      photo: imageUrl,
+      caption: caption,
+      parse_mode: "Markdown"
+    });
+  } catch (error) {
+    console.error("Error sending photo:", error.response?.data || error.message);
+  }
+}
 
-bot.telegram.setWebhook(`${process.env.WEBHOOK_URL}`).then(() => {
-  console.log('✅ Webhook set:', process.env.WEBHOOK_URL);
-}).catch(console.error);
-
-module.exports = { bot, webhookCallback };
+module.exports = { sendMessage, sendPhoto };
