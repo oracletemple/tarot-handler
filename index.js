@@ -1,50 +1,26 @@
-// index.js · v1.1.5
-
+// v1.1.4
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const { processTransaction } = require('./utils/processor');
-const { simulateClick } = require('./utils/simulate-click');
-const { initTelegramBot } = require('./utils/telegram');
-const testTransactions = require('./utils/test-transactions');
+require('./utils/telegram'); // ensure bot is launched
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(bodyParser.json());
 
-// --- Webhook 入口 ---
 app.post('/webhook', async (req, res) => {
-  const tx = req.body;
-  if (!tx || !tx.amount || !tx.hash) {
-    return res.status(400).json({ error: 'Invalid transaction data' });
-  }
-
   try {
+    const tx = req.body;
     await processTransaction(tx);
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error('[ERROR] Webhook processing failed:', err.message);
-    res.status(500).json({ error: 'Processing failed' });
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('[ERROR] /webhook failed:', error.message);
+    res.status(500).send('Internal Server Error');
   }
 });
 
-// --- 启动 Telegram Bot ---
-if (!global.telegramStarted) {
-  initTelegramBot();
-  global.telegramStarted = true;
-}
-
-// --- 启动服务器 ---
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Tarot Webhook Server running at http://localhost:${PORT}`);
 });
-
-// --- 仅首次部署时运行模拟测试 ---
-if (!global.testedOnce) {
-  const runTest = async () => {
-    global.testedOnce = true;
-    await testTransactions(simulateClick);
-    console.log('[INFO] Test mode complete. Now entering live mode.');
-  };
-  runTest();
-}
