@@ -1,45 +1,82 @@
 // v1.1.4
-const { sendTarotMessage } = require('./telegram');
-const { simulateClick } = require('./simulate-click');
+require('dotenv').config();
+const axios = require('axios');
+const { startSession, getCard } = require('./tarot-session');
 
-// 配置参数
+const WALLET = process.env.WALLET_ADDRESS;
+const RECEIVER_ID = parseInt(process.env.RECEIVER_ID);
 const AMOUNT_THRESHOLD = parseFloat(process.env.AMOUNT_THRESHOLD || '10');
-const RECEIVER_ID = process.env.RECEIVER_ID;
 
-let testCount = 0;
+function isTargetTransaction(tx) {
+  return (
+    tx.to === WALLET &&
+    parseFloat(tx.amount) >= AMOUNT_THRESHOLD &&
+    tx.tokenSymbol === 'USDT'
+  );
+}
 
-/**
- * 判断金额并处理交易
- * @param {Object} tx - 交易对象
- */
-async function handleTransaction(tx) {
-  const { amount, sender, hash } = tx;
-  const userId = RECEIVER_ID;
+function getTarotTier(tx) {
+  const amount = parseFloat(tx.amount);
+  if (amount >= 30) return 'premium';
+  if (amount >= 12) return 'basic';
+  return 'none';
+}
 
-  // 记录日志
-  console.log(`[TEST] Simulated Tx: ${hash} -> ${amount} USDT`);
-
-  // 推送基础塔罗 + 守护灵等
-  await sendTarotMessage(userId, amount, hash);
-
-  // 每档前两笔交易自动模拟点击按钮
-  const testIndex = getTestIndex(hash);
-  if (testIndex < 2) {
-    const cardNumber = 3; // 统一模拟点击第三张牌
-    setTimeout(() => {
-      simulateClick(userId, cardNumber).catch(err =>
-        console.error('[ERROR] Simulate click failed:', err.message)
-      );
-    }, 800); // 延迟800ms，确保按钮先发送完
+async function simulateClick(userId, cardIndex) {
+  try {
+    await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/callback_query`, {
+      callback_query: {
+        id: 'simulate_' + Date.now(),
+        from: { id: userId },
+        data: `card_${cardIndex}`,
+      }
+    });
+  } catch (err) {
+    console.error('[ERROR] Simulate click failed:', err.message);
   }
 }
 
-/**
- * 返回测试编号（test_tx_001 -> 0）
- */
-function getTestIndex(hash) {
-  const match = hash.match(/test_tx_(\d+)/);
-  return match ? (parseInt(match[1], 10) - 1) % 3 : 999;
+async function processTransaction(tx) {
+  if (!isTargetTransaction(tx)) return;
+
+  const tier = getTarotTier(tx);
+  const userId = RECEIVER_ID;
+  const txid = tx.hash || tx.txid || 'unknown_tx';
+
+  console.log(`[TEST] Simulated Tx: ${txid} -> ${tx.amount} USDT`);
+  await sendTelegramMessage(userId, tier, txid);
+
+  // 自动模拟点击流程（仅限前两单）
+  const idSuffix = txid.split('_').pop();
+  if (['001', '002'].includes(idSuffix)) {
+    await startSession(userId);
+    await simulateClick(userId, 0);
+    await simulateClick(userId, 1);
+  }
 }
 
-module.exports = { handleTransaction };
+async function sendTelegramMessage(userId, tier, txid) {
+  const buttons = [
+    { text: 'Draw First Card', callback_data: 'card_0' },
+    { text: 'Draw Second Card', callback_data: 'card_1' },
+    { text: 'Draw Final Card', callback_data: 'card_2' }
+  ];
+
+  let text = `🔮 Transaction ID: ${txid}\nYour reading session has begun.`;
+  if (tier === 'premium') {
+    text += `\n\n🌟 Premium reading will follow with deep insights.`;
+  }
+
+  try {
+    await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      chat_id: userId,
+      text,
+      reply_markup: { inline_keyboard: [buttons] }
+    });
+    console.log(`[INFO] Message sent for ${txid}`);
+  } catch (err) {
+    console.error('[ERROR] sendTelegramMessage failed:', err.message);
+  }
+}
+
+module.exports = { processTransaction };
