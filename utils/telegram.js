@@ -1,74 +1,53 @@
-// v1.1.2 - utils/telegram.js
-
+// utils/telegram.js
+// v1.0.11
 const axios = require("axios");
 
-// ✅ 自动注入配置变量，无需手动设置
-const BOT_TOKEN = "7842470393:AAG6T07t_fzzZIOBrccWKF-A_gGPweVGVZc";
+const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const RECEIVER_ID = process.env.RECEIVER_ID;
 
-// ✅ 发送文字消息
-async function sendMessage(chatId, text) {
-  try {
-    await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: "Markdown"
-    });
-  } catch (error) {
-    console.error("Error sending message:", error.response?.data || error.message);
-  }
-}
-
-// ✅ 发送图片
-async function sendPhoto(chatId, imageUrl, caption = "") {
-  try {
-    await axios.post(`${API_URL}/sendPhoto`, {
-      chat_id: chatId,
-      photo: imageUrl,
-      caption,
-      parse_mode: "Markdown"
-    });
-  } catch (error) {
-    console.error("Error sending photo:", error.response?.data || error.message);
-  }
-}
-
-// ✅ 发送按钮消息（用于抽牌交互）
-async function sendCardButtons(chatId) {
-  const replyMarkup = {
-    inline_keyboard: [
-      [{ text: "🃏 Card 1", callback_data: "card_1" }],
-      [{ text: "🃏 Card 2", callback_data: "card_2" }],
-      [{ text: "🃏 Card 3", callback_data: "card_3" }]
-    ]
+// 发送文本消息
+async function sendMessage(text, buttons = null) {
+  const payload = {
+    chat_id: RECEIVER_ID,
+    text,
+    parse_mode: "Markdown",
   };
 
-  try {
-    await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text: "We've received your payment.\nPlease choose a card below to begin your reading:",
-      reply_markup: replyMarkup
-    });
-  } catch (error) {
-    console.error("Error sending buttons:", error.response?.data || error.message);
+  if (buttons) {
+    payload.reply_markup = {
+      inline_keyboard: [buttons.map((btn) => ({
+        text: btn.text,
+        callback_data: btn.callback_data,
+      }))],
+    };
   }
+
+  return axios.post(`${API_URL}/sendMessage`, payload);
 }
 
-// ✅ 处理按钮点击（客户点击 Card 1/2/3）
-async function handleTransaction({ callback_query }) {
-  const chatId = callback_query?.message?.chat?.id;
-  const data = callback_query?.data;
+// 发送牌按钮（用于12/30 USDT档）
+function sendTarotButtons() {
+  return sendMessage("🃏 Please choose your card:", [
+    { text: "Card 1", callback_data: "card_1" },
+    { text: "Card 2", callback_data: "card_2" },
+    { text: "Card 3", callback_data: "card_3" },
+  ]);
+}
 
-  if (!chatId || !data) return;
-
-  await sendMessage(chatId, `You chose *${data.replace("card_", "Card ")}*. Please wait while I reveal your card...`);
-
-  // 后续将由外部模块根据 data 和 userId 生成塔罗牌内容（在 index.js 触发 getCard）
+// 模拟点击按钮
+function simulateClick(index) {
+  const data = {
+    callback_query: {
+      from: { id: RECEIVER_ID },
+      data: `card_${index}`,
+    },
+  };
+  return axios.post(`${process.env.WEBHOOK_URL}`, data);
 }
 
 module.exports = {
   sendMessage,
-  sendPhoto,
-  sendCardButtons,
-  handleTransaction
+  sendTarotButtons,
+  simulateClick,
 };
