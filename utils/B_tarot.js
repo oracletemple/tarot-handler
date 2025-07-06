@@ -1,24 +1,18 @@
 // B_tarot.js - v1.1.1
 
-const { getCard, isSessionComplete, endSession } = require("./B_tarot-session");
-const { sendMessage, sendImage, removeCardButtons } = require("./B_send-message");
+const { getCard } = require("./B_tarot-session");
+const { generateCardMessage } = require("./B_tarot-engine");
+const { sendMessage } = require("./B_send-message");
 
 /**
- * Handle callback_query interaction (card_1_12 etc)
- * @param {object} callbackQuery
+ * 处理塔罗按钮点击事件
+ * @param {number} userId - 用户 Telegram ID
+ * @param {string} data - callback_data，如 "card_1_12"
  */
-async function handleTarotInteraction(callbackQuery) {
-  const { id: queryId, from, message, data } = callbackQuery;
-  const userId = from.id;
-  const messageId = message.message_id;
-  const chatId = message.chat.id;
-
-  if (!data.startsWith("card_")) return;
-
-  const match = data.match(/^card_(\d)_(\d+)/);
+async function handleCardButton(userId, data) {
+  const match = data.match(/^card_(\d)_(\d+)$/);
   if (!match) {
-    await sendMessage(chatId, "❌ Invalid card selection.");
-    return;
+    return await sendMessage(userId, "❌ Invalid card format.");
   }
 
   const cardIndex = parseInt(match[1]);
@@ -27,28 +21,17 @@ async function handleTarotInteraction(callbackQuery) {
   try {
     const card = await getCard(userId, cardIndex);
     if (!card) {
-      await sendMessage(chatId, "⚠️ Session not found or card already drawn.");
-      return;
+      return await sendMessage(userId, "⚠️ Session not found. Please try again later.");
     }
 
-    const label = ["Past", "Present", "Future"][cardIndex - 1] || `Card ${cardIndex}`;
-    const caption = `*${label}:* ${card.name}\n_${card.meaning}_`;
-
-    await sendImage(chatId, card.image, caption);
-
-    if (isSessionComplete(userId)) {
-      await removeCardButtons(chatId, messageId);
-      await endSession(userId);
-
-      if (amount === 30) {
-        await sendMessage(chatId, "🌟 Thank you for choosing the premium reading. Your deep spiritual guidance will be sent shortly...");
-        // TODO: Add custom GPT reading hook here
-      }
-    }
+    const message = generateCardMessage(card, cardIndex);
+    await sendMessage(userId, message);
   } catch (err) {
-    console.error("❌ Tarot interaction error:", err.message);
-    await sendMessage(chatId, "An error occurred while processing your card.");
+    console.error("❌ Error in handleCardButton:", err);
+    await sendMessage(userId, "❌ Something went wrong. Please try again.");
   }
 }
 
-module.exports = { handleTarotInteraction };
+module.exports = {
+  handleCardButton
+};
