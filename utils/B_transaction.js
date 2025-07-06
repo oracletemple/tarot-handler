@@ -1,38 +1,32 @@
 // B_transaction.js - v1.1.1
 
-const { startSession } = require("./B_tarot-session");
-const { sendCardButtons } = require("./B_send-message");
+/**
+ * 交易处理模块（服务内部调用）
+ * 根据用户付款金额，模拟触发按钮点击（通常由监听器或 webhook 驱动）
+ */
 
-const RECEIVER_ID = parseInt(process.env.RECEIVER_ID); // your Telegram user ID
-const AMOUNT_THRESHOLD = parseFloat(process.env.AMOUNT_THRESHOLD);
+const { simulateButtonClick } = require("./B_simulate-click");
 
 /**
- * Detect valid USDT payment messages and trigger session + buttons
- * @param {object} message - Telegram message object
+ * 根据付款金额触发模拟占卜流程（仅限 12 / 30 USDT）
+ * @param {number} userId - Telegram 用户 ID
+ * @param {number} amount - 实际付款金额（12 或 30）
  */
-async function handleTransactionMessage(message) {
-  if (!message || !message.from || !message.text) return;
-
-  const chatId = message.chat.id;
-  const userId = message.from.id;
-  const text = message.text.trim();
-
-  const regex = /You sent (\d+(?:\.\d+)?) USDT/i;
-  const match = text.match(regex);
-
-  if (!match) return;
-
-  const amount = parseFloat(match[1]);
-  if (isNaN(amount)) return;
-
-  if (amount < AMOUNT_THRESHOLD) {
-    await sendCardButtons(chatId, "⚠️ Received " + amount + " USDT, which is below the minimum threshold.");
-    return;
+async function handleTransaction(userId, amount) {
+  if (amount === 12) {
+    // 基础版：自动模拟前两张卡
+    await simulateButtonClick(userId, 1, 12);
+    await simulateButtonClick(userId, 2, 12);
+  } else if (amount === 30) {
+    // 高级版：模拟三张卡点击（含深度解读预留）
+    await simulateButtonClick(userId, 1, 30);
+    await simulateButtonClick(userId, 2, 30);
+    await simulateButtonClick(userId, 3, 30);
+  } else {
+    console.warn(`⚠️ Unknown amount received: ${amount}`);
   }
-
-  // Create session
-  await startSession(userId, amount);
-  await sendCardButtons(chatId, "🔮 Your spiritual reading is ready. Please choose a card to reveal:");
 }
 
-module.exports = { handleTransactionMessage };
+module.exports = {
+  handleTransaction
+};
