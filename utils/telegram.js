@@ -52,7 +52,7 @@ async function handleCallbackQuery(callbackQuery) {
   }
 
   const response = formatCardMessage(card, index);
-  await answerCallback(id); // remove loading animation
+  await answerCallback(id);
   await sendMessage(chatId, response);
 
   if (isSessionComplete(userId)) {
