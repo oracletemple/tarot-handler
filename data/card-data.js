@@ -1,860 +1,472 @@
-module.exports = [
+const cardData = [
   {
-    "id": 1,
-    "name": "Major Arcana 1",
+    "name": "The Fool",
     "image": null,
-    "meaning": {
-      "title": "Title 1",
-      "love": "Love meaning 1",
-      "advice": "Advice 1",
-      "warning": "Warning 1"
-    }
+    "meaning_up": "The Fool meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Fool reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 2,
-    "name": "Major Arcana 2",
+    "name": "The Magician",
     "image": null,
-    "meaning": {
-      "title": "Title 2",
-      "love": "Love meaning 2",
-      "advice": "Advice 2",
-      "warning": "Warning 2"
-    }
+    "meaning_up": "The Magician meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Magician reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 3,
-    "name": "Major Arcana 3",
+    "name": "The High Priestess",
     "image": null,
-    "meaning": {
-      "title": "Title 3",
-      "love": "Love meaning 3",
-      "advice": "Advice 3",
-      "warning": "Warning 3"
-    }
+    "meaning_up": "The High Priestess meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The High Priestess reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 4,
-    "name": "Major Arcana 4",
+    "name": "The Empress",
     "image": null,
-    "meaning": {
-      "title": "Title 4",
-      "love": "Love meaning 4",
-      "advice": "Advice 4",
-      "warning": "Warning 4"
-    }
+    "meaning_up": "The Empress meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Empress reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 5,
-    "name": "Major Arcana 5",
+    "name": "The Emperor",
     "image": null,
-    "meaning": {
-      "title": "Title 5",
-      "love": "Love meaning 5",
-      "advice": "Advice 5",
-      "warning": "Warning 5"
-    }
+    "meaning_up": "The Emperor meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Emperor reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 6,
-    "name": "Major Arcana 6",
+    "name": "The Hierophant",
     "image": null,
-    "meaning": {
-      "title": "Title 6",
-      "love": "Love meaning 6",
-      "advice": "Advice 6",
-      "warning": "Warning 6"
-    }
+    "meaning_up": "The Hierophant meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Hierophant reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 7,
-    "name": "Major Arcana 7",
+    "name": "The Lovers",
     "image": null,
-    "meaning": {
-      "title": "Title 7",
-      "love": "Love meaning 7",
-      "advice": "Advice 7",
-      "warning": "Warning 7"
-    }
+    "meaning_up": "The Lovers meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Lovers reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 8,
-    "name": "Major Arcana 8",
+    "name": "The Chariot",
     "image": null,
-    "meaning": {
-      "title": "Title 8",
-      "love": "Love meaning 8",
-      "advice": "Advice 8",
-      "warning": "Warning 8"
-    }
+    "meaning_up": "The Chariot meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Chariot reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 9,
-    "name": "Major Arcana 9",
+    "name": "Strength",
     "image": null,
-    "meaning": {
-      "title": "Title 9",
-      "love": "Love meaning 9",
-      "advice": "Advice 9",
-      "warning": "Warning 9"
-    }
+    "meaning_up": "Strength meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Strength reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 10,
-    "name": "Major Arcana 10",
+    "name": "The Hermit",
     "image": null,
-    "meaning": {
-      "title": "Title 10",
-      "love": "Love meaning 10",
-      "advice": "Advice 10",
-      "warning": "Warning 10"
-    }
+    "meaning_up": "The Hermit meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Hermit reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 11,
-    "name": "Major Arcana 11",
+    "name": "Wheel of Fortune",
     "image": null,
-    "meaning": {
-      "title": "Title 11",
-      "love": "Love meaning 11",
-      "advice": "Advice 11",
-      "warning": "Warning 11"
-    }
+    "meaning_up": "Wheel of Fortune meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Wheel of Fortune reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 12,
-    "name": "Major Arcana 12",
+    "name": "Justice",
     "image": null,
-    "meaning": {
-      "title": "Title 12",
-      "love": "Love meaning 12",
-      "advice": "Advice 12",
-      "warning": "Warning 12"
-    }
+    "meaning_up": "Justice meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Justice reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 13,
-    "name": "Major Arcana 13",
+    "name": "The Hanged Man",
     "image": null,
-    "meaning": {
-      "title": "Title 13",
-      "love": "Love meaning 13",
-      "advice": "Advice 13",
-      "warning": "Warning 13"
-    }
+    "meaning_up": "The Hanged Man meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Hanged Man reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 14,
-    "name": "Major Arcana 14",
+    "name": "Death",
     "image": null,
-    "meaning": {
-      "title": "Title 14",
-      "love": "Love meaning 14",
-      "advice": "Advice 14",
-      "warning": "Warning 14"
-    }
+    "meaning_up": "Death meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Death reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 15,
-    "name": "Major Arcana 15",
+    "name": "Temperance",
     "image": null,
-    "meaning": {
-      "title": "Title 15",
-      "love": "Love meaning 15",
-      "advice": "Advice 15",
-      "warning": "Warning 15"
-    }
+    "meaning_up": "Temperance meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Temperance reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 16,
-    "name": "Major Arcana 16",
+    "name": "The Devil",
     "image": null,
-    "meaning": {
-      "title": "Title 16",
-      "love": "Love meaning 16",
-      "advice": "Advice 16",
-      "warning": "Warning 16"
-    }
+    "meaning_up": "The Devil meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Devil reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 17,
-    "name": "Major Arcana 17",
+    "name": "The Tower",
     "image": null,
-    "meaning": {
-      "title": "Title 17",
-      "love": "Love meaning 17",
-      "advice": "Advice 17",
-      "warning": "Warning 17"
-    }
+    "meaning_up": "The Tower meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Tower reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 18,
-    "name": "Major Arcana 18",
+    "name": "The Star",
     "image": null,
-    "meaning": {
-      "title": "Title 18",
-      "love": "Love meaning 18",
-      "advice": "Advice 18",
-      "warning": "Warning 18"
-    }
+    "meaning_up": "The Star meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Star reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 19,
-    "name": "Major Arcana 19",
+    "name": "The Moon",
     "image": null,
-    "meaning": {
-      "title": "Title 19",
-      "love": "Love meaning 19",
-      "advice": "Advice 19",
-      "warning": "Warning 19"
-    }
+    "meaning_up": "The Moon meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Moon reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 20,
-    "name": "Major Arcana 20",
+    "name": "The Sun",
     "image": null,
-    "meaning": {
-      "title": "Title 20",
-      "love": "Love meaning 20",
-      "advice": "Advice 20",
-      "warning": "Warning 20"
-    }
+    "meaning_up": "The Sun meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The Sun reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 21,
-    "name": "Major Arcana 21",
+    "name": "Judgement",
     "image": null,
-    "meaning": {
-      "title": "Title 21",
-      "love": "Love meaning 21",
-      "advice": "Advice 21",
-      "warning": "Warning 21"
-    }
+    "meaning_up": "Judgement meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Judgement reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 22,
-    "name": "Major Arcana 22",
+    "name": "The World",
     "image": null,
-    "meaning": {
-      "title": "Title 22",
-      "love": "Love meaning 22",
-      "advice": "Advice 22",
-      "warning": "Warning 22"
-    }
+    "meaning_up": "The World meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "The World reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 23,
-    "name": "Ace of Cups",
-    "image": null,
-    "meaning": {
-      "title": "Ace of Cups meaning",
-      "love": "Ace of Cups love",
-      "advice": "Ace of Cups advice",
-      "warning": "Ace of Cups warning"
-    }
-  },
-  {
-    "id": 24,
-    "name": "2 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "2 of Cups meaning",
-      "love": "2 of Cups love",
-      "advice": "2 of Cups advice",
-      "warning": "2 of Cups warning"
-    }
-  },
-  {
-    "id": 25,
-    "name": "3 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "3 of Cups meaning",
-      "love": "3 of Cups love",
-      "advice": "3 of Cups advice",
-      "warning": "3 of Cups warning"
-    }
-  },
-  {
-    "id": 26,
-    "name": "4 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "4 of Cups meaning",
-      "love": "4 of Cups love",
-      "advice": "4 of Cups advice",
-      "warning": "4 of Cups warning"
-    }
-  },
-  {
-    "id": 27,
-    "name": "5 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "5 of Cups meaning",
-      "love": "5 of Cups love",
-      "advice": "5 of Cups advice",
-      "warning": "5 of Cups warning"
-    }
-  },
-  {
-    "id": 28,
-    "name": "6 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "6 of Cups meaning",
-      "love": "6 of Cups love",
-      "advice": "6 of Cups advice",
-      "warning": "6 of Cups warning"
-    }
-  },
-  {
-    "id": 29,
-    "name": "7 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "7 of Cups meaning",
-      "love": "7 of Cups love",
-      "advice": "7 of Cups advice",
-      "warning": "7 of Cups warning"
-    }
-  },
-  {
-    "id": 30,
-    "name": "8 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "8 of Cups meaning",
-      "love": "8 of Cups love",
-      "advice": "8 of Cups advice",
-      "warning": "8 of Cups warning"
-    }
-  },
-  {
-    "id": 31,
-    "name": "9 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "9 of Cups meaning",
-      "love": "9 of Cups love",
-      "advice": "9 of Cups advice",
-      "warning": "9 of Cups warning"
-    }
-  },
-  {
-    "id": 32,
-    "name": "10 of Cups",
-    "image": null,
-    "meaning": {
-      "title": "10 of Cups meaning",
-      "love": "10 of Cups love",
-      "advice": "10 of Cups advice",
-      "warning": "10 of Cups warning"
-    }
-  },
-  {
-    "id": 33,
-    "name": "Page of Cups",
-    "image": null,
-    "meaning": {
-      "title": "Page of Cups meaning",
-      "love": "Page of Cups love",
-      "advice": "Page of Cups advice",
-      "warning": "Page of Cups warning"
-    }
-  },
-  {
-    "id": 34,
-    "name": "Knight of Cups",
-    "image": null,
-    "meaning": {
-      "title": "Knight of Cups meaning",
-      "love": "Knight of Cups love",
-      "advice": "Knight of Cups advice",
-      "warning": "Knight of Cups warning"
-    }
-  },
-  {
-    "id": 35,
-    "name": "Queen of Cups",
-    "image": null,
-    "meaning": {
-      "title": "Queen of Cups meaning",
-      "love": "Queen of Cups love",
-      "advice": "Queen of Cups advice",
-      "warning": "Queen of Cups warning"
-    }
-  },
-  {
-    "id": 36,
-    "name": "King of Cups",
-    "image": null,
-    "meaning": {
-      "title": "King of Cups meaning",
-      "love": "King of Cups love",
-      "advice": "King of Cups advice",
-      "warning": "King of Cups warning"
-    }
-  },
-  {
-    "id": 37,
     "name": "Ace of Wands",
     "image": null,
-    "meaning": {
-      "title": "Ace of Wands meaning",
-      "love": "Ace of Wands love",
-      "advice": "Ace of Wands advice",
-      "warning": "Ace of Wands warning"
-    }
+    "meaning_up": "Ace of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Ace of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 38,
     "name": "2 of Wands",
     "image": null,
-    "meaning": {
-      "title": "2 of Wands meaning",
-      "love": "2 of Wands love",
-      "advice": "2 of Wands advice",
-      "warning": "2 of Wands warning"
-    }
+    "meaning_up": "2 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "2 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 39,
     "name": "3 of Wands",
     "image": null,
-    "meaning": {
-      "title": "3 of Wands meaning",
-      "love": "3 of Wands love",
-      "advice": "3 of Wands advice",
-      "warning": "3 of Wands warning"
-    }
+    "meaning_up": "3 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "3 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 40,
     "name": "4 of Wands",
     "image": null,
-    "meaning": {
-      "title": "4 of Wands meaning",
-      "love": "4 of Wands love",
-      "advice": "4 of Wands advice",
-      "warning": "4 of Wands warning"
-    }
+    "meaning_up": "4 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "4 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 41,
     "name": "5 of Wands",
     "image": null,
-    "meaning": {
-      "title": "5 of Wands meaning",
-      "love": "5 of Wands love",
-      "advice": "5 of Wands advice",
-      "warning": "5 of Wands warning"
-    }
+    "meaning_up": "5 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "5 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 42,
     "name": "6 of Wands",
     "image": null,
-    "meaning": {
-      "title": "6 of Wands meaning",
-      "love": "6 of Wands love",
-      "advice": "6 of Wands advice",
-      "warning": "6 of Wands warning"
-    }
+    "meaning_up": "6 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "6 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 43,
     "name": "7 of Wands",
     "image": null,
-    "meaning": {
-      "title": "7 of Wands meaning",
-      "love": "7 of Wands love",
-      "advice": "7 of Wands advice",
-      "warning": "7 of Wands warning"
-    }
+    "meaning_up": "7 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "7 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 44,
     "name": "8 of Wands",
     "image": null,
-    "meaning": {
-      "title": "8 of Wands meaning",
-      "love": "8 of Wands love",
-      "advice": "8 of Wands advice",
-      "warning": "8 of Wands warning"
-    }
+    "meaning_up": "8 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "8 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 45,
     "name": "9 of Wands",
     "image": null,
-    "meaning": {
-      "title": "9 of Wands meaning",
-      "love": "9 of Wands love",
-      "advice": "9 of Wands advice",
-      "warning": "9 of Wands warning"
-    }
+    "meaning_up": "9 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "9 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 46,
     "name": "10 of Wands",
     "image": null,
-    "meaning": {
-      "title": "10 of Wands meaning",
-      "love": "10 of Wands love",
-      "advice": "10 of Wands advice",
-      "warning": "10 of Wands warning"
-    }
+    "meaning_up": "10 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "10 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 47,
     "name": "Page of Wands",
     "image": null,
-    "meaning": {
-      "title": "Page of Wands meaning",
-      "love": "Page of Wands love",
-      "advice": "Page of Wands advice",
-      "warning": "Page of Wands warning"
-    }
+    "meaning_up": "Page of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Page of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 48,
     "name": "Knight of Wands",
     "image": null,
-    "meaning": {
-      "title": "Knight of Wands meaning",
-      "love": "Knight of Wands love",
-      "advice": "Knight of Wands advice",
-      "warning": "Knight of Wands warning"
-    }
+    "meaning_up": "Knight of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Knight of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 49,
     "name": "Queen of Wands",
     "image": null,
-    "meaning": {
-      "title": "Queen of Wands meaning",
-      "love": "Queen of Wands love",
-      "advice": "Queen of Wands advice",
-      "warning": "Queen of Wands warning"
-    }
+    "meaning_up": "Queen of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Queen of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 50,
     "name": "King of Wands",
     "image": null,
-    "meaning": {
-      "title": "King of Wands meaning",
-      "love": "King of Wands love",
-      "advice": "King of Wands advice",
-      "warning": "King of Wands warning"
-    }
+    "meaning_up": "King of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "King of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 51,
+    "name": "Ace of Cups",
+    "image": null,
+    "meaning_up": "Ace of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Ace of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "2 of Cups",
+    "image": null,
+    "meaning_up": "2 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "2 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "3 of Cups",
+    "image": null,
+    "meaning_up": "3 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "3 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "4 of Cups",
+    "image": null,
+    "meaning_up": "4 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "4 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "5 of Cups",
+    "image": null,
+    "meaning_up": "5 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "5 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "6 of Cups",
+    "image": null,
+    "meaning_up": "6 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "6 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "7 of Cups",
+    "image": null,
+    "meaning_up": "7 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "7 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "8 of Cups",
+    "image": null,
+    "meaning_up": "8 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "8 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "9 of Cups",
+    "image": null,
+    "meaning_up": "9 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "9 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "10 of Cups",
+    "image": null,
+    "meaning_up": "10 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "10 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "Page of Cups",
+    "image": null,
+    "meaning_up": "Page of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Page of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "Knight of Cups",
+    "image": null,
+    "meaning_up": "Knight of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Knight of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "Queen of Cups",
+    "image": null,
+    "meaning_up": "Queen of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Queen of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
+    "name": "King of Cups",
+    "image": null,
+    "meaning_up": "King of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "King of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+  },
+  {
     "name": "Ace of Swords",
     "image": null,
-    "meaning": {
-      "title": "Ace of Swords meaning",
-      "love": "Ace of Swords love",
-      "advice": "Ace of Swords advice",
-      "warning": "Ace of Swords warning"
-    }
+    "meaning_up": "Ace of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Ace of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 52,
     "name": "2 of Swords",
     "image": null,
-    "meaning": {
-      "title": "2 of Swords meaning",
-      "love": "2 of Swords love",
-      "advice": "2 of Swords advice",
-      "warning": "2 of Swords warning"
-    }
+    "meaning_up": "2 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "2 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 53,
     "name": "3 of Swords",
     "image": null,
-    "meaning": {
-      "title": "3 of Swords meaning",
-      "love": "3 of Swords love",
-      "advice": "3 of Swords advice",
-      "warning": "3 of Swords warning"
-    }
+    "meaning_up": "3 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "3 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 54,
     "name": "4 of Swords",
     "image": null,
-    "meaning": {
-      "title": "4 of Swords meaning",
-      "love": "4 of Swords love",
-      "advice": "4 of Swords advice",
-      "warning": "4 of Swords warning"
-    }
+    "meaning_up": "4 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "4 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 55,
     "name": "5 of Swords",
     "image": null,
-    "meaning": {
-      "title": "5 of Swords meaning",
-      "love": "5 of Swords love",
-      "advice": "5 of Swords advice",
-      "warning": "5 of Swords warning"
-    }
+    "meaning_up": "5 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "5 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 56,
     "name": "6 of Swords",
     "image": null,
-    "meaning": {
-      "title": "6 of Swords meaning",
-      "love": "6 of Swords love",
-      "advice": "6 of Swords advice",
-      "warning": "6 of Swords warning"
-    }
+    "meaning_up": "6 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "6 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 57,
     "name": "7 of Swords",
     "image": null,
-    "meaning": {
-      "title": "7 of Swords meaning",
-      "love": "7 of Swords love",
-      "advice": "7 of Swords advice",
-      "warning": "7 of Swords warning"
-    }
+    "meaning_up": "7 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "7 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 58,
     "name": "8 of Swords",
     "image": null,
-    "meaning": {
-      "title": "8 of Swords meaning",
-      "love": "8 of Swords love",
-      "advice": "8 of Swords advice",
-      "warning": "8 of Swords warning"
-    }
+    "meaning_up": "8 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "8 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 59,
     "name": "9 of Swords",
     "image": null,
-    "meaning": {
-      "title": "9 of Swords meaning",
-      "love": "9 of Swords love",
-      "advice": "9 of Swords advice",
-      "warning": "9 of Swords warning"
-    }
+    "meaning_up": "9 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "9 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 60,
     "name": "10 of Swords",
     "image": null,
-    "meaning": {
-      "title": "10 of Swords meaning",
-      "love": "10 of Swords love",
-      "advice": "10 of Swords advice",
-      "warning": "10 of Swords warning"
-    }
+    "meaning_up": "10 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "10 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 61,
     "name": "Page of Swords",
     "image": null,
-    "meaning": {
-      "title": "Page of Swords meaning",
-      "love": "Page of Swords love",
-      "advice": "Page of Swords advice",
-      "warning": "Page of Swords warning"
-    }
+    "meaning_up": "Page of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Page of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 62,
     "name": "Knight of Swords",
     "image": null,
-    "meaning": {
-      "title": "Knight of Swords meaning",
-      "love": "Knight of Swords love",
-      "advice": "Knight of Swords advice",
-      "warning": "Knight of Swords warning"
-    }
+    "meaning_up": "Knight of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Knight of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 63,
     "name": "Queen of Swords",
     "image": null,
-    "meaning": {
-      "title": "Queen of Swords meaning",
-      "love": "Queen of Swords love",
-      "advice": "Queen of Swords advice",
-      "warning": "Queen of Swords warning"
-    }
+    "meaning_up": "Queen of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Queen of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 64,
     "name": "King of Swords",
     "image": null,
-    "meaning": {
-      "title": "King of Swords meaning",
-      "love": "King of Swords love",
-      "advice": "King of Swords advice",
-      "warning": "King of Swords warning"
-    }
+    "meaning_up": "King of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "King of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 65,
     "name": "Ace of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "Ace of Pentacles meaning",
-      "love": "Ace of Pentacles love",
-      "advice": "Ace of Pentacles advice",
-      "warning": "Ace of Pentacles warning"
-    }
+    "meaning_up": "Ace of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Ace of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 66,
     "name": "2 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "2 of Pentacles meaning",
-      "love": "2 of Pentacles love",
-      "advice": "2 of Pentacles advice",
-      "warning": "2 of Pentacles warning"
-    }
+    "meaning_up": "2 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "2 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 67,
     "name": "3 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "3 of Pentacles meaning",
-      "love": "3 of Pentacles love",
-      "advice": "3 of Pentacles advice",
-      "warning": "3 of Pentacles warning"
-    }
+    "meaning_up": "3 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "3 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 68,
     "name": "4 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "4 of Pentacles meaning",
-      "love": "4 of Pentacles love",
-      "advice": "4 of Pentacles advice",
-      "warning": "4 of Pentacles warning"
-    }
+    "meaning_up": "4 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "4 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 69,
     "name": "5 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "5 of Pentacles meaning",
-      "love": "5 of Pentacles love",
-      "advice": "5 of Pentacles advice",
-      "warning": "5 of Pentacles warning"
-    }
+    "meaning_up": "5 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "5 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 70,
     "name": "6 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "6 of Pentacles meaning",
-      "love": "6 of Pentacles love",
-      "advice": "6 of Pentacles advice",
-      "warning": "6 of Pentacles warning"
-    }
+    "meaning_up": "6 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "6 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 71,
     "name": "7 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "7 of Pentacles meaning",
-      "love": "7 of Pentacles love",
-      "advice": "7 of Pentacles advice",
-      "warning": "7 of Pentacles warning"
-    }
+    "meaning_up": "7 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "7 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 72,
     "name": "8 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "8 of Pentacles meaning",
-      "love": "8 of Pentacles love",
-      "advice": "8 of Pentacles advice",
-      "warning": "8 of Pentacles warning"
-    }
+    "meaning_up": "8 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "8 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 73,
     "name": "9 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "9 of Pentacles meaning",
-      "love": "9 of Pentacles love",
-      "advice": "9 of Pentacles advice",
-      "warning": "9 of Pentacles warning"
-    }
+    "meaning_up": "9 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "9 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 74,
     "name": "10 of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "10 of Pentacles meaning",
-      "love": "10 of Pentacles love",
-      "advice": "10 of Pentacles advice",
-      "warning": "10 of Pentacles warning"
-    }
+    "meaning_up": "10 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "10 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 75,
     "name": "Page of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "Page of Pentacles meaning",
-      "love": "Page of Pentacles love",
-      "advice": "Page of Pentacles advice",
-      "warning": "Page of Pentacles warning"
-    }
+    "meaning_up": "Page of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Page of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 76,
     "name": "Knight of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "Knight of Pentacles meaning",
-      "love": "Knight of Pentacles love",
-      "advice": "Knight of Pentacles advice",
-      "warning": "Knight of Pentacles warning"
-    }
+    "meaning_up": "Knight of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Knight of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 77,
     "name": "Queen of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "Queen of Pentacles meaning",
-      "love": "Queen of Pentacles love",
-      "advice": "Queen of Pentacles advice",
-      "warning": "Queen of Pentacles warning"
-    }
+    "meaning_up": "Queen of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "Queen of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   },
   {
-    "id": 78,
     "name": "King of Pentacles",
     "image": null,
-    "meaning": {
-      "title": "King of Pentacles meaning",
-      "love": "King of Pentacles love",
-      "advice": "King of Pentacles advice",
-      "warning": "King of Pentacles warning"
-    }
+    "meaning_up": "King of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
+    "meaning_rev": "King of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
   }
 ];
+
+export default cardData;
