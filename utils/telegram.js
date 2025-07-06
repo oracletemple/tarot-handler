@@ -1,89 +1,67 @@
-// utils/telegram.js - v1.2.2
-import fetch from "node-fetch";
-import { getCard, isSessionComplete, getSession } from "./tarot-session.js";
+// telegram.js - v1.2.2 (修复按钮 callback_data 包含金额字段)
+
+import { sendMessage, sendCardButtons, sendCardResult, updateMessageButtons } from "./utils/send-message.js";
+import { getCard, isSessionComplete, getSession, removeCardFromSession } from "./tarot-session.js";
 import cardData from "./card-data.js";
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+export async function handleWebhookUpdate(req, res) {
+  const body = req.body;
+  console.log("\u{1F4E5} Received Webhook Payload:", JSON.stringify(body, null, 2));
 
-export async function sendButtonsMessage(userId) {
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: "🃏 Card 1", callback_data: "card_1" },
-        { text: "🃏 Card 2", callback_data: "card_2" },
-        { text: "🃏 Card 3", callback_data: "card_3" }
-      ]
-    ]
-  };
-
-  await fetch(`${API_URL}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: userId,
-      text: "✨ Please choose your card:",
-      reply_markup: keyboard
-    })
-  });
-}
-
-export async function sendCardResult(userId, cardIndex) {
-  const session = getSession(userId);
-  const card = cardData[cardIndex];
-
-  const position = session.cardsDrawn.length === 1
-    ? "🌅 Past"
-    : session.cardsDrawn.length === 2
-    ? "🌟 Present"
-    : "🌠 Future";
-
-  const message = `${position}: ${card.name}\n\n${card.meaning}`;
-
-  await fetch(`${API_URL}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: userId,
-      text: message
-    })
-  });
-
-  // 若已抽完 3 张牌，移除按钮
-  if (isSessionComplete(userId)) {
-    await fetch(`${API_URL}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: userId,
-        text: "🔮 Your full Tarot spread is complete. Thank you!",
-      }),
-    });
+  // 处理交易成功推送按钮
+  if (body.user_id && body.amount) {
+    const userId = body.user_id;
+    const amount = body.amount;
+    await sendCardButtons(userId, amount);
+    return res.status(200).send("✅ Buttons sent");
   }
+
+  // 处理 Telegram 回调按钮点击
+  const callback = body.callback_query;
+  if (callback && callback.data && callback.from) {
+    const userId = callback.from.id;
+    const data = callback.data;
+
+    if (data?.startsWith("draw_card_")) {
+      const parts = data.split("_"); // draw_card_1_12
+      const cardIndex = parseInt(parts[2]) - 1;
+      const amount = parseFloat(parts[3]);
+
+      if (isNaN(cardIndex) || isNaN(amount)) {
+        console.log("❌ Invalid button format:", data);
+        return res.status(200).send("❌ Invalid button");
+      }
+
+      await handleCardDraw(userId, cardIndex, amount, callback);
+      return res.status(200).send("✅ Card drawn");
+    }
+  }
+
+  res.status(200).send("⚠️ No action taken");
 }
 
-export async function handleCardClick(ctx) {
-  const userId = ctx.from.id;
-  const data = ctx.callbackQuery.data;
-  const index = parseInt(data.split("_")[1], 10) - 1;
-
+async function handleCardDraw(userId, index, amount, callback) {
   const session = getSession(userId);
   if (!session) {
-    await ctx.answerCbQuery("⚠️ Session not found. Please try again later.");
+    await sendMessage(userId, "⚠️ Session not found. Please try again later.");
     return;
   }
 
-  if (session.cardsDrawn.includes(session.deck[index])) {
-    await ctx.answerCbQuery("⚠️ You've already drawn this card.");
+  const cardId = getCard(userId, index);
+  if (cardId === null) {
+    await sendMessage(userId, "⚠️ Invalid card or already drawn.");
     return;
   }
 
-  const cardIndex = getCard(userId, index);
-  if (cardIndex === null) {
-    await ctx.answerCbQuery("⚠️ Unable to draw card.");
+  const card = cardData[cardId];
+  if (!card) {
+    await sendMessage(userId, "⚠️ Card not found in database.");
     return;
   }
 
-  await ctx.answerCbQuery("✅ Card drawn!");
-  await sendCardResult(userId, cardIndex);
+  await sendCardResult(userId, card, index);
+
+  if (isSessionComplete(userId)) {
+    await updateMessageButtons(callback.message.message_id, userId);
+  }
 }
