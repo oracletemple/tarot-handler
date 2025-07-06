@@ -1,44 +1,46 @@
-// index.js - v1.1.7
-const express = require("express");
-const bodyParser = require("body-parser");
-const { handleTransaction, sendCardButtons } = require("./utils/telegram");
-const { startSession, getCard, isSessionComplete } = require("./utils/tarot-session");
+// index.js  // v1.1.8
+
+require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
+const { sendButtonMessage } = require('./utils/telegram');
+const { startSession } = require('./utils/tarot-session');
+const { handleCallbackQuery } = require('./utils/telegram');
 
 const app = express();
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
+const RECEIVER_ID = process.env.RECEIVER_ID;
+const AMOUNT_THRESHOLD = parseFloat(process.env.AMOUNT_THRESHOLD || '10');
 
-app.post("/webhook", async (req, res) => {
+// Handle Webhook from Telegram or payment listener
+app.post('/webhook', async (req, res) => {
   const body = req.body;
 
+  // Handle Telegram button click (callback_query)
   if (body.callback_query) {
-    const { callback_query } = body;
-    const userId = callback_query.from.id;
-    const data = callback_query.data;
-    const cardIndex = parseInt(data.replace("card_", ""));
-
-    await handleTransaction({ callback_query });
-
-    if (!isNaN(cardIndex)) {
-      const result = await getCard(userId, cardIndex);
-      console.log("Card Drawn:", result.text);
-    }
+    await handleCallbackQuery(body.callback_query);
     return res.sendStatus(200);
   }
 
-  if (body.transaction && body.transaction.to === process.env.WALLET_ADDRESS) {
-    const { amount, user_id } = body.transaction;
-    if (amount >= process.env.AMOUNT_THRESHOLD) {
-      await startSession(user_id);
-      await sendCardButtons(user_id);
-    }
-    return res.sendStatus(200);
+  // Handle payment notification (must contain user_id and amount)
+  const { user_id, amount } = body;
+  if (!user_id || !amount || amount < AMOUNT_THRESHOLD) {
+    return res.status(400).send('Invalid payment');
   }
 
+  // Start tarot session and push buttons
+  startSession(user_id);
+  await sendButtonMessage(user_id, '✨ Thank you for your payment. Please draw your cards:');
   res.sendStatus(200);
 });
 
+// Health check
+app.get('/', (req, res) => {
+  res.send('Tarot webhook active.');
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Tarot service running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
