@@ -1,85 +1,115 @@
-// telegram.js - v1.2.3
+// telegram.js - v1.2.2
 
-import axios from 'axios';
+import fetch from 'node-fetch';
 import cardData from './card-data.js';
-import { startSession, getCard, isSessionComplete, removeCardFromSession } from './tarot-session.js';
+import {
+  startSession,
+  getCard,
+  isSessionComplete,
+  removeCardFromSession,
+  getSession
+} from './tarot-session.js';
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.RECEIVER_ID;
+const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
 
-export async function sendTarotButtons(userId, amount) {
-  if (!userId || !amount) {
-    console.warn('⚠️ Missing user_id or amount');
-    return;
-  }
+// 发送初始按钮消息
+export async function sendButtonMessage(userId, amount) {
+  startSession(userId, amount);
 
-  await startSession(userId, amount);
+  const message = `🃏 Please choose your card one by one:\n(Click to reveal each card's meaning)`;
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: '🔮 Card 1', callback_data: 'card_1' },
+        { text: '🔮 Card 2', callback_data: 'card_2' },
+        { text: '🔮 Card 3', callback_data: 'card_3' }
+      ]
+    ]
+  };
 
-  const buttons = [
-    [{ text: '🃏 Card 1', callback_data: `draw_1_${amount}` }],
-    [{ text: '🃏 Card 2', callback_data: `draw_2_${amount}` }],
-    [{ text: '🃏 Card 3', callback_data: `draw_3_${amount}` }]
-  ];
-
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: userId,
-    text: `Thank you for your ${amount} USDT payment! ✨\nPlease pick a card:`,
-    reply_markup: {
-      inline_keyboard: buttons
-    }
+  await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: userId,
+      text: message,
+      reply_markup: keyboard
+    })
   });
 }
 
+// 处理按钮点击事件
 export async function handleCallbackQuery(callbackQuery) {
-  const { id, from, data, message } = callbackQuery;
+  const { message, from, data, id } = callbackQuery;
   const userId = from.id;
-  const msgId = message.message_id;
+  const index = parseInt(data.split('_')[1]) - 1;
 
-  const match = data.match(/^draw_(\d)_(\d+)/);
-  if (!match) return;
-
-  const index = parseInt(match[1]);
-  const amount = parseInt(match[2]);
-
-  const card = getCard(userId, index);
-  if (!card) {
-    await answerCallbackQuery(id, '⚠️ Session not found or card already drawn.');
+  const session = getSession(userId);
+  if (!session) {
+    await answerCallback(id, '⚠️ Session not found. Please try again later.');
     return;
   }
 
-  // 发送抽到的牌信息
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: userId,
-    text: `You drew:
-*${card.name}*
-${card.meaning}`,
-    parse_mode: 'Markdown'
-  });
+  if (session.cardsDrawn.length > index) {
+    await answerCallback(id, '✅ You already opened this card.');
+    return;
+  }
 
-  // 移除当前按钮（只保留剩余未点击的）
-  const remaining = [1, 2, 3].filter(i => i !== index && !isSessionComplete(userId, i));
-  const newButtons = remaining.map(i => [{ text: `🃏 Card ${i}`, callback_data: `draw_${i}_${amount}` }]);
+  const cardIndex = getCard(userId, index);
+  if (cardIndex === null) {
+    await answerCallback(id, '⚠️ Invalid card selection.');
+    return;
+  }
 
-  await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-    chat_id: userId,
-    message_id: msgId,
-    reply_markup: { inline_keyboard: newButtons }
-  });
+  const card = cardData[cardIndex];
+  if (!card) {
+    await answerCallback(id, '⚠️ Card data not found.');
+    return;
+  }
 
-  // 如果已经抽满 3 张，自动提示
-  if (isSessionComplete(userId)) {
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+  removeCardFromSession(userId, cardIndex);
+
+  const imageBlock = card.image
+    ? `<a href="${card.image}">&#8205;</a>`
+    : '';
+  const messageText = `${imageBlock}✨ <b>${card.name}</b>\n${card.meaning}`;
+
+  await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       chat_id: userId,
-      text: 'You have drawn 3 cards. 🧘‍♀️ May their wisdom guide you.',
+      text: messageText,
+      parse_mode: 'HTML',
+      disable_web_page_preview: false
+    })
+  });
+
+  await answerCallback(id, '🔮 Card revealed.');
+
+  if (isSessionComplete(userId)) {
+    await fetch(`${TELEGRAM_API}/editMessageReplyMarkup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: message.chat.id,
+        message_id: message.message_id,
+        reply_markup: { inline_keyboard: [] }
+      })
     });
   }
-
-  await answerCallbackQuery(id);
 }
 
-async function answerCallbackQuery(callbackQueryId, text = '') {
-  await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-    callback_query_id: callbackQueryId,
-    text
+// 回复按钮点击反馈
+async function answerCallback(callbackId, text) {
+  await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      callback_query_id: callbackId,
+      text
+    })
   });
 }
