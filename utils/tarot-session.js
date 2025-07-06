@@ -1,34 +1,28 @@
-// utils/tarot-session.js  // v1.0.9
+// v1.0.9 - 修复导出缺失 getCard 的问题，完整导出 session 控制逻辑
+const sessions = new Map();
 
-const { drawCards } = require('./tarot-engine');
-const sessions = {};
-
-function startSession(userId) {
-  sessions[userId] = {
-    cards: drawCards(),
-    selected: [false, false, false],
+export function startSession(userId) {
+  const session = {
+    drawnCards: [],
+    createdAt: Date.now()
   };
+  sessions.set(userId, session);
+  return session;
 }
 
-function getCard(userId, index) {
-  const session = sessions[userId];
-  if (!session || session.selected[index]) return null;
-  session.selected[index] = true;
-  return session.cards[index];
+export function getCard(userId, index) {
+  const session = sessions.get(userId);
+  if (!session) return null;
+  if (session.drawnCards.length >= 3) return null;
+
+  if (!session.drawnCards.includes(index)) {
+    session.drawnCards.push(index);
+  }
+  return { index, total: session.drawnCards.length };
 }
 
-function isSessionComplete(userId) {
-  const session = sessions[userId];
-  return session && session.selected.every(Boolean);
+export function isSessionComplete(userId) {
+  const session = sessions.get(userId);
+  if (!session) return false;
+  return session.drawnCards.length >= 3;
 }
-
-function clearSession(userId) {
-  delete sessions[userId];
-}
-
-module.exports = {
-  startSession,
-  getCard,
-  isSessionComplete,
-  clearSession
-};
