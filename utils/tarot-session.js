@@ -1,28 +1,41 @@
-// v1.0.9 - 修复导出缺失 getCard 的问题，完整导出 session 控制逻辑
+// tarot-session.js - v1.0.10
+
 const sessions = new Map();
 
-export function startSession(userId) {
-  const session = {
-    drawnCards: [],
-    createdAt: Date.now()
-  };
-  sessions.set(userId, session);
-  return session;
+export function startSession(userId, amount) {
+  sessions.set(userId, {
+    amount,
+    drawn: {},
+    count: 0
+  });
 }
 
 export function getCard(userId, index) {
   const session = sessions.get(userId);
-  if (!session) return null;
-  if (session.drawnCards.length >= 3) return null;
+  if (!session || session.drawn[index]) return null;
 
-  if (!session.drawnCards.includes(index)) {
-    session.drawnCards.push(index);
-  }
-  return { index, total: session.drawnCards.length };
+  const usedCards = Object.values(session.drawn).map(c => c.name);
+  let card;
+  do {
+    card = getRandomCard();
+  } while (usedCards.includes(card.name));
+
+  session.drawn[index] = card;
+  session.count++;
+  return card;
 }
 
-export function isSessionComplete(userId) {
+export function isSessionComplete(userId, specificIndex = null) {
   const session = sessions.get(userId);
-  if (!session) return false;
-  return session.drawnCards.length >= 3;
+  if (!session) return true;
+  if (specificIndex !== null) return !!session.drawn[specificIndex];
+  return session.count >= 3;
 }
+
+function getRandomCard() {
+  const deck = [...cardData];
+  const randomIndex = Math.floor(Math.random() * deck.length);
+  return deck[randomIndex];
+}
+
+import cardData from './card-data.js';
