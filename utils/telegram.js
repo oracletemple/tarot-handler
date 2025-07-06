@@ -1,93 +1,89 @@
-// telegram.js - v1.2.4
-// ✅ 修复测试按钮点击报错问题
-// ✅ 支持开发者手动测试时跳过 session 校验（userId 白名单）
-import axios from "axios";
+// utils/telegram.js - v1.2.2
+import fetch from "node-fetch";
+import { getCard, isSessionComplete, getSession } from "./tarot-session.js";
 import cardData from "./card-data.js";
-import { getCard, startSession, isSessionComplete } from "./tarot-session.js";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-const DEV_WHITELIST = [7685088782]; // ✅ 开发者 userId 白名单
-
-async function sendMessage(chatId, text, extra = {}) {
-  try {
-    await axios.post(`${API_URL}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      ...extra,
-    });
-  } catch (err) {
-    console.error("❌ sendMessage error:", err?.response?.data || err.message);
-  }
-}
-
-async function editMessageReplyMarkup(chatId, messageId, markup) {
-  try {
-    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup: markup,
-    });
-  } catch (err) {
-    console.error("❌ editReplyMarkup error:", err?.response?.data || err.message);
-  }
-}
-
-async function sendCard(chatId, card) {
-  const caption = `🃏 *${card.name}*\n\n${card.meaning}`;
-  const options = {
-    parse_mode: "Markdown",
+export async function sendButtonsMessage(userId) {
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: "🃏 Card 1", callback_data: "card_1" },
+        { text: "🃏 Card 2", callback_data: "card_2" },
+        { text: "🃏 Card 3", callback_data: "card_3" }
+      ]
+    ]
   };
 
-  if (card.image) {
-    await axios.post(`${API_URL}/sendPhoto`, {
-      chat_id: chatId,
-      photo: card.image,
-      caption,
-      ...options,
+  await fetch(`${API_URL}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: userId,
+      text: "✨ Please choose your card:",
+      reply_markup: keyboard
+    })
+  });
+}
+
+export async function sendCardResult(userId, cardIndex) {
+  const session = getSession(userId);
+  const card = cardData[cardIndex];
+
+  const position = session.cardsDrawn.length === 1
+    ? "🌅 Past"
+    : session.cardsDrawn.length === 2
+    ? "🌟 Present"
+    : "🌠 Future";
+
+  const message = `${position}: ${card.name}\n\n${card.meaning}`;
+
+  await fetch(`${API_URL}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: userId,
+      text: message
+    })
+  });
+
+  // 若已抽完 3 张牌，移除按钮
+  if (isSessionComplete(userId)) {
+    await fetch(`${API_URL}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: userId,
+        text: "🔮 Your full Tarot spread is complete. Thank you!",
+      }),
     });
-  } else {
-    await sendMessage(chatId, caption, options);
   }
 }
 
-export async function handleCallbackQuery(callback) {
-  const userId = callback.from?.id;
-  const messageId = callback.message?.message_id;
-  const chatId = callback.message?.chat?.id || userId;
-  const data = callback.data;
+export async function handleCardClick(ctx) {
+  const userId = ctx.from.id;
+  const data = ctx.callbackQuery.data;
+  const index = parseInt(data.split("_")[1], 10) - 1;
 
-  if (!userId || !data || !chatId) return;
-
-  const cardIndex = {
-    card_1: 0,
-    card_2: 1,
-    card_3: 2,
-  }[data];
-
-  if (cardIndex === undefined) return;
-
-  // ✅ 如果是开发者测试，跳过 session 校验
-  let card;
-  if (DEV_WHITELIST.includes(userId)) {
-    card = cardData[Math.floor(Math.random() * cardData.length)];
-  } else {
-    const sessionCard = await getCard(userId, cardIndex);
-    if (!sessionCard) {
-      await sendMessage(chatId, "⚠️ Session not found. Please try again later.");
-      return;
-    }
-    card = sessionCard;
+  const session = getSession(userId);
+  if (!session) {
+    await ctx.answerCbQuery("⚠️ Session not found. Please try again later.");
+    return;
   }
 
-  await sendCard(chatId, card);
-
-  // ✅ 逐张移除按钮，避免重复点击
-  await editMessageReplyMarkup(chatId, messageId, { inline_keyboard: [[]] });
-
-  // ✅ 如果是最后一张牌，附加结束提示
-  if (!DEV_WHITELIST.includes(userId) && (await isSessionComplete(userId))) {
-    await sendMessage(chatId, "🌟 You have drawn 3 cards. Thank you for using Divine Oracle!");
+  if (session.cardsDrawn.includes(session.deck[index])) {
+    await ctx.answerCbQuery("⚠️ You've already drawn this card.");
+    return;
   }
+
+  const cardIndex = getCard(userId, index);
+  if (cardIndex === null) {
+    await ctx.answerCbQuery("⚠️ Unable to draw card.");
+    return;
+  }
+
+  await ctx.answerCbQuery("✅ Card drawn!");
+  await sendCardResult(userId, cardIndex);
 }
