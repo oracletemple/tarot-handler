@@ -1,14 +1,19 @@
-// telegram.js  // v1.2.1
+// tarot-handler/utils/telegram.js  // v1.2.2
 
 const axios = require('axios');
 const { drawCards, formatCardMessage } = require('./tarot-engine');
-const { startSession, getCard, isSessionComplete, endSession } = require('./tarot-session');
+const {
+  startSession,
+  getCard,
+  isSessionComplete,
+  endSession // ✅ 新增导入
+} = require('./tarot-session');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function sendMessage(chatId, text, options = {}) {
-  return axios.post(`${TELEGRAM_API}/sendMessage`, {
+  await axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: chatId,
     text,
     parse_mode: 'HTML',
@@ -16,69 +21,51 @@ async function sendMessage(chatId, text, options = {}) {
   });
 }
 
-async function sendButtonMessage(chatId, text) {
-  const replyMarkup = {
-    inline_keyboard: [
-      [
-        { text: '🃏 Card 1', callback_data: 'card_0' },
-        { text: '🃏 Card 2', callback_data: 'card_1' },
-        { text: '🃏 Card 3', callback_data: 'card_2' }
-      ]
-    ]
-  };
+async function sendButtons(chatId) {
+  const buttons = [
+    [{ text: '🃏 Card 1', callback_data: 'card_0' }],
+    [{ text: '🃏 Card 2', callback_data: 'card_1' }],
+    [{ text: '🃏 Card 3', callback_data: 'card_2' }],
+  ];
 
-  return axios.post(`${TELEGRAM_API}/sendMessage`, {
+  await axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: chatId,
-    text,
-    parse_mode: 'HTML',
-    reply_markup: replyMarkup,
+    text: '✨ Please choose your card one by one:',
+    reply_markup: { inline_keyboard: buttons },
   });
 }
 
-async function handleCallbackQuery(callbackQuery) {
-  const { message, from, data, id } = callbackQuery;
-  const userId = from.id;
-  const chatId = message.chat.id;
-  const messageId = message.message_id;
+async function handlePayment(userId, amount) {
+  console.log(`💸 Payment received: ${amount} USDT from ${userId}`);
+  await startSession(userId);
+  await sendButtons(userId);
+}
+
+async function handleCallbackQuery(callback) {
+  const userId = callback.from.id;
+  const data = callback.data;
 
   if (!data.startsWith('card_')) return;
 
-  const index = parseInt(data.split('_')[1]);
-  if (isNaN(index)) return;
+  const cardIndex = parseInt(data.split('_')[1]);
+  const card = getCard(userId, cardIndex);
 
-  const card = getCard(userId, index);
   if (!card) {
-    return answerCallback(id, '⚠️ Session not found. Please try again later.');
+    console.log(`⚠️ Session not found for ${userId}`);
+    await sendMessage(userId, `⚠️ Session not found. Please try again later.`);
+    return;
   }
 
-  const response = formatCardMessage(card, index);
-  await answerCallback(id);
-  await sendMessage(chatId, response);
+  console.log(`🎴 Card ${cardIndex} drawn by ${userId}`);
+  await sendMessage(userId, formatCardMessage(card, cardIndex));
 
   if (isSessionComplete(userId)) {
-    await endSession(userId);
-    await removeInlineKeyboard(chatId, messageId);
+    console.log(`✅ Session complete for ${userId}`);
+    await endSession(userId); // ✅ 修复崩溃：正确调用 session 清理
   }
-}
-
-async function answerCallback(callbackId, text = '') {
-  return axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-    callback_query_id: callbackId,
-    text,
-    show_alert: false,
-  });
-}
-
-async function removeInlineKeyboard(chatId, messageId) {
-  return axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: { inline_keyboard: [] },
-  });
 }
 
 module.exports = {
-  sendMessage,
-  sendButtonMessage,
+  handlePayment,
   handleCallbackQuery,
 };
