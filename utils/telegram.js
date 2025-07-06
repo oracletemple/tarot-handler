@@ -1,74 +1,70 @@
-// v1.2.2
+// telegram.js - v1.2.2
 const axios = require('axios');
 const { getCard, isSessionComplete, endSession } = require('./tarot-session');
 const { formatCardMessage } = require('./tarot-engine');
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
+const TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
 
-async function sendButtonMessage(chatId, text) {
+async function sendButtonMessage(userId, text) {
   const keyboard = {
     inline_keyboard: [
-      [
-        { text: '🃏 Card 1', callback_data: 'card_0' },
-        { text: '🃏 Card 2', callback_data: 'card_1' },
-        { text: '🃏 Card 3', callback_data: 'card_2' },
-      ],
+      [{ text: '🃏 Card 1', callback_data: 'card_0' }],
+      [{ text: '🃏 Card 2', callback_data: 'card_1' }],
+      [{ text: '🃏 Card 3', callback_data: 'card_2' }],
     ],
   };
 
   await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
+    chat_id: userId,
     text,
     reply_markup: keyboard,
+    parse_mode: 'HTML',
   });
 }
 
-async function handleCallbackQuery(req, res) {
-  const { callback_query } = req.body;
-  const userId = callback_query.from.id;
-  const messageId = callback_query.message.message_id;
-  const data = callback_query.data;
+async function handleCallbackQuery(query) {
+  const userId = query.from.id;
+  const data = query.data;
 
-  const index = parseInt(data.split('_')[1], 10);
+  const match = data.match(/^card_(\d)$/);
+  if (!match) return;
+
+  const index = parseInt(match[1], 10);
   const card = getCard(userId, index);
 
   if (!card) {
-    await answerCallback(callback_query.id, `⚠️ Session not found or card already drawn.`);
-    return res.sendStatus(200);
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: userId,
+      text: '⚠️ Session not found. Please try again later.',
+    });
+    return;
   }
 
-  const cardText = formatCardMessage(card);
+  const message = formatCardMessage(card);
 
-  // 回应按钮点击并推送卡牌内容
   await axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: userId,
-    text: cardText,
+    text: message,
     parse_mode: 'HTML',
   });
 
-  // 如果三张牌已抽完，则结束 session 并删除按钮
+  console.log(`🎴 Card ${index} drawn by ${userId}`);
+
   if (isSessionComplete(userId)) {
+    console.log(`✅ Session complete for ${userId}`);
     await endSession(userId);
+
+    // 删除按钮
     await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-      chat_id: userId,
-      message_id: messageId,
+      chat_id: query.message.chat.id,
+      message_id: query.message.message_id,
       reply_markup: { inline_keyboard: [] },
     });
   }
-
-  await answerCallback(callback_query.id);
-  res.sendStatus(200);
-}
-
-async function answerCallback(callbackId, text = '') {
-  await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-    callback_query_id: callbackId,
-    text,
-    show_alert: false,
-  });
 }
 
 module.exports = {
+  sendButtonMessage,
   handleCallbackQuery,
-  sendButtonMessage, // ✅ 必须导出此函数
 };
