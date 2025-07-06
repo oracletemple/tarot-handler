@@ -1,8 +1,9 @@
 {
-  "name": "usdt-listener",
-  "version": "1.1.4",
-  "description": "Webhook service for listening to USDT transactions and handling tarot logic.",
+  "name": "tarot-handler",
+  "version": "1.2.0",
+  "description": "Webhook service for handling tarot reading logic and Telegram button interactions.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
