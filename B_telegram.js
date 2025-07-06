@@ -1,62 +1,107 @@
-// B_telegram.js - v1.2.3
+// B_telegram.js - v1.2.4
 
-const { startSession, isSessionComplete, getCard, advanceSession } = require("./G_tarot-session");
-const { getCardMessage } = require("./G_tarot-engine");
+const axios = require("axios");
+const { startSession, getCard, isSessionComplete, endSession } = require("./G_tarot-session");
+const { renderCardMessage } = require("./G_tarot-engine");
 const { sendText, sendButtons, sendImage } = require("./G_send-message");
 
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const RECEIVER_ID = parseInt(process.env.RECEIVER_ID);
+
 /**
- * 处理 Telegram 的 update 数据（包括 message 和 callback_query）
+ * 处理 Telegram Webhook 更新
+ * @param {Object} update 
  */
 async function handleTelegramUpdate(update) {
   if (update.message) {
-    await handleMessage(update.message);
-  } else if (update.callback_query) {
-    await handleCallback(update.callback_query);
+    const message = update.message;
+    const userId = message.from.id;
+    const text = message.text;
+
+    if (text === "/test123" && userId === RECEIVER_ID) {
+      await startSession(userId);
+      await sendButtons(userId, "🧙 *Your divine reading begins...*\nPlease choose your card:", [
+        [
+          { text: "🃏 Card 1", callback_data: "card_0" },
+          { text: "🃏 Card 2", callback_data: "card_1" },
+          { text: "🃏 Card 3", callback_data: "card_2" }
+        ]
+      ]);
+      return;
+    }
+
+    // 非测试命令可忽略
+  }
+
+  if (update.callback_query) {
+    const query = update.callback_query;
+    const userId = query.from.id;
+    const data = query.data;
+    const messageId = query.message.message_id;
+    const chatId = query.message.chat.id;
+
+    if (!data.startsWith("card_")) return;
+
+    const index = parseInt(data.split("_")[1]);
+
+    const card = getCard(userId, index);
+    if (!card) {
+      await answerCallback(query.id, "⚠️ Session not found or card already drawn.");
+      return;
+    }
+
+    const caption = renderCardMessage(card, index);
+
+    if (card.image) {
+      await sendImage(chatId, card.image, caption);
+    } else {
+      await sendText(chatId, caption);
+    }
+
+    if (isSessionComplete(userId)) {
+      await endSession(userId);
+      await editMessageReplyMarkup(chatId, messageId, { inline_keyboard: [] });
+    } else {
+      await answerCallback(query.id, "✅ Card received.");
+    }
   }
 }
 
 /**
- * 处理普通文本消息（用于测试命令或引导语）
+ * 回应按钮点击（防止超时 loading）
+ * @param {string} callbackQueryId 
+ * @param {string} text 
  */
-async function handleMessage(message) {
-  const userId = message.from.id;
-  const text = message.text || "";
-
-  if (text === "/start") {
-    await sendText(userId, "🔮 Welcome to Divine Oracle!\n\nPlease send *12 USDT* to begin your tarot reading.");
+async function answerCallback(callbackQueryId, text) {
+  try {
+    await axios.post(`${API_URL}/answerCallbackQuery`, {
+      callback_query_id: callbackQueryId,
+      text
+    });
+  } catch (err) {
+    console.error("❌ answerCallback error:", err.response?.data || err.message);
   }
 }
 
 /**
- * 处理按钮点击
+ * 清除按钮（占卜完成后）
+ * @param {number} chatId 
+ * @param {number} messageId 
+ * @param {object} markup 
  */
-async function handleCallback(query) {
-  const userId = query.from.id;
-  const data = query.data;
-
-  const match = data?.match(/^card_(\d)_(\d+)$/);
-  if (!match) return sendText(userId, "⚠️ Invalid card selection.");
-
-  const index = parseInt(match[1], 10) - 1;
-  const amount = parseInt(match[2], 10);
-
-  if (isSessionComplete(userId)) {
-    return sendText(userId, "⚠️ Your session has ended. Please send a new payment to begin again.");
+async function editMessageReplyMarkup(chatId, messageId, markup) {
+  try {
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: markup
+    });
+  } catch (err) {
+    console.error("❌ editMessageReplyMarkup error:", err.response?.data || err.message);
   }
-
-  const cardId = getCard(userId, index);
-  if (cardId === null) {
-    return sendText(userId, "⚠️ Session not found. Please try again later.");
-  }
-
-  const message = getCardMessage(cardId, index, amount);
-  if (cardId.image) {
-    await sendImage(userId, cardId.image, message);
-  } else {
-    await sendText(userId, message);
-  }
-
-  advanceSession(userId);
 }
 
-module.exports = { handleTelegramUpdate };
+module.exports = {
+  handleTelegramUpdate
+};
