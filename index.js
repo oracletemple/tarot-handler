@@ -1,39 +1,37 @@
-// index.js - v1.1.8
+// v1.1.9
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const { sendButtonMessage, handleCallbackQuery } = require('./utils/telegram');
 const { startSession } = require('./utils/tarot-session');
+const { sendButtonMessage, handleCallbackQuery } = require('./utils/telegram');
 
 const app = express();
 app.use(bodyParser.json());
 
-const PORT = 3000;
-
 app.post('/webhook', async (req, res) => {
-  const { user_id, amount } = req.body;
-
-  if (!user_id || !amount) {
-    return res.status(400).json({ error: 'Missing user_id or amount' });
-  }
-
-  console.log(`✅ Session started for ${user_id}`);
-  await startSession(user_id);
-
-  // 推送按钮消息
-  await sendButtonMessage(user_id, '✨ Thank you for your payment. Please draw your cards:');
-  res.json({ ok: true });
-});
-
-app.post('/', async (req, res) => {
   const body = req.body;
+
+  if (body.message) {
+    return res.sendStatus(200);
+  }
 
   if (body.callback_query) {
     await handleCallbackQuery(body.callback_query);
+    return res.sendStatus(200);
   }
 
-  res.sendStatus(200);
+  const { user_id, amount } = body;
+
+  if (!user_id || amount < 10) {
+    return res.status(400).json({ error: 'Invalid data' });
+  }
+
+  await startSession(user_id);
+  await sendButtonMessage(user_id, '✨ Thank you for your payment. Please draw your cards:');
+
+  res.json({ status: 'ok' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
 });
