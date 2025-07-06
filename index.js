@@ -1,30 +1,32 @@
-// v1.1.9
-const express = require('express');
-const bodyParser = require('body-parser');
-const { sendButtonMessage, handleCallbackQuery } = require('./utils/telegram.js');
-require('dotenv').config();
+// index.js - v1.1.9
+import express from 'express';
+import bodyParser from 'body-parser';
+import { sendButtonMessage } from './utils/telegram.js';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(bodyParser.json());
 
 app.post('/webhook', async (req, res) => {
-  const body = req.body;
+  const { user_id, amount } = req.body;
 
-  if (body.message && body.message.successful_payment) {
-    const userId = body.message.chat.id;
-    const amount = body.message.successful_payment.total_amount / 100;
-    await sendButtonMessage(userId, amount);
+  if (!user_id || !amount) {
+    console.warn('⚠️ Missing user_id or amount');
+    return res.status(400).send('Missing user_id or amount');
   }
 
-  if (body.callback_query) {
-    await handleCallbackQuery(body.callback_query);
+  if (amount >= 10) {
+    console.log(`✅ Received ${amount} USDT from ${user_id}`);
+    await sendButtonMessage(user_id, amount);
+  } else {
+    console.warn(`⚠️ Invalid or low amount received: ${amount}`);
   }
 
-  res.sendStatus(200);
+  res.send('OK');
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
