@@ -1,17 +1,14 @@
-// B_simulate-click.js // v1.1.0
+// G_simulate-click.js - v1.1.3
 
 const axios = require("axios");
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
 /**
- * Simulate a button click by triggering a callback_query update to the Webhook.
- * This is mainly used for automated testing after payment detection.
- * 
- * @param {number} userId - Telegram user ID to simulate interaction for.
- * @param {number} cardIndex - Card index (1/2/3).
- * @param {number} amount - Payment amount (12 or 30).
+ * 模拟按钮点击，向 Webhook 推送 callback_query 数据
+ * @param {number} userId - Telegram 用户 ID
+ * @param {number} cardIndex - 1 / 2 / 3
+ * @param {number} amount - 12 / 30
  */
 async function simulateButtonClick(userId, cardIndex, amount) {
   const payload = {
@@ -39,12 +36,12 @@ async function simulateButtonClick(userId, cardIndex, amount) {
   };
 
   try {
-    await axios.post(process.env.WEBHOOK_URL, payload, {
+    await axios.post(WEBHOOK_URL, payload, {
       headers: { "Content-Type": "application/json" }
     });
-    console.log(`✅ Simulated card ${cardIndex} click for user ${userId}`);
+    console.log(`✅ Simulated card ${cardIndex} click for user ${userId} (${amount} USDT)`);
   } catch (err) {
-    console.error("❌ Failed to simulate button click:", err.response?.data || err.message);
+    console.error("❌ simulateButtonClick failed:", err.response?.data || err.message);
   }
 }
 
