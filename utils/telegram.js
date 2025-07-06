@@ -1,76 +1,67 @@
-// ✅ 修复说明：
-// 1. 修复 drawTarotCard 未导入的问题；
-// 2. 修复已抽完牌还能继续抽的问题；
-// 3. 增加自动隐藏按钮逻辑
-//
-// ⚠️ 本文件需同步上传到两个项目：
-// - tarot-handler/utils/telegram.js
-// - usdt-listener/utils/telegram.js
-// 📌 原因：telegram.js 是共享交互模块，两个服务必须保持一致
-
+// v1.2.1
 const axios = require('axios');
-const { startSession, getCard, isSessionComplete, endSession } = require('./tarot-session');
-const { drawTarotCard } = require('./tarot-engine');
-const { CARD_OPTIONS } = require('./card-data');
+const { startSession, getCard, isSessionComplete, endSession } = require('./tarot-session.js');
+const { cards } = require('./card-data.js');
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function sendButtonMessage(userId, text) {
+async function sendButtonMessage(userId, amount) {
   const keyboard = {
-    inline_keyboard: [[
-      { text: '🃏 Card 1', callback_data: 'card_0' },
-      { text: '🃏 Card 2', callback_data: 'card_1' },
-      { text: '🃏 Card 3', callback_data: 'card_2' }
-    ]]
+    inline_keyboard: [
+      [
+        { text: '🃏 Card 1', callback_data: 'draw_0' },
+        { text: '🃏 Card 2', callback_data: 'draw_1' },
+        { text: '🃏 Card 3', callback_data: 'draw_2' }
+      ]
+    ]
   };
+
   await axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: userId,
-    text,
+    text: `🎉 Received ${amount} USDT! Click a card to reveal your reading:`,
     reply_markup: keyboard
   });
+
+  await startSession(userId, amount);
 }
 
-async function handleCallbackQuery(query) {
-  const userId = query.from.id;
-  const data = query.data;
-  const messageId = query.message.message_id;
+async function handleCallbackQuery(callbackQuery) {
+  const userId = callbackQuery.from.id;
+  const data = callbackQuery.data;
 
-  if (!data.startsWith('card_')) return;
+  if (!data.startsWith('draw_')) return;
 
-  const cardIndex = parseInt(data.split('_')[1]);
-  const card = await getCard(userId, cardIndex);
+  const index = parseInt(data.split('_')[1]);
+  const { card, position, error } = getCard(userId, index);
 
-  if (!card) {
-    await answerCallback(query.id, '⚠️ Session not found or card already drawn.');
+  if (error) {
+    await sendTelegramMessage(userId, `⚠️ ${error}`);
     return;
   }
 
-  const interpretation = drawTarotCard(card);
-  const position = ['Past', 'Present', 'Future'][cardIndex];
+  const interpretation = `🔮 *${card.name}* (${position})\n${card.meaning}`;
+  await sendTelegramMessage(userId, interpretation, true);
 
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: userId,
-    text: `🔮 *${position}* — *${card.name}*\n${interpretation}`,
-    parse_mode: 'Markdown'
-  });
-
-  if (await isSessionComplete(userId)) {
+  if (isSessionComplete(userId)) {
     await endSession(userId);
-    await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-      chat_id: userId,
-      message_id: messageId,
-      reply_markup: { inline_keyboard: [] } // 🔒 清除按钮
-    });
+    await removeButtons(callbackQuery.message.message_id, userId);
   }
-
-  await answerCallback(query.id);
 }
 
-async function answerCallback(callbackId, text) {
-  await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-    callback_query_id: callbackId,
-    text: text || '',
-    show_alert: false
+async function sendTelegramMessage(userId, text, markdown = false) {
+  await axios.post(`${TELEGRAM_API}/sendMessage`, {
+    chat_id: userId,
+    text,
+    parse_mode: markdown ? 'Markdown' : undefined
+  });
+}
+
+async function removeButtons(messageId, userId) {
+  await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
+    chat_id: userId,
+    message_id: messageId,
+    reply_markup: { inline_keyboard: [] }
   });
 }
 
