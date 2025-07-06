@@ -4,7 +4,7 @@ const axios = require("axios");
 
 const { startSession, isSessionComplete, getCard } = require("./G_tarot-session");
 const { getCardMessage } = require("./G_tarot-engine");
-const { sendMessage, sendCardImage } = require("./G_send-message");
+const { sendText, sendButtons, sendImage } = require("./G_send-message");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const RECEIVER_ID = process.env.RECEIVER_ID;
@@ -28,19 +28,17 @@ async function handleMessage(message) {
   const text = message.text || "";
 
   if (text === "/start") {
-    await sendMessage(userId, "Welcome to Divine Oracle 🔮\n\nPlease send 12 USDT to begin your tarot reading.");
+    await sendText(userId, "Welcome to Divine Oracle 🔮\n\nPlease send 12 USDT to begin your tarot reading.");
   } else if (text.includes("USDT")) {
     if (userId.toString() === RECEIVER_ID) {
       await startSession(userId);
-      await sendMessage(userId, "🧿 Your spiritual reading is ready. Please choose a card to reveal:", {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: "🃏 Card 1", callback_data: "card_1_12" },
-            { text: "🃏 Card 2", callback_data: "card_2_12" },
-            { text: "🃏 Card 3", callback_data: "card_3_12" }
-          ]]
-        }
-      });
+      await sendButtons(userId, "🧿 Your spiritual reading is ready. Please choose a card to reveal:", [
+        [
+          { text: "🃏 Card 1", callback_data: "card_1_12" },
+          { text: "🃏 Card 2", callback_data: "card_2_12" },
+          { text: "🃏 Card 3", callback_data: "card_3_12" }
+        ]
+      ]);
     }
   }
 }
@@ -54,24 +52,24 @@ async function handleCallback(query) {
 
   const match = data?.match(/^card_(\d)_(\d+)$/);
   if (!match) {
-    return sendMessage(userId, "⚠️ Invalid card selection.");
+    return sendText(userId, "⚠️ Invalid card selection.");
   }
 
   const index = parseInt(match[1], 10);
   const amount = parseInt(match[2], 10);
 
-  const valid = await isSessionComplete(userId, index);
-  if (!valid) {
-    const card = await getCard(userId, index);
-    const cardMessage = getCardMessage(card, index, amount);
+  const complete = isSessionComplete(userId);
+  if (complete) {
+    return sendText(userId, "⚠️ This card has already been revealed.");
+  }
 
-    if (card.image) {
-      await sendCardImage(userId, card.image, cardMessage);
-    } else {
-      await sendMessage(userId, cardMessage);
-    }
+  const card = getCard(userId, index);
+  const cardMessage = getCardMessage(card, index, amount);
+
+  if (card?.image) {
+    await sendImage(userId, card.image, cardMessage);
   } else {
-    await sendMessage(userId, "⚠️ This card has already been revealed.");
+    await sendText(userId, cardMessage);
   }
 }
 
