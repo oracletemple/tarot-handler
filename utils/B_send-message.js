@@ -1,57 +1,92 @@
-// B_send-message.js // v1.1.0
+// B_send-message.js - v1.1.1
 
 const axios = require("axios");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-async function sendTextMessage(chatId, text) {
+/**
+ * Send a text message to a user.
+ * @param {number} chatId
+ * @param {string} text
+ * @param {object} [options]
+ */
+async function sendMessage(chatId, text, options = {}) {
   try {
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
       text,
-      parse_mode: "Markdown"
+      parse_mode: "Markdown",
+      ...options
     });
-  } catch (error) {
-    console.error("❌ Failed to send text message:", error.response?.data || error.message);
+  } catch (err) {
+    console.error("❌ sendMessage error:", err.response?.data || err.message);
   }
 }
 
-async function sendCardButtons(chatId) {
+/**
+ * Send an image with optional caption.
+ * @param {number} chatId
+ * @param {string} imageUrl
+ * @param {string} [caption]
+ */
+async function sendImage(chatId, imageUrl, caption = "") {
   try {
+    await axios.post(`${API_URL}/sendPhoto`, {
+      chat_id: chatId,
+      photo: imageUrl,
+      caption,
+      parse_mode: "Markdown"
+    });
+  } catch (err) {
+    console.error("❌ sendImage error:", err.response?.data || err.message);
+  }
+}
+
+/**
+ * Send buttons for card selection (1/2/3).
+ * @param {number} chatId
+ * @param {number} amount - 12 or 30
+ */
+async function sendCardButtons(chatId, amount) {
+  try {
+    const buttons = [1, 2, 3].map(i => ({
+      text: `🃏 Card ${i}`,
+      callback_data: `card_${i}_${amount}`
+    }));
+
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
       text: "Your spiritual reading is ready. Please choose a card to reveal:",
       reply_markup: {
-        inline_keyboard: [
-          [
-            { text: "🃏 Card 1", callback_data: "card_1_12" },
-            { text: "🃏 Card 2", callback_data: "card_2_12" },
-            { text: "🃏 Card 3", callback_data: "card_3_12" }
-          ]
-        ]
+        inline_keyboard: [buttons]
       }
     });
-  } catch (error) {
-    console.error("❌ Failed to send card buttons:", error.response?.data || error.message);
+  } catch (err) {
+    console.error("❌ sendCardButtons error:", err.response?.data || err.message);
   }
 }
 
-async function editMessage(chatId, messageId, newText) {
+/**
+ * Edit inline keyboard to remove buttons after 3 draws.
+ * @param {number} chatId
+ * @param {number} messageId
+ */
+async function removeCardButtons(chatId, messageId) {
   try {
-    await axios.post(`${API_URL}/editMessageText`, {
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
       chat_id: chatId,
       message_id: messageId,
-      text: newText,
-      parse_mode: "Markdown"
+      reply_markup: { inline_keyboard: [] }
     });
-  } catch (error) {
-    console.error("❌ Failed to edit message:", error.response?.data || error.message);
+  } catch (err) {
+    console.error("❌ removeCardButtons error:", err.response?.data || err.message);
   }
 }
 
 module.exports = {
-  sendTextMessage,
+  sendMessage,
+  sendImage,
   sendCardButtons,
-  editMessage
+  removeCardButtons
 };
