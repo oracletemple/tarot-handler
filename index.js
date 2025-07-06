@@ -1,43 +1,57 @@
 // index.js - v1.2.1
-// ✅ 修复模拟测试失败问题，允许开发者使用自定义 userId 进行调试
-// ✅ 实际客户仍按正常流程走 session，不受影响
-
 import express from "express";
 import dotenv from "dotenv";
-import { handleTransaction } from "./utils/transaction.js";
-import { handleCallbackQuery } from "./utils/telegram.js";
+import bodyParser from "body-parser";
+import { sendButtonsMessage, sendCardResult } from "./utils/telegram.js";
+import { extractTransactionInfo } from "./utils/transaction.js";
+import { startSession, getCard, isSessionComplete } from "./utils/tarot-session.js";
+import cardData from "./data/card-data.js";
 
 dotenv.config();
+
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
-const WEBHOOK_PATH = "/webhook";
+const RECEIVER_ID = process.env.RECEIVER_ID;
+const AMOUNT_THRESHOLD = parseFloat(process.env.AMOUNT_THRESHOLD || "10");
 
-app.post(WEBHOOK_PATH, async (req, res) => {
-  try {
-    const body = req.body;
+app.post("/webhook", async (req, res) => {
+  const { user_id, amount } = extractTransactionInfo(req.body);
 
-    // 处理按钮点击事件
-    if (body.callback_query) {
-      const callback = body.callback_query;
-      await handleCallbackQuery(callback);
-      return res.sendStatus(200);
-    }
-
-    // 处理链上交易事件
-    const { amount, from, to, txid, type } = body;
-    if (amount && from && to && txid && type === "transfer") {
-      await handleTransaction({ amount, from, to, txid });
-      return res.sendStatus(200);
-    }
-
+  if (!user_id || !amount) {
     console.warn("⚠️ Missing user_id or amount");
-    return res.status(400).send("Invalid payload");
-  } catch (err) {
-    console.error("❌ Webhook error:", err);
-    return res.sendStatus(500);
+    return res.sendStatus(400);
   }
+
+  if (amount < AMOUNT_THRESHOLD) {
+    console.warn(`⚠️ Received ${amount} USDT, which is below the minimum threshold.`);
+    return res.sendStatus(200);
+  }
+
+  // ✅ 启动 session
+  startSession(user_id, amount);
+
+  // ✅ 发送按钮消息
+  await sendButtonsMessage(user_id, amount);
+  res.sendStatus(200);
+});
+
+app.post("/click", async (req, res) => {
+  const { user_id, card_index } = req.body;
+  if (!user_id || typeof card_index !== "number") return res.sendStatus(400);
+
+  const cardId = getCard(user_id, card_index);
+  if (cardId == null || !cardData[cardId]) return res.sendStatus(400);
+
+  const card = cardData[cardId];
+  await sendCardResult(user_id, card_index, card);
+
+  if (isSessionComplete(user_id)) {
+    console.log(`✅ Session complete for user ${user_id}`);
+  }
+
+  res.sendStatus(200);
 });
 
 app.listen(PORT, () => {
