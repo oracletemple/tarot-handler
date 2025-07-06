@@ -1,471 +1,393 @@
 const cardData = [
   {
     "name": "The Fool",
-    "image": null,
-    "meaning_up": "The Fool meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Fool reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "New beginnings, optimism, trust in the universe.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/00/RWS_Tarot_The_Fool.jpg/400px-RWS_Tarot_The_Fool.jpg"
   },
   {
     "name": "The Magician",
-    "image": null,
-    "meaning_up": "The Magician meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Magician reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Manifestation, resourcefulness, power, inspired action.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/01/RWS_Tarot_The_Magician.jpg/400px-RWS_Tarot_The_Magician.jpg"
   },
   {
     "name": "The High Priestess",
-    "image": null,
-    "meaning_up": "The High Priestess meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The High Priestess reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intuition, sacred knowledge, divine feminine, the subconscious mind.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/02/RWS_Tarot_The_High_Priestess.jpg/400px-RWS_Tarot_The_High_Priestess.jpg"
   },
   {
     "name": "The Empress",
-    "image": null,
-    "meaning_up": "The Empress meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Empress reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Femininity, beauty, nature, nurturing, abundance.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/03/RWS_Tarot_The_Empress.jpg/400px-RWS_Tarot_The_Empress.jpg"
   },
   {
     "name": "The Emperor",
-    "image": null,
-    "meaning_up": "The Emperor meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Emperor reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Authority, structure, control, fatherhood.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/04/RWS_Tarot_The_Emperor.jpg/400px-RWS_Tarot_The_Emperor.jpg"
   },
   {
     "name": "The Hierophant",
-    "image": null,
-    "meaning_up": "The Hierophant meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Hierophant reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Spiritual wisdom, religious beliefs, conformity, tradition.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/05/RWS_Tarot_The_Hierophant.jpg/400px-RWS_Tarot_The_Hierophant.jpg"
   },
   {
     "name": "The Lovers",
-    "image": null,
-    "meaning_up": "The Lovers meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Lovers reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Love, harmony, relationships, choices, alignment.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/06/RWS_Tarot_The_Lovers.jpg/400px-RWS_Tarot_The_Lovers.jpg"
   },
   {
     "name": "The Chariot",
-    "image": null,
-    "meaning_up": "The Chariot meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Chariot reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Direction, control, willpower, determination, success.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/07/RWS_Tarot_The_Chariot.jpg/400px-RWS_Tarot_The_Chariot.jpg"
   },
   {
     "name": "Strength",
-    "image": null,
-    "meaning_up": "Strength meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Strength reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Courage, persuasion, influence, compassion.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/08/RWS_Tarot_Strength.jpg/400px-RWS_Tarot_Strength.jpg"
   },
   {
     "name": "The Hermit",
-    "image": null,
-    "meaning_up": "The Hermit meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Hermit reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Soul-searching, introspection, inner guidance, solitude.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/09/RWS_Tarot_The_Hermit.jpg/400px-RWS_Tarot_The_Hermit.jpg"
   },
   {
     "name": "Wheel of Fortune",
-    "image": null,
-    "meaning_up": "Wheel of Fortune meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Wheel of Fortune reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Change, cycles, fate, turning points.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/10/RWS_Tarot_Wheel_of_Fortune.jpg/400px-RWS_Tarot_Wheel_of_Fortune.jpg"
   },
   {
     "name": "Justice",
-    "image": null,
-    "meaning_up": "Justice meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Justice reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Fairness, truth, law, cause and effect.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/11/RWS_Tarot_Justice.jpg/400px-RWS_Tarot_Justice.jpg"
   },
   {
     "name": "The Hanged Man",
-    "image": null,
-    "meaning_up": "The Hanged Man meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Hanged Man reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Pause, surrender, letting go, new perspective.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/12/RWS_Tarot_The_Hanged_Man.jpg/400px-RWS_Tarot_The_Hanged_Man.jpg"
   },
   {
     "name": "Death",
-    "image": null,
-    "meaning_up": "Death meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Death reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Endings, transformation, transition, letting go.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/13/RWS_Tarot_Death.jpg/400px-RWS_Tarot_Death.jpg"
   },
   {
     "name": "Temperance",
-    "image": null,
-    "meaning_up": "Temperance meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Temperance reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Balance, moderation, patience, purpose.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/14/RWS_Tarot_Temperance.jpg/400px-RWS_Tarot_Temperance.jpg"
   },
   {
     "name": "The Devil",
-    "image": null,
-    "meaning_up": "The Devil meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Devil reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Addiction, materialism, playfulness, restriction.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/15/RWS_Tarot_The_Devil.jpg/400px-RWS_Tarot_The_Devil.jpg"
   },
   {
     "name": "The Tower",
-    "image": null,
-    "meaning_up": "The Tower meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Tower reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Sudden change, upheaval, chaos, revelation, awakening.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/16/RWS_Tarot_The_Tower.jpg/400px-RWS_Tarot_The_Tower.jpg"
   },
   {
     "name": "The Star",
-    "image": null,
-    "meaning_up": "The Star meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Star reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Hope, faith, renewal, spirituality.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/17/RWS_Tarot_The_Star.jpg/400px-RWS_Tarot_The_Star.jpg"
   },
   {
     "name": "The Moon",
-    "image": null,
-    "meaning_up": "The Moon meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Moon reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Illusion, intuition, dreams, subconscious.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/18/RWS_Tarot_The_Moon.jpg/400px-RWS_Tarot_The_Moon.jpg"
   },
   {
     "name": "The Sun",
-    "image": null,
-    "meaning_up": "The Sun meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The Sun reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Positivity, fun, warmth, success, vitality.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/19/RWS_Tarot_The_Sun.jpg/400px-RWS_Tarot_The_Sun.jpg"
   },
   {
     "name": "Judgement",
-    "image": null,
-    "meaning_up": "Judgement meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Judgement reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Reflection, reckoning, awakening, inner calling.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/20/RWS_Tarot_Judgement.jpg/400px-RWS_Tarot_Judgement.jpg"
   },
   {
     "name": "The World",
-    "image": null,
-    "meaning_up": "The World meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "The World reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Completion, celebration, accomplishment, travel.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/21/RWS_Tarot_The_World.jpg/400px-RWS_Tarot_The_World.jpg"
   },
   {
     "name": "Ace of Wands",
-    "image": null,
-    "meaning_up": "Ace of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Ace of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Inspiration, growth, energy of Ace of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ace_of_Wands.jpg/400px-RWS_Tarot_Ace_of_Wands.jpg"
   },
   {
-    "name": "2 of Wands",
-    "image": null,
-    "meaning_up": "2 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "2 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Two of Wands",
+    "meaning": "Inspiration, growth, energy of Two of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Two_of_Wands.jpg/400px-RWS_Tarot_Two_of_Wands.jpg"
   },
   {
-    "name": "3 of Wands",
-    "image": null,
-    "meaning_up": "3 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "3 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Three of Wands",
+    "meaning": "Inspiration, growth, energy of Three of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Three_of_Wands.jpg/400px-RWS_Tarot_Three_of_Wands.jpg"
   },
   {
-    "name": "4 of Wands",
-    "image": null,
-    "meaning_up": "4 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "4 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Four of Wands",
+    "meaning": "Inspiration, growth, energy of Four of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Four_of_Wands.jpg/400px-RWS_Tarot_Four_of_Wands.jpg"
   },
   {
-    "name": "5 of Wands",
-    "image": null,
-    "meaning_up": "5 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "5 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Five of Wands",
+    "meaning": "Inspiration, growth, energy of Five of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Five_of_Wands.jpg/400px-RWS_Tarot_Five_of_Wands.jpg"
   },
   {
-    "name": "6 of Wands",
-    "image": null,
-    "meaning_up": "6 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "6 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Six of Wands",
+    "meaning": "Inspiration, growth, energy of Six of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Six_of_Wands.jpg/400px-RWS_Tarot_Six_of_Wands.jpg"
   },
   {
-    "name": "7 of Wands",
-    "image": null,
-    "meaning_up": "7 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "7 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Seven of Wands",
+    "meaning": "Inspiration, growth, energy of Seven of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Seven_of_Wands.jpg/400px-RWS_Tarot_Seven_of_Wands.jpg"
   },
   {
-    "name": "8 of Wands",
-    "image": null,
-    "meaning_up": "8 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "8 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Eight of Wands",
+    "meaning": "Inspiration, growth, energy of Eight of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Eight_of_Wands.jpg/400px-RWS_Tarot_Eight_of_Wands.jpg"
   },
   {
-    "name": "9 of Wands",
-    "image": null,
-    "meaning_up": "9 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "9 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Nine of Wands",
+    "meaning": "Inspiration, growth, energy of Nine of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Nine_of_Wands.jpg/400px-RWS_Tarot_Nine_of_Wands.jpg"
   },
   {
-    "name": "10 of Wands",
-    "image": null,
-    "meaning_up": "10 of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "10 of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Ten of Wands",
+    "meaning": "Inspiration, growth, energy of Ten of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ten_of_Wands.jpg/400px-RWS_Tarot_Ten_of_Wands.jpg"
   },
   {
     "name": "Page of Wands",
-    "image": null,
-    "meaning_up": "Page of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Page of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Inspiration, growth, energy of Page of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Page_of_Wands.jpg/400px-RWS_Tarot_Page_of_Wands.jpg"
   },
   {
     "name": "Knight of Wands",
-    "image": null,
-    "meaning_up": "Knight of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Knight of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Inspiration, growth, energy of Knight of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Knight_of_Wands.jpg/400px-RWS_Tarot_Knight_of_Wands.jpg"
   },
   {
     "name": "Queen of Wands",
-    "image": null,
-    "meaning_up": "Queen of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Queen of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Inspiration, growth, energy of Queen of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Queen_of_Wands.jpg/400px-RWS_Tarot_Queen_of_Wands.jpg"
   },
   {
     "name": "King of Wands",
-    "image": null,
-    "meaning_up": "King of Wands meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "King of Wands reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Inspiration, growth, energy of King of Wands.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_King_of_Wands.jpg/400px-RWS_Tarot_King_of_Wands.jpg"
   },
   {
     "name": "Ace of Cups",
-    "image": null,
-    "meaning_up": "Ace of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Ace of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Emotion, relationships, intuition of Ace of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ace_of_Cups.jpg/400px-RWS_Tarot_Ace_of_Cups.jpg"
   },
   {
-    "name": "2 of Cups",
-    "image": null,
-    "meaning_up": "2 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "2 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Two of Cups",
+    "meaning": "Emotion, relationships, intuition of Two of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Two_of_Cups.jpg/400px-RWS_Tarot_Two_of_Cups.jpg"
   },
   {
-    "name": "3 of Cups",
-    "image": null,
-    "meaning_up": "3 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "3 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Three of Cups",
+    "meaning": "Emotion, relationships, intuition of Three of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Three_of_Cups.jpg/400px-RWS_Tarot_Three_of_Cups.jpg"
   },
   {
-    "name": "4 of Cups",
-    "image": null,
-    "meaning_up": "4 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "4 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Four of Cups",
+    "meaning": "Emotion, relationships, intuition of Four of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Four_of_Cups.jpg/400px-RWS_Tarot_Four_of_Cups.jpg"
   },
   {
-    "name": "5 of Cups",
-    "image": null,
-    "meaning_up": "5 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "5 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Five of Cups",
+    "meaning": "Emotion, relationships, intuition of Five of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Five_of_Cups.jpg/400px-RWS_Tarot_Five_of_Cups.jpg"
   },
   {
-    "name": "6 of Cups",
-    "image": null,
-    "meaning_up": "6 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "6 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Six of Cups",
+    "meaning": "Emotion, relationships, intuition of Six of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Six_of_Cups.jpg/400px-RWS_Tarot_Six_of_Cups.jpg"
   },
   {
-    "name": "7 of Cups",
-    "image": null,
-    "meaning_up": "7 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "7 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Seven of Cups",
+    "meaning": "Emotion, relationships, intuition of Seven of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Seven_of_Cups.jpg/400px-RWS_Tarot_Seven_of_Cups.jpg"
   },
   {
-    "name": "8 of Cups",
-    "image": null,
-    "meaning_up": "8 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "8 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Eight of Cups",
+    "meaning": "Emotion, relationships, intuition of Eight of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Eight_of_Cups.jpg/400px-RWS_Tarot_Eight_of_Cups.jpg"
   },
   {
-    "name": "9 of Cups",
-    "image": null,
-    "meaning_up": "9 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "9 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Nine of Cups",
+    "meaning": "Emotion, relationships, intuition of Nine of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Nine_of_Cups.jpg/400px-RWS_Tarot_Nine_of_Cups.jpg"
   },
   {
-    "name": "10 of Cups",
-    "image": null,
-    "meaning_up": "10 of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "10 of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Ten of Cups",
+    "meaning": "Emotion, relationships, intuition of Ten of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ten_of_Cups.jpg/400px-RWS_Tarot_Ten_of_Cups.jpg"
   },
   {
     "name": "Page of Cups",
-    "image": null,
-    "meaning_up": "Page of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Page of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Emotion, relationships, intuition of Page of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Page_of_Cups.jpg/400px-RWS_Tarot_Page_of_Cups.jpg"
   },
   {
     "name": "Knight of Cups",
-    "image": null,
-    "meaning_up": "Knight of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Knight of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Emotion, relationships, intuition of Knight of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Knight_of_Cups.jpg/400px-RWS_Tarot_Knight_of_Cups.jpg"
   },
   {
     "name": "Queen of Cups",
-    "image": null,
-    "meaning_up": "Queen of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Queen of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Emotion, relationships, intuition of Queen of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Queen_of_Cups.jpg/400px-RWS_Tarot_Queen_of_Cups.jpg"
   },
   {
     "name": "King of Cups",
-    "image": null,
-    "meaning_up": "King of Cups meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "King of Cups reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Emotion, relationships, intuition of King of Cups.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_King_of_Cups.jpg/400px-RWS_Tarot_King_of_Cups.jpg"
   },
   {
     "name": "Ace of Swords",
-    "image": null,
-    "meaning_up": "Ace of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Ace of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intellect, conflict, clarity of Ace of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ace_of_Swords.jpg/400px-RWS_Tarot_Ace_of_Swords.jpg"
   },
   {
-    "name": "2 of Swords",
-    "image": null,
-    "meaning_up": "2 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "2 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Two of Swords",
+    "meaning": "Intellect, conflict, clarity of Two of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Two_of_Swords.jpg/400px-RWS_Tarot_Two_of_Swords.jpg"
   },
   {
-    "name": "3 of Swords",
-    "image": null,
-    "meaning_up": "3 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "3 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Three of Swords",
+    "meaning": "Intellect, conflict, clarity of Three of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Three_of_Swords.jpg/400px-RWS_Tarot_Three_of_Swords.jpg"
   },
   {
-    "name": "4 of Swords",
-    "image": null,
-    "meaning_up": "4 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "4 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Four of Swords",
+    "meaning": "Intellect, conflict, clarity of Four of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Four_of_Swords.jpg/400px-RWS_Tarot_Four_of_Swords.jpg"
   },
   {
-    "name": "5 of Swords",
-    "image": null,
-    "meaning_up": "5 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "5 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Five of Swords",
+    "meaning": "Intellect, conflict, clarity of Five of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Five_of_Swords.jpg/400px-RWS_Tarot_Five_of_Swords.jpg"
   },
   {
-    "name": "6 of Swords",
-    "image": null,
-    "meaning_up": "6 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "6 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Six of Swords",
+    "meaning": "Intellect, conflict, clarity of Six of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Six_of_Swords.jpg/400px-RWS_Tarot_Six_of_Swords.jpg"
   },
   {
-    "name": "7 of Swords",
-    "image": null,
-    "meaning_up": "7 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "7 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Seven of Swords",
+    "meaning": "Intellect, conflict, clarity of Seven of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Seven_of_Swords.jpg/400px-RWS_Tarot_Seven_of_Swords.jpg"
   },
   {
-    "name": "8 of Swords",
-    "image": null,
-    "meaning_up": "8 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "8 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Eight of Swords",
+    "meaning": "Intellect, conflict, clarity of Eight of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Eight_of_Swords.jpg/400px-RWS_Tarot_Eight_of_Swords.jpg"
   },
   {
-    "name": "9 of Swords",
-    "image": null,
-    "meaning_up": "9 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "9 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Nine of Swords",
+    "meaning": "Intellect, conflict, clarity of Nine of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Nine_of_Swords.jpg/400px-RWS_Tarot_Nine_of_Swords.jpg"
   },
   {
-    "name": "10 of Swords",
-    "image": null,
-    "meaning_up": "10 of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "10 of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Ten of Swords",
+    "meaning": "Intellect, conflict, clarity of Ten of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ten_of_Swords.jpg/400px-RWS_Tarot_Ten_of_Swords.jpg"
   },
   {
     "name": "Page of Swords",
-    "image": null,
-    "meaning_up": "Page of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Page of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intellect, conflict, clarity of Page of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Page_of_Swords.jpg/400px-RWS_Tarot_Page_of_Swords.jpg"
   },
   {
     "name": "Knight of Swords",
-    "image": null,
-    "meaning_up": "Knight of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Knight of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intellect, conflict, clarity of Knight of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Knight_of_Swords.jpg/400px-RWS_Tarot_Knight_of_Swords.jpg"
   },
   {
     "name": "Queen of Swords",
-    "image": null,
-    "meaning_up": "Queen of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Queen of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intellect, conflict, clarity of Queen of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Queen_of_Swords.jpg/400px-RWS_Tarot_Queen_of_Swords.jpg"
   },
   {
     "name": "King of Swords",
-    "image": null,
-    "meaning_up": "King of Swords meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "King of Swords reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Intellect, conflict, clarity of King of Swords.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_King_of_Swords.jpg/400px-RWS_Tarot_King_of_Swords.jpg"
   },
   {
     "name": "Ace of Pentacles",
-    "image": null,
-    "meaning_up": "Ace of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Ace of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Material, career, abundance of Ace of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ace_of_Pentacles.jpg/400px-RWS_Tarot_Ace_of_Pentacles.jpg"
   },
   {
-    "name": "2 of Pentacles",
-    "image": null,
-    "meaning_up": "2 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "2 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Two of Pentacles",
+    "meaning": "Material, career, abundance of Two of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Two_of_Pentacles.jpg/400px-RWS_Tarot_Two_of_Pentacles.jpg"
   },
   {
-    "name": "3 of Pentacles",
-    "image": null,
-    "meaning_up": "3 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "3 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Three of Pentacles",
+    "meaning": "Material, career, abundance of Three of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Three_of_Pentacles.jpg/400px-RWS_Tarot_Three_of_Pentacles.jpg"
   },
   {
-    "name": "4 of Pentacles",
-    "image": null,
-    "meaning_up": "4 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "4 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Four of Pentacles",
+    "meaning": "Material, career, abundance of Four of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Four_of_Pentacles.jpg/400px-RWS_Tarot_Four_of_Pentacles.jpg"
   },
   {
-    "name": "5 of Pentacles",
-    "image": null,
-    "meaning_up": "5 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "5 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Five of Pentacles",
+    "meaning": "Material, career, abundance of Five of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Five_of_Pentacles.jpg/400px-RWS_Tarot_Five_of_Pentacles.jpg"
   },
   {
-    "name": "6 of Pentacles",
-    "image": null,
-    "meaning_up": "6 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "6 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Six of Pentacles",
+    "meaning": "Material, career, abundance of Six of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Six_of_Pentacles.jpg/400px-RWS_Tarot_Six_of_Pentacles.jpg"
   },
   {
-    "name": "7 of Pentacles",
-    "image": null,
-    "meaning_up": "7 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "7 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Seven of Pentacles",
+    "meaning": "Material, career, abundance of Seven of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Seven_of_Pentacles.jpg/400px-RWS_Tarot_Seven_of_Pentacles.jpg"
   },
   {
-    "name": "8 of Pentacles",
-    "image": null,
-    "meaning_up": "8 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "8 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Eight of Pentacles",
+    "meaning": "Material, career, abundance of Eight of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Eight_of_Pentacles.jpg/400px-RWS_Tarot_Eight_of_Pentacles.jpg"
   },
   {
-    "name": "9 of Pentacles",
-    "image": null,
-    "meaning_up": "9 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "9 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Nine of Pentacles",
+    "meaning": "Material, career, abundance of Nine of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Nine_of_Pentacles.jpg/400px-RWS_Tarot_Nine_of_Pentacles.jpg"
   },
   {
-    "name": "10 of Pentacles",
-    "image": null,
-    "meaning_up": "10 of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "10 of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "name": "Ten of Pentacles",
+    "meaning": "Material, career, abundance of Ten of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Ten_of_Pentacles.jpg/400px-RWS_Tarot_Ten_of_Pentacles.jpg"
   },
   {
     "name": "Page of Pentacles",
-    "image": null,
-    "meaning_up": "Page of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Page of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Material, career, abundance of Page of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Page_of_Pentacles.jpg/400px-RWS_Tarot_Page_of_Pentacles.jpg"
   },
   {
     "name": "Knight of Pentacles",
-    "image": null,
-    "meaning_up": "Knight of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Knight of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Material, career, abundance of Knight of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Knight_of_Pentacles.jpg/400px-RWS_Tarot_Knight_of_Pentacles.jpg"
   },
   {
     "name": "Queen of Pentacles",
-    "image": null,
-    "meaning_up": "Queen of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "Queen of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Material, career, abundance of Queen of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_Queen_of_Pentacles.jpg/400px-RWS_Tarot_Queen_of_Pentacles.jpg"
   },
   {
     "name": "King of Pentacles",
-    "image": null,
-    "meaning_up": "King of Pentacles meaning: Represents traditional interpretation of the card's theme and energy.",
-    "meaning_rev": "King of Pentacles reversed meaning: Indicates blocked or opposite energy, challenges, or inner conflicts."
+    "meaning": "Material, career, abundance of King of Pentacles.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RWS_Tarot_King_of_Pentacles.jpg/400px-RWS_Tarot_King_of_Pentacles.jpg"
   }
 ];
 
