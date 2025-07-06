@@ -1,11 +1,11 @@
-// B_index.js - v1.2.3
+// B_index.js - v1.2.4
 
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 
 const { handleTelegramUpdate } = require("./B_telegram");
-const { simulateButtonClick } = require("./B_simulate-click");
+const { simulateButtonClick } = require("./G_simulate-click");
 
 const app = express();
 app.use(bodyParser.json());
