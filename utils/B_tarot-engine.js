@@ -1,10 +1,10 @@
 // B_tarot-engine.js - v1.1.1
 
 /**
- * Generate interpretation message for a card.
- * @param {object} card - Tarot card object
- * @param {number} index - Card position (1/2/3)
- * @returns {string}
+ * 根据塔罗牌对象和位置，生成解读文本
+ * @param {object} card - 单张牌对象（含 name, meaning, image）
+ * @param {number} index - 牌序位置：1=Past，2=Present，3=Future
+ * @returns {string} 解读信息（含格式化）
  */
 function generateCardMessage(card, index) {
   const positionMap = {
