@@ -1,41 +1,49 @@
-// tarot-session.js - v1.0.10
+// tarot-session.js - v1.1.0
 
 const sessions = new Map();
 
 export function startSession(userId, amount) {
+  const deck = Array.from({ length: 78 }, (_, i) => i);
+  shuffle(deck);
   sessions.set(userId, {
     amount,
-    drawn: {},
-    count: 0
+    deck,
+    cardsDrawn: [],
+    createdAt: Date.now()
   });
 }
 
 export function getCard(userId, index) {
   const session = sessions.get(userId);
-  if (!session || session.drawn[index]) return null;
+  if (!session) return null;
 
-  const usedCards = Object.values(session.drawn).map(c => c.name);
-  let card;
-  do {
-    card = getRandomCard();
-  } while (usedCards.includes(card.name));
+  const cardIndex = session.deck[index];
+  if (typeof cardIndex === 'undefined') return null;
 
-  session.drawn[index] = card;
-  session.count++;
-  return card;
+  session.cardsDrawn.push(cardIndex);
+  return cardIndex;
 }
 
-export function isSessionComplete(userId, specificIndex = null) {
+export function removeCardFromSession(userId, cardIndex) {
   const session = sessions.get(userId);
-  if (!session) return true;
-  if (specificIndex !== null) return !!session.drawn[specificIndex];
-  return session.count >= 3;
+  if (!session) return;
+
+  // 移除指定卡牌，避免重复抽取
+  session.deck = session.deck.filter((i) => i !== cardIndex);
 }
 
-function getRandomCard() {
-  const deck = [...cardData];
-  const randomIndex = Math.floor(Math.random() * deck.length);
-  return deck[randomIndex];
+export function isSessionComplete(userId) {
+  const session = sessions.get(userId);
+  return session && session.cardsDrawn.length >= 3;
 }
 
-import cardData from './card-data.js';
+export function getSession(userId) {
+  return sessions.get(userId);
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
