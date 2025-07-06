@@ -1,25 +1,29 @@
-// B_tarot-engine.js - v1.1.0
-const cards = require("./B_card-data");
+// B_tarot-engine.js - v1.1.1
 
-function getRandomCard() {
-  const index = Math.floor(Math.random() * cards.length);
-  return cards[index];
-}
+/**
+ * Generate interpretation message for a card.
+ * @param {object} card - Tarot card object
+ * @param {number} index - Card position (1/2/3)
+ * @returns {string}
+ */
+function generateCardMessage(card, index) {
+  const positionMap = {
+    1: "🌅 **Past**",
+    2: "🌟 **Present**",
+    3: "🌌 **Future**"
+  };
 
-function getCardById(id) {
-  return cards.find((c) => c.id === id);
-}
+  const positionLabel = positionMap[index] || "🃏 Card";
 
-function formatCardMessage(card, index) {
-  const position = ["Past", "Present", "Future"][index - 1] || `Card ${index}`;
-  const title = `🃏 *${position}: ${card.name}*`;
-  const meaning = `_${card.meaning}_`;
-  const image = card.image ? `[ ](${card.image})` : "";
-  return `${title}\n\n${meaning}${image}`;
+  return `
+${positionLabel}
+**${card.name}**
+_${card.meaning}_
+
+![Card Image](${card.image})
+  `.trim();
 }
 
 module.exports = {
-  getRandomCard,
-  getCardById,
-  formatCardMessage
+  generateCardMessage
 };
