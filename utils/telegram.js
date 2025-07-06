@@ -1,88 +1,93 @@
-// utils/telegram.js - v1.2.4
-
-import fetch from 'node-fetch';
-import cardData from './card-data.js';
-import { startSession, getCard, isSessionComplete } from './tarot-session.js';
+// telegram.js - v1.2.4
+// ✅ 修复测试按钮点击报错问题
+// ✅ 支持开发者手动测试时跳过 session 校验（userId 白名单）
+import axios from "axios";
+import cardData from "./card-data.js";
+import { getCard, startSession, isSessionComplete } from "./tarot-session.js";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-export async function sendMessage(chatId, text, extra = {}) {
-  await fetch(`${API_URL}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, ...extra }),
-  });
+const DEV_WHITELIST = [7685088782]; // ✅ 开发者 userId 白名单
+
+async function sendMessage(chatId, text, extra = {}) {
+  try {
+    await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      ...extra,
+    });
+  } catch (err) {
+    console.error("❌ sendMessage error:", err?.response?.data || err.message);
+  }
 }
 
-export async function sendButtonMessage(chatId, amount) {
-  const keyboard = {
-    inline_keyboard: [
-      [{ text: '🃏 Card 1', callback_data: 'card_1' }],
-      [{ text: '🃏 Card 2', callback_data: 'card_2' }],
-      [{ text: '🃏 Card 3', callback_data: 'card_3' }],
-    ],
+async function editMessageReplyMarkup(chatId, messageId, markup) {
+  try {
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: markup,
+    });
+  } catch (err) {
+    console.error("❌ editReplyMarkup error:", err?.response?.data || err.message);
+  }
+}
+
+async function sendCard(chatId, card) {
+  const caption = `🃏 *${card.name}*\n\n${card.meaning}`;
+  const options = {
+    parse_mode: "Markdown",
   };
 
-  await sendMessage(chatId, `🎴 You've sent ${amount} USDT.\nPlease pick 3 cards one by one:`, {
-    reply_markup: keyboard,
-  });
-
-  startSession(chatId, amount);
-}
-
-export async function handleCallbackQuery(callbackQuery) {
-  const { message, data, from, id } = callbackQuery;
-  const userId = from.id;
-  const messageId = message.message_id;
-  const chatId = message.chat.id;
-
-  const cardIndex = parseInt(data.split('_')[1]) - 1;
-  if (isNaN(cardIndex)) return;
-
-  const card = getCard(userId, cardIndex);
-  if (!card) {
-    await answerCallback(id, '⚠️ Session not found or already completed.');
-    return;
-  }
-
-  const text = `🃏 You picked: *${card.name}*\n_${card.meaning}_`;
-  const imageUrl = card.image;
-
-  await answerCallback(id);
-
-  if (imageUrl) {
-    await sendPhoto(chatId, imageUrl, { caption: text, parse_mode: 'Markdown' });
+  if (card.image) {
+    await axios.post(`${API_URL}/sendPhoto`, {
+      chat_id: chatId,
+      photo: card.image,
+      caption,
+      ...options,
+    });
   } else {
-    await sendMessage(chatId, text, { parse_mode: 'Markdown' });
-  }
-
-  // 自动删除按钮（抽完3张）
-  if (isSessionComplete(userId)) {
-    await editReplyMarkup(chatId, messageId, null);
+    await sendMessage(chatId, caption, options);
   }
 }
 
-async function sendPhoto(chatId, photoUrl, extra = {}) {
-  await fetch(`${API_URL}/sendPhoto`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, photo: photoUrl, ...extra }),
-  });
-}
+export async function handleCallbackQuery(callback) {
+  const userId = callback.from?.id;
+  const messageId = callback.message?.message_id;
+  const chatId = callback.message?.chat?.id || userId;
+  const data = callback.data;
 
-async function editReplyMarkup(chatId, messageId, replyMarkup) {
-  await fetch(`${API_URL}/editMessageReplyMarkup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: replyMarkup }),
-  });
-}
+  if (!userId || !data || !chatId) return;
 
-async function answerCallback(callbackQueryId, text = '') {
-  await fetch(`${API_URL}/answerCallbackQuery`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
-  });
+  const cardIndex = {
+    card_1: 0,
+    card_2: 1,
+    card_3: 2,
+  }[data];
+
+  if (cardIndex === undefined) return;
+
+  // ✅ 如果是开发者测试，跳过 session 校验
+  let card;
+  if (DEV_WHITELIST.includes(userId)) {
+    card = cardData[Math.floor(Math.random() * cardData.length)];
+  } else {
+    const sessionCard = await getCard(userId, cardIndex);
+    if (!sessionCard) {
+      await sendMessage(chatId, "⚠️ Session not found. Please try again later.");
+      return;
+    }
+    card = sessionCard;
+  }
+
+  await sendCard(chatId, card);
+
+  // ✅ 逐张移除按钮，避免重复点击
+  await editMessageReplyMarkup(chatId, messageId, { inline_keyboard: [[]] });
+
+  // ✅ 如果是最后一张牌，附加结束提示
+  if (!DEV_WHITELIST.includes(userId) && (await isSessionComplete(userId))) {
+    await sendMessage(chatId, "🌟 You have drawn 3 cards. Thank you for using Divine Oracle!");
+  }
 }
