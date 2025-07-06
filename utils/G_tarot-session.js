@@ -3,28 +3,35 @@
 const sessions = new Map();
 
 /**
- * 启动一轮新占卜：初始化一个用户的 session。
+ * 创建一个新的占卜 session
  * @param {number} userId - Telegram 用户 ID
+ * @param {number[]} cards - 抽到的三张牌的索引值
+ * @param {number} amount - 付款金额（12 或 30）
  */
-function startSession(userId) {
+function startSession(userId, cards, amount) {
   sessions.set(userId, {
-    cards: [],
-    revealed: []
+    cards,
+    current: 0, // 当前进行到第几张（0~2）
+    amount,
+    createdAt: Date.now()
   });
 }
 
 /**
- * 判断一个用户是否已有 session。
- * @param {number} userId
- * @returns {boolean}
+ * 获取指定用户的当前牌对象（根据索引）
+ * @param {number} userId 
+ * @param {number} index 
+ * @returns {number|null} - 返回卡牌索引值或 null
  */
-function exists(userId) {
-  return sessions.has(userId);
+function getCard(userId, index) {
+  const session = sessions.get(userId);
+  if (!session || index < 0 || index >= session.cards.length) return null;
+  return session.cards[index];
 }
 
 /**
- * 获取当前用户的 session。
- * @param {number} userId
+ * 获取当前 session 结构
+ * @param {number} userId 
  * @returns {object|null}
  */
 function getSession(userId) {
@@ -32,48 +39,39 @@ function getSession(userId) {
 }
 
 /**
- * 判断是否已抽过此牌。
- * @param {number} userId
- * @param {number} index - 第几张牌（1~3）
+ * 检查是否存在有效 session
+ * @param {number} userId 
  * @returns {boolean}
  */
-function isSessionComplete(userId, index) {
-  const session = sessions.get(userId);
-  if (!session) return false;
-  return session.revealed.includes(index);
+function exists(userId) {
+  return sessions.has(userId);
 }
 
 /**
- * 获取某张牌（抽取或返回已抽取）
- * @param {number} userId
- * @param {number} index
- * @returns {object|null}
+ * 判断用户是否已完成所有抽牌
+ * @param {number} userId 
+ * @returns {boolean}
  */
-function getCard(userId, index) {
-  if (!sessions.has(userId)) return null;
-
+function isSessionComplete(userId) {
   const session = sessions.get(userId);
-
-  if (session.cards.length < 3) {
-    while (session.cards.length < 3) {
-      const card = {
-        id: Math.floor(Math.random() * 78)
-      };
-      session.cards.push(card);
-    }
-  }
-
-  const card = session.cards[index - 1];
-  if (!session.revealed.includes(index)) {
-    session.revealed.push(index);
-  }
-
-  return card;
+  if (!session) return true;
+  return session.current >= session.cards.length;
 }
 
 /**
- * 清除 session（暂未使用，可供未来管理功能调用）
- * @param {number} userId
+ * 标记用户已点击一张牌（向前推进一格）
+ * @param {number} userId 
+ */
+function advanceSession(userId) {
+  const session = sessions.get(userId);
+  if (session) {
+    session.current += 1;
+  }
+}
+
+/**
+ * 清除某个用户的 session（用于过期或异常时重置）
+ * @param {number} userId 
  */
 function clearSession(userId) {
   sessions.delete(userId);
@@ -81,9 +79,10 @@ function clearSession(userId) {
 
 module.exports = {
   startSession,
-  exists,
-  getSession,
   getCard,
+  getSession,
+  exists,
   isSessionComplete,
+  advanceSession,
   clearSession
 };
