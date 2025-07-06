@@ -1,6 +1,6 @@
 // telegram.js - v1.2.2 (修复按钮 callback_data 包含金额字段)
 
-import { sendMessage, sendCardButtons, sendCardResult, updateMessageButtons } from "./utils/send-message.js";
+import { sendMessage, sendCardButtons, sendCardResult, updateMessageButtons } from "./send-message.js";
 import { getCard, isSessionComplete, getSession, removeCardFromSession } from "./tarot-session.js";
 import cardData from "./card-data.js";
 
