@@ -1,4 +1,4 @@
-// G_tarot-engine.js - v1.1.3
+// G_tarot-engine.js - v1.1.4
 
 const cards = require("./G_card-data");
 
@@ -22,12 +22,20 @@ function drawRandomCards(count = 3) {
 }
 
 /**
- * 获取牌的解读文本（可自定义风格或多语言）
+ * 获取带位置标签的解读内容
  * @param {object} card - 卡牌对象
+ * @param {number} position - 0: Past, 1: Present, 2: Future
  * @returns {string} - 解读字符串
  */
-function getCardMeaning(card) {
-  return `🃏 *${card.name}*\n\n${card.meaning}`;
+function getCardMeaning(card, position = 0) {
+  const positionMap = {
+    0: "🌒 *Past*",
+    1: "🌕 *Present*",
+    2: "🌘 *Future*"
+  };
+
+  const header = positionMap[position] || "*Unknown Position*";
+  return `${header}\n🃏 *${card.name}*\n\n${card.meaning}`;
 }
 
 module.exports = {
