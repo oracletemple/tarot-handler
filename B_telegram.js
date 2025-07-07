@@ -1,93 +1,73 @@
-// B_telegram.js - v1.2.4
+// B_telegram.js - v1.2.6
 
-const { Telegraf } = require('telegraf');
-const {
-  startSession,
-  getSession,
-  getCard,
-  isSessionComplete
-} = require('./G_tarot-session');
+const axios = require("axios");
+const { getSession, getCard, isSessionComplete } = require("./G_tarot-session");
+const { getRemainingButtons } = require("./G_button-render");
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const RECEIVER_ID = Number(process.env.RECEIVER_ID); // 仅限开发者使用指令
+const TOKEN = process.env.BOT_TOKEN;
+const API = `https://api.telegram.org/bot${TOKEN}`;
 
-const bot = new Telegraf(BOT_TOKEN);
+async function handleTelegramUpdate(update) {
+  if (update.message) {
+    const message = update.message;
+    const userId = message.from.id;
+    const text = message.text;
 
-// ✅ /test123 → 模拟 12 USDT 套餐占卜
-bot.command('test123', async (ctx) => {
-  if (ctx.from.id !== RECEIVER_ID) return;
-  startSession(ctx.from.id, 12);
-  await ctx.reply(
-    '🧙 Your divine reading begins...\nPlease choose your card:',
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '🃏 Card 1', callback_data: 'card_0' },
-          { text: '🃏 Card 2', callback_data: 'card_1' },
-          { text: '🃏 Card 3', callback_data: 'card_2' }
-        ]]
-      }
-    }
-  );
-});
-
-// ✅ /test30 → 模拟 30 USDT 高端套餐占卜
-bot.command('test30', async (ctx) => {
-  if (ctx.from.id !== RECEIVER_ID) return;
-  startSession(ctx.from.id, 30);
-  await ctx.reply(
-    '🧙 Your divine reading begins...\nPlease choose your card:',
-    {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '🃏 Card 1', callback_data: 'card_0' },
-          { text: '🃏 Card 2', callback_data: 'card_1' },
-          { text: '🃏 Card 3', callback_data: 'card_2' }
-        ]]
-      }
-    }
-  );
-});
-
-// ✅ 按钮回调处理
-bot.on('callback_query', async (ctx) => {
-  const userId = ctx.from.id;
-  const messageId = ctx.callbackQuery.message.message_id;
-  const chatId = ctx.chat.id;
-  const data = ctx.callbackQuery.data;
-
-  try {
-    const session = getSession(userId);
-    if (!session) {
-      return ctx.reply('⚠️ Session not found. Please try again later.');
+    if (text === "/test123" && userId === 7685088782) {
+      const simulate = require("./G_simulate-click");
+      await simulate.simulateButtonClick(userId, 1, 12);
+      await simulate.simulateButtonClick(userId, 2, 12);
     }
 
-    const index = parseInt(data.split('_')[1], 10);
-    if (session.drawn.includes(index)) {
-      return ctx.answerCbQuery('You already drew this card.');
-    }
-
-    const card = getCard(userId, index);
-    const amountText = session.amount ? `${session.amount} USDT` : 'N/A USDT';
-
-    await ctx.replyWithMarkdown(`🔮 *${card.name}*\n${card.meaning}\n\n💰 You paid: ${amountText}`);
-
-    if (isSessionComplete(userId)) {
-      await ctx.telegram.editMessageReplyMarkup(chatId, messageId, null, {
-        inline_keyboard: []
-      });
-    } else {
-      await ctx.answerCbQuery('Card drawn!');
-    }
-  } catch (err) {
-    console.error('❌ Callback error:', err.message);
-    ctx.reply('❌ Error: ' + err.message);
+    return;
   }
-});
 
-// ✅ 导出给 webhook 使用
-module.exports = {
-  handleTelegramUpdate: bot.handleUpdate.bind(bot)
-};
+  if (update.callback_query) {
+    const query = update.callback_query;
+    const userId = query.from.id;
+    const data = query.data;
+    const msg = query.message;
+
+    // 1. 删除按钮
+    await axios.post(`${API}/editMessageReplyMarkup`, {
+      chat_id: msg.chat.id,
+      message_id: msg.message_id,
+      reply_markup: null
+    });
+
+    if (!data.startsWith("card_")) return;
+
+    const index = parseInt(data.split("_")[1]);
+    if (isNaN(index)) return;
+
+    try {
+      const card = getCard(userId, index);
+
+      const caption = `✨ You drew *${card.name}*\n\n_${card.meaning}_`;
+      await axios.post(`${API}/sendMessage`, {
+        chat_id: userId,
+        text: caption,
+        parse_mode: "Markdown"
+      });
+
+      const session = getSession(userId);
+      if (!session) return;
+
+      const remainingButtons = getRemainingButtons(session.drawn);
+      if (remainingButtons) {
+        await axios.post(`${API}/sendMessage`, {
+          chat_id: userId,
+          text: "🔮 Choose your next card:",
+          reply_markup: { inline_keyboard: remainingButtons }
+        });
+      }
+    } catch (err) {
+      await axios.post(`${API}/sendMessage`, {
+        chat_id: userId,
+        text: `⚠️ ${err.message || "Unknown error"}`
+      });
+    }
+  }
+}
+
+module.exports = { handleTelegramUpdate };
