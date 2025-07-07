@@ -1,4 +1,4 @@
-// B_index.js - v1.2.4
+// B_index.js - v1.2.5
 
 require("dotenv").config();
 const express = require("express");
@@ -23,15 +23,29 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// ✅ 测试入口：开发者专属 /test123（模拟启动 12 USDT 占卜）
+// ✅ 测试入口：开发者专属 /test123（模拟启动 12 USDT 占卜，全自动三张）
 app.get("/test123", async (req, res) => {
-  const devId = 7685088782; // 仅允许此 ID 调用测试功能
+  const devId = 7685088782;
   try {
+    await simulateButtonClick(devId, 0, 12);
     await simulateButtonClick(devId, 1, 12);
     await simulateButtonClick(devId, 2, 12);
-    res.send("✅ Test session triggered (card 1 & 2).");
+    res.send("✅ Test session triggered (card 1, 2, 3).");
   } catch (err) {
     res.status(500).send("❌ Failed to trigger test session.");
+  }
+});
+
+// ✅ 测试入口：开发者专属 /test30（模拟启动 30 USDT 占卜，全自动三张）
+app.get("/test30", async (req, res) => {
+  const devId = 7685088782;
+  try {
+    await simulateButtonClick(devId, 0, 30);
+    await simulateButtonClick(devId, 1, 30);
+    await simulateButtonClick(devId, 2, 30);
+    res.send("✅ Test session triggered (card 1, 2, 3, amount 30).");
+  } catch (err) {
+    res.status(500).send("❌ Failed to trigger test30.");
   }
 });
 
