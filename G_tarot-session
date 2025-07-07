@@ -1,4 +1,4 @@
-// G_tarot-session.js - v1.1.4
+// G_tarot-session.js - v1.1.5
 
 const sessions = new Map();
 
@@ -6,7 +6,7 @@ function startSession(userId, amount) {
   const cards = Array.from({ length: 3 }, () => null); // 占位符
   const session = {
     userId,
-    amount,
+    amount, // ✅ 记录套餐档位
     cards,
     drawn: [],
     createdAt: Date.now()
