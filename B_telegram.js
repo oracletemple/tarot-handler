@@ -9,15 +9,11 @@ const {
 } = require('./G_tarot-session');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const RECEIVER_ID = Number(process.env.RECEIVER_ID); // 7685088782
+const RECEIVER_ID = Number(process.env.RECEIVER_ID); // 仅限开发者使用指令
 
 const bot = new Telegraf(BOT_TOKEN);
 
-bot.start((ctx) => {
-  ctx.reply('Welcome to the Divine Oracle Bot 🌟');
-});
-
-// 🧪 测试入口 /test123 → 模拟 12 USDT 套餐
+// ✅ /test123 → 模拟 12 USDT 套餐占卜
 bot.command('test123', async (ctx) => {
   if (ctx.from.id !== RECEIVER_ID) return;
   startSession(ctx.from.id, 12);
@@ -36,7 +32,7 @@ bot.command('test123', async (ctx) => {
   );
 });
 
-// 🧪 测试入口 /test30 → 模拟 30 USDT 高端套餐
+// ✅ /test30 → 模拟 30 USDT 高端套餐占卜
 bot.command('test30', async (ctx) => {
   if (ctx.from.id !== RECEIVER_ID) return;
   startSession(ctx.from.id, 30);
@@ -55,7 +51,7 @@ bot.command('test30', async (ctx) => {
   );
 });
 
-// 处理按钮点击
+// ✅ 按钮回调处理
 bot.on('callback_query', async (ctx) => {
   const userId = ctx.from.id;
   const messageId = ctx.callbackQuery.message.message_id;
@@ -91,4 +87,7 @@ bot.on('callback_query', async (ctx) => {
   }
 });
 
-module.exports = bot;
+// ✅ 导出给 webhook 使用
+module.exports = {
+  handleTelegramUpdate: bot.handleUpdate.bind(bot)
+};
