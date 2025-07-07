@@ -1,5 +1,6 @@
-// G_simulate-click.js - v1.1.3
+// G_simulate-click.js - v1.1.4
 
+require("dotenv").config(); // ✅ 加入这一行，确保能读取 .env
 const axios = require("axios");
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
