@@ -1,105 +1,94 @@
 // B_telegram.js - v1.2.4
 
-const axios = require('axios');
+const { Telegraf } = require('telegraf');
+const {
+  startSession,
+  getSession,
+  getCard,
+  isSessionComplete
+} = require('./G_tarot-session');
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const { startSession, getCard, isSessionComplete } = require('./G_tarot-session');
+const RECEIVER_ID = Number(process.env.RECEIVER_ID); // 7685088782
 
-const OWNER_ID = 7685088782;
+const bot = new Telegraf(BOT_TOKEN);
 
-async function sendMessage(chatId, text, buttons) {
-  const payload = {
-    chat_id: chatId,
-    text,
-    parse_mode: 'Markdown',
-  };
+bot.start((ctx) => {
+  ctx.reply('Welcome to the Divine Oracle Bot 🌟');
+});
 
-  if (buttons) {
-    payload.reply_markup = {
-      inline_keyboard: [buttons.map((btn, i) => ({
-        text: `🃏 Card ${i + 1}`,
-        callback_data: `card_${i}`,
-      }))]
-    };
-  }
-
-  await axios.post(`${TELEGRAM_API}/sendMessage`, payload);
-}
-
-async function answerCallbackQuery(callbackQueryId, text) {
-  await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-    callback_query_id: callbackQueryId,
-    text,
-    show_alert: false
-  });
-}
-
-async function editMessage(chatId, messageId, newText) {
-  await axios.post(`${TELEGRAM_API}/editMessageText`, {
-    chat_id: chatId,
-    message_id: messageId,
-    text: newText,
-    parse_mode: 'Markdown'
-  });
-}
-
-async function handleTelegramUpdate(update) {
-  // Handle button callbacks
-  if (update.callback_query) {
-    const { id, from, data, message } = update.callback_query;
-    const userId = from.id;
-    const messageId = message.message_id;
-    const cardIndex = parseInt(data.split('_')[1], 10);
-
-    try {
-      const card = getCard(userId, cardIndex);
-
-      if (!card) {
-        await answerCallbackQuery(id, '⚠️ Invalid card or session expired.');
-        return;
+// 🧪 测试入口 /test123 → 模拟 12 USDT 套餐
+bot.command('test123', async (ctx) => {
+  if (ctx.from.id !== RECEIVER_ID) return;
+  startSession(ctx.from.id, 12);
+  await ctx.reply(
+    '🧙 Your divine reading begins...\nPlease choose your card:',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🃏 Card 1', callback_data: 'card_0' },
+          { text: '🃏 Card 2', callback_data: 'card_1' },
+          { text: '🃏 Card 3', callback_data: 'card_2' }
+        ]]
       }
+    }
+  );
+});
 
-      const { name, meaning, image, amount, cards } = card;
-      const imageText = image ? `🖼 [Card Image](${image})\n` : '';
-      const result = `🔮 *${name}*\n${imageText}${meaning}\n\n💰 *You paid:* ${amount ?? 'N/A'} USDT`;
-
-      await answerCallbackQuery(id, `✨ You selected Card ${cardIndex + 1}`);
-      await editMessage(userId, messageId, result);
-
-      if (isSessionComplete(userId)) {
-        // Hide all buttons by editing message again
-        await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-          chat_id: userId,
-          message_id: messageId,
-          reply_markup: { inline_keyboard: [] }
-        });
+// 🧪 测试入口 /test30 → 模拟 30 USDT 高端套餐
+bot.command('test30', async (ctx) => {
+  if (ctx.from.id !== RECEIVER_ID) return;
+  startSession(ctx.from.id, 30);
+  await ctx.reply(
+    '🧙 Your divine reading begins...\nPlease choose your card:',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🃏 Card 1', callback_data: 'card_0' },
+          { text: '🃏 Card 2', callback_data: 'card_1' },
+          { text: '🃏 Card 3', callback_data: 'card_2' }
+        ]]
       }
+    }
+  );
+});
 
-    } catch (err) {
-      console.error('❌ Callback error:', err.message);
-      await answerCallbackQuery(id, '⚠️ An error occurred. Please try again.');
+// 处理按钮点击
+bot.on('callback_query', async (ctx) => {
+  const userId = ctx.from.id;
+  const messageId = ctx.callbackQuery.message.message_id;
+  const chatId = ctx.chat.id;
+  const data = ctx.callbackQuery.data;
+
+  try {
+    const session = getSession(userId);
+    if (!session) {
+      return ctx.reply('⚠️ Session not found. Please try again later.');
     }
 
-    return;
+    const index = parseInt(data.split('_')[1], 10);
+    if (session.drawn.includes(index)) {
+      return ctx.answerCbQuery('You already drew this card.');
+    }
+
+    const card = getCard(userId, index);
+    const amountText = session.amount ? `${session.amount} USDT` : 'N/A USDT';
+
+    await ctx.replyWithMarkdown(`🔮 *${card.name}*\n${card.meaning}\n\n💰 You paid: ${amountText}`);
+
+    if (isSessionComplete(userId)) {
+      await ctx.telegram.editMessageReplyMarkup(chatId, messageId, null, {
+        inline_keyboard: []
+      });
+    } else {
+      await ctx.answerCbQuery('Card drawn!');
+    }
+  } catch (err) {
+    console.error('❌ Callback error:', err.message);
+    ctx.reply('❌ Error: ' + err.message);
   }
+});
 
-  // Handle commands like /start and /test123
-  if (update.message && update.message.text) {
-    const { chat, text, from } = update.message;
-
-    if (text === '/test123' && from.id === OWNER_ID) {
-      console.log('🧪 Triggering test session for developer...');
-      startSession(chat.id, 12);
-
-      await sendMessage(chat.id, '🧙 *Your divine reading begins...*\nPlease choose your card:', [0, 1, 2]);
-      return;
-    }
-
-    if (text === '/start') {
-      await sendMessage(chat.id, '✨ Welcome to the Divine Oracle.\nPlease send a payment to begin your reading.');
-      return;
-    }
-  }
-}
-
-module.exports = { handleTelegramUpdate };
+module.exports = bot;
