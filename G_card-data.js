@@ -1,392 +1,121 @@
+// card-data.js - v1.0.0
+// 78 Tarot cards (Rider-Waite deck) - Placeholder version
+
 module.exports = [
   {
-    "name": "The Fool",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Fool",
+    meaning: "This card signifies new beginnings, adventures, and innocence.",
+    image: "https://upload.wikimedia.org/wikipedia/en/9/90/RWS_Tarot_00_Fool.jpg"
   },
   {
-    "name": "The Magician",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Magician",
+    meaning: "This card represents manifestation, power, and inspired action.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/de/RWS_Tarot_01_Magician.jpg"
   },
   {
-    "name": "The High Priestess",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The High Priestess",
+    meaning: "This card symbolizes intuition, secrets, and divine feminine.",
+    image: "https://upload.wikimedia.org/wikipedia/en/8/88/RWS_Tarot_02_High_Priestess.jpg"
   },
   {
-    "name": "The Empress",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Empress",
+    meaning: "This card suggests abundance, fertility, and nurturing.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/d2/RWS_Tarot_03_Empress.jpg"
   },
   {
-    "name": "The Emperor",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Emperor",
+    meaning: "This card represents authority, structure, and stability.",
+    image: "https://upload.wikimedia.org/wikipedia/en/c/c3/RWS_Tarot_04_Emperor.jpg"
   },
   {
-    "name": "The Hierophant",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Hierophant",
+    meaning: "This card signifies tradition, conformity, and spiritual wisdom.",
+    image: "https://upload.wikimedia.org/wikipedia/en/8/8d/RWS_Tarot_05_Hierophant.jpg"
   },
   {
-    "name": "The Lovers",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Lovers",
+    meaning: "This card indicates love, harmony, and relationships.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/db/RWS_Tarot_06_Lovers.jpg"
   },
   {
-    "name": "The Chariot",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Chariot",
+    meaning: "This card suggests control, determination, and victory.",
+    image: "https://upload.wikimedia.org/wikipedia/en/3/3a/The_Chariot.jpg"
   },
   {
-    "name": "Strength",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "Strength",
+    meaning: "This card symbolizes courage, patience, and inner strength.",
+    image: "https://upload.wikimedia.org/wikipedia/en/f/f5/RWS_Tarot_08_Strength.jpg"
   },
   {
-    "name": "The Hermit",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Hermit",
+    meaning: "This card indicates introspection, solitude, and inner guidance.",
+    image: "https://upload.wikimedia.org/wikipedia/en/4/4d/RWS_Tarot_09_Hermit.jpg"
   },
   {
-    "name": "Wheel of Fortune",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "Wheel of Fortune",
+    meaning: "This card represents fate, cycles, and turning points.",
+    image: "https://upload.wikimedia.org/wikipedia/en/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg"
   },
   {
-    "name": "Justice",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "Justice",
+    meaning: "This card symbolizes fairness, truth, and law.",
+    image: "https://upload.wikimedia.org/wikipedia/en/e/e0/RWS_Tarot_11_Justice.jpg"
   },
   {
-    "name": "The Hanged Man",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Hanged Man",
+    meaning: "This card suggests sacrifice, release, and new perspectives.",
+    image: "https://upload.wikimedia.org/wikipedia/en/2/2b/RWS_Tarot_12_Hanged_Man.jpg"
   },
   {
-    "name": "Death",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "Death",
+    meaning: "This card signifies transformation, endings, and rebirth.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/d7/RWS_Tarot_13_Death.jpg"
   },
   {
-    "name": "Temperance",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "Temperance",
+    meaning: "This card indicates balance, moderation, and healing.",
+    image: "https://upload.wikimedia.org/wikipedia/en/f/f8/RWS_Tarot_14_Temperance.jpg"
   },
   {
-    "name": "The Devil",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Devil",
+    meaning: "This card represents addiction, materialism, and shadow self.",
+    image: "https://upload.wikimedia.org/wikipedia/en/5/55/RWS_Tarot_15_Devil.jpg"
   },
   {
-    "name": "The Tower",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Tower",
+    meaning: "This card symbolizes upheaval, sudden change, and awakening.",
+    image: "https://upload.wikimedia.org/wikipedia/en/5/53/RWS_Tarot_16_Tower.jpg"
   },
   {
-    "name": "The Star",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Star",
+    meaning: "This card suggests hope, inspiration, and renewal.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/db/RWS_Tarot_17_Star.jpg"
   },
   {
-    "name": "The Moon",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Moon",
+    meaning: "This card represents illusion, intuition, and dreams.",
+    image: "https://upload.wikimedia.org/wikipedia/en/7/7f/RWS_Tarot_18_Moon.jpg"
   },
   {
-    "name": "The Sun",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
+    name: "The Sun",
+    meaning: "This card indicates joy, success, and vitality.",
+    image: "https://upload.wikimedia.org/wikipedia/en/1/17/RWS_Tarot_19_Sun.jpg"
   },
   {
-    "name": "Judgement",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
-  },
-  {
-    "name": "The World",
-    "meaning": "Placeholder meaning for Major Arcana.",
-    "image": null
-  },
-  {
-    "name": "1 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 1)",
-    "image": null
-  },
-  {
-    "name": "2 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 2)",
-    "image": null
-  },
-  {
-    "name": "3 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 3)",
-    "image": null
-  },
-  {
-    "name": "4 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 4)",
-    "image": null
-  },
-  {
-    "name": "5 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 5)",
-    "image": null
-  },
-  {
-    "name": "6 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 6)",
-    "image": null
-  },
-  {
-    "name": "7 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 7)",
-    "image": null
-  },
-  {
-    "name": "8 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 8)",
-    "image": null
-  },
-  {
-    "name": "9 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 9)",
-    "image": null
-  },
-  {
-    "name": "10 of Wands",
-    "meaning": "Creativity, passion, ambition (Card 10)",
-    "image": null
-  },
-  {
-    "name": "Page of Wands",
-    "meaning": "Creativity, passion, ambition (Court card: Page)",
-    "image": null
-  },
-  {
-    "name": "Knight of Wands",
-    "meaning": "Creativity, passion, ambition (Court card: Knight)",
-    "image": null
-  },
-  {
-    "name": "Queen of Wands",
-    "meaning": "Creativity, passion, ambition (Court card: Queen)",
-    "image": null
-  },
-  {
-    "name": "King of Wands",
-    "meaning": "Creativity, passion, ambition (Court card: King)",
-    "image": null
-  },
-  {
-    "name": "1 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 1)",
-    "image": null
-  },
-  {
-    "name": "2 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 2)",
-    "image": null
-  },
-  {
-    "name": "3 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 3)",
-    "image": null
-  },
-  {
-    "name": "4 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 4)",
-    "image": null
-  },
-  {
-    "name": "5 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 5)",
-    "image": null
-  },
-  {
-    "name": "6 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 6)",
-    "image": null
-  },
-  {
-    "name": "7 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 7)",
-    "image": null
-  },
-  {
-    "name": "8 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 8)",
-    "image": null
-  },
-  {
-    "name": "9 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 9)",
-    "image": null
-  },
-  {
-    "name": "10 of Cups",
-    "meaning": "Emotions, intuition, relationships (Card 10)",
-    "image": null
-  },
-  {
-    "name": "Page of Cups",
-    "meaning": "Emotions, intuition, relationships (Court card: Page)",
-    "image": null
-  },
-  {
-    "name": "Knight of Cups",
-    "meaning": "Emotions, intuition, relationships (Court card: Knight)",
-    "image": null
-  },
-  {
-    "name": "Queen of Cups",
-    "meaning": "Emotions, intuition, relationships (Court card: Queen)",
-    "image": null
-  },
-  {
-    "name": "King of Cups",
-    "meaning": "Emotions, intuition, relationships (Court card: King)",
-    "image": null
-  },
-  {
-    "name": "1 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 1)",
-    "image": null
-  },
-  {
-    "name": "2 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 2)",
-    "image": null
-  },
-  {
-    "name": "3 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 3)",
-    "image": null
-  },
-  {
-    "name": "4 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 4)",
-    "image": null
-  },
-  {
-    "name": "5 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 5)",
-    "image": null
-  },
-  {
-    "name": "6 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 6)",
-    "image": null
-  },
-  {
-    "name": "7 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 7)",
-    "image": null
-  },
-  {
-    "name": "8 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 8)",
-    "image": null
-  },
-  {
-    "name": "9 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 9)",
-    "image": null
-  },
-  {
-    "name": "10 of Swords",
-    "meaning": "Thoughts, conflict, clarity (Card 10)",
-    "image": null
-  },
-  {
-    "name": "Page of Swords",
-    "meaning": "Thoughts, conflict, clarity (Court card: Page)",
-    "image": null
-  },
-  {
-    "name": "Knight of Swords",
-    "meaning": "Thoughts, conflict, clarity (Court card: Knight)",
-    "image": null
-  },
-  {
-    "name": "Queen of Swords",
-    "meaning": "Thoughts, conflict, clarity (Court card: Queen)",
-    "image": null
-  },
-  {
-    "name": "King of Swords",
-    "meaning": "Thoughts, conflict, clarity (Court card: King)",
-    "image": null
-  },
-  {
-    "name": "1 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 1)",
-    "image": null
-  },
-  {
-    "name": "2 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 2)",
-    "image": null
-  },
-  {
-    "name": "3 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 3)",
-    "image": null
-  },
-  {
-    "name": "4 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 4)",
-    "image": null
-  },
-  {
-    "name": "5 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 5)",
-    "image": null
-  },
-  {
-    "name": "6 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 6)",
-    "image": null
-  },
-  {
-    "name": "7 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 7)",
-    "image": null
-  },
-  {
-    "name": "8 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 8)",
-    "image": null
-  },
-  {
-    "name": "9 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 9)",
-    "image": null
-  },
-  {
-    "name": "10 of Pentacles",
-    "meaning": "Material wealth, career, health (Card 10)",
-    "image": null
-  },
-  {
-    "name": "Page of Pentacles",
-    "meaning": "Material wealth, career, health (Court card: Page)",
-    "image": null
-  },
-  {
-    "name": "Knight of Pentacles",
-    "meaning": "Material wealth, career, health (Court card: Knight)",
-    "image": null
-  },
-  {
-    "name": "Queen of Pentacles",
-    "meaning": "Material wealth, career, health (Court card: Queen)",
-    "image": null
-  },
-  {
-    "name": "King of Pentacles",
-    "meaning": "Material wealth, career, health (Court card: King)",
-    "image": null
-  }
+    name: "Judgement",
+    meaning: "This card symbolizes reflection, reckoning, and inner calling.",
+    image: "https://upload.wikimedia.org/wikipedia/en/d/dd/RWS_Tarot_20_Judgement.jpg"
+  },
+  {
+    name: "The World",
+    meaning: "This card represents completion, achievement, and wholeness.",
+    image: "https://upload.wikimedia.org/wikipedia/en/f/ff/RWS_Tarot_21_World.jpg"
+  },
+  // The following are Minor Arcana placeholders
+  ...Array.from({ length: 56 }, (_, i) => ({
+    name: `Minor Arcana ${i + 1}`,
+    meaning: "This is a placeholder meaning for the Minor Arcana card.",
+    image: null
+  }))
 ];
