@@ -1,121 +1,83 @@
-// card-data.js - v1.0.0
-// 78 Tarot cards (Rider-Waite deck) - Placeholder version
+// card-data.js - v1.0.0（完整版示例，暂用占位内容）
 
 module.exports = [
   {
+    id: 0,
     name: "The Fool",
-    meaning: "This card signifies new beginnings, adventures, and innocence.",
+    meaning: "A new beginning. Take a leap of faith.",
     image: "https://upload.wikimedia.org/wikipedia/en/9/90/RWS_Tarot_00_Fool.jpg"
   },
   {
+    id: 1,
     name: "The Magician",
-    meaning: "This card represents manifestation, power, and inspired action.",
+    meaning: "You have the power to manifest your desires.",
     image: "https://upload.wikimedia.org/wikipedia/en/d/de/RWS_Tarot_01_Magician.jpg"
   },
   {
+    id: 2,
     name: "The High Priestess",
-    meaning: "This card symbolizes intuition, secrets, and divine feminine.",
+    meaning: "Trust your intuition and inner wisdom.",
     image: "https://upload.wikimedia.org/wikipedia/en/8/88/RWS_Tarot_02_High_Priestess.jpg"
   },
   {
+    id: 3,
     name: "The Empress",
-    meaning: "This card suggests abundance, fertility, and nurturing.",
+    meaning: "Nurturing, fertility, and abundance.",
     image: "https://upload.wikimedia.org/wikipedia/en/d/d2/RWS_Tarot_03_Empress.jpg"
   },
   {
+    id: 4,
     name: "The Emperor",
-    meaning: "This card represents authority, structure, and stability.",
+    meaning: "Leadership, structure, and authority.",
     image: "https://upload.wikimedia.org/wikipedia/en/c/c3/RWS_Tarot_04_Emperor.jpg"
   },
   {
+    id: 5,
     name: "The Hierophant",
-    meaning: "This card signifies tradition, conformity, and spiritual wisdom.",
+    meaning: "Tradition and spiritual guidance.",
     image: "https://upload.wikimedia.org/wikipedia/en/8/8d/RWS_Tarot_05_Hierophant.jpg"
   },
   {
+    id: 6,
     name: "The Lovers",
-    meaning: "This card indicates love, harmony, and relationships.",
+    meaning: "Choices in love and relationships.",
     image: "https://upload.wikimedia.org/wikipedia/en/d/db/RWS_Tarot_06_Lovers.jpg"
   },
   {
+    id: 7,
     name: "The Chariot",
-    meaning: "This card suggests control, determination, and victory.",
+    meaning: "Victory through willpower and discipline.",
     image: "https://upload.wikimedia.org/wikipedia/en/3/3a/The_Chariot.jpg"
   },
   {
+    id: 8,
     name: "Strength",
-    meaning: "This card symbolizes courage, patience, and inner strength.",
+    meaning: "Courage and inner strength.",
     image: "https://upload.wikimedia.org/wikipedia/en/f/f5/RWS_Tarot_08_Strength.jpg"
   },
   {
+    id: 9,
     name: "The Hermit",
-    meaning: "This card indicates introspection, solitude, and inner guidance.",
+    meaning: "Solitude and inner reflection.",
     image: "https://upload.wikimedia.org/wikipedia/en/4/4d/RWS_Tarot_09_Hermit.jpg"
   },
   {
+    id: 10,
     name: "Wheel of Fortune",
-    meaning: "This card represents fate, cycles, and turning points.",
+    meaning: "Change, cycles, and destiny.",
     image: "https://upload.wikimedia.org/wikipedia/en/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg"
   },
   {
+    id: 11,
     name: "Justice",
-    meaning: "This card symbolizes fairness, truth, and law.",
+    meaning: "Fairness, truth, and law.",
     image: "https://upload.wikimedia.org/wikipedia/en/e/e0/RWS_Tarot_11_Justice.jpg"
   },
   {
+    id: 12,
     name: "The Hanged Man",
-    meaning: "This card suggests sacrifice, release, and new perspectives.",
+    meaning: "Pause and a new perspective.",
     image: "https://upload.wikimedia.org/wikipedia/en/2/2b/RWS_Tarot_12_Hanged_Man.jpg"
-  },
-  {
-    name: "Death",
-    meaning: "This card signifies transformation, endings, and rebirth.",
-    image: "https://upload.wikimedia.org/wikipedia/en/d/d7/RWS_Tarot_13_Death.jpg"
-  },
-  {
-    name: "Temperance",
-    meaning: "This card indicates balance, moderation, and healing.",
-    image: "https://upload.wikimedia.org/wikipedia/en/f/f8/RWS_Tarot_14_Temperance.jpg"
-  },
-  {
-    name: "The Devil",
-    meaning: "This card represents addiction, materialism, and shadow self.",
-    image: "https://upload.wikimedia.org/wikipedia/en/5/55/RWS_Tarot_15_Devil.jpg"
-  },
-  {
-    name: "The Tower",
-    meaning: "This card symbolizes upheaval, sudden change, and awakening.",
-    image: "https://upload.wikimedia.org/wikipedia/en/5/53/RWS_Tarot_16_Tower.jpg"
-  },
-  {
-    name: "The Star",
-    meaning: "This card suggests hope, inspiration, and renewal.",
-    image: "https://upload.wikimedia.org/wikipedia/en/d/db/RWS_Tarot_17_Star.jpg"
-  },
-  {
-    name: "The Moon",
-    meaning: "This card represents illusion, intuition, and dreams.",
-    image: "https://upload.wikimedia.org/wikipedia/en/7/7f/RWS_Tarot_18_Moon.jpg"
-  },
-  {
-    name: "The Sun",
-    meaning: "This card indicates joy, success, and vitality.",
-    image: "https://upload.wikimedia.org/wikipedia/en/1/17/RWS_Tarot_19_Sun.jpg"
-  },
-  {
-    name: "Judgement",
-    meaning: "This card symbolizes reflection, reckoning, and inner calling.",
-    image: "https://upload.wikimedia.org/wikipedia/en/d/dd/RWS_Tarot_20_Judgement.jpg"
-  },
-  {
-    name: "The World",
-    meaning: "This card represents completion, achievement, and wholeness.",
-    image: "https://upload.wikimedia.org/wikipedia/en/f/ff/RWS_Tarot_21_World.jpg"
-  },
-  // The following are Minor Arcana placeholders
-  ...Array.from({ length: 56 }, (_, i) => ({
-    name: `Minor Arcana ${i + 1}`,
-    meaning: "This is a placeholder meaning for the Minor Arcana card.",
-    image: null
-  }))
+  }
+  // 可继续扩展到 78 张
 ];
