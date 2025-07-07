@@ -2,94 +2,152 @@
 
 const axios = require("axios");
 const { getSession, getCard, isSessionComplete } = require("./G_tarot-session");
+const { getCardMeaning } = require("./G_tarot-engine");
 const { renderRemainingButtons } = require("./G_button-render");
-const { sendSpiritualAddons } = require("./G_spiritual-addons");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 /**
- * 处理 Telegram 回调按钮逻辑
+ * 主处理函数：处理 Telegram Webhook Update
  */
-async function handleCallback(callback) {
-  const userId = callback.from.id;
-  const messageId = callback.message.message_id;
-  const chatId = callback.message.chat.id;
-  const data = callback.data;
+async function handleTelegramUpdate(update) {
+  if (update.message && update.message.text) {
+    const userId = update.message.from.id;
+    const text = update.message.text.trim();
 
-  // 匹配格式 card_0_12 / card_2_30 等
-  const match = data.match(/^card_(\d)_(\d{2})$/);
-  if (!match) return;
+    // 忽略一切非 /test123 的文本（测试指令由 B_index 控制）
+    if (text.startsWith("/")) {
+      console.log(`ℹ️ Ignored command: ${text}`);
+    }
+  }
 
-  const cardIndex = parseInt(match[1], 10);
-  const amount = parseInt(match[2], 10);
+  if (update.callback_query) {
+    const { id, from, message, data } = update.callback_query;
+    const userId = from.id;
+    const messageId = message.message_id;
+    const chatId = message.chat.id;
 
-  try {
+    if (!data.startsWith("card_")) return;
+
+    const parts = data.split("_");
+    const cardIndex = parseInt(parts[1], 10);
+    const amount = parseInt(parts[2], 10);
+
     const session = getSession(userId);
     if (!session) {
-      await sendMessage(chatId, "⚠️ Session not found. Please try again later.");
+      await answerCallback(id, "⚠️ Session not found. Please try again later.");
       return;
     }
 
     if (session.drawn.includes(cardIndex)) {
-      await sendMessage(chatId, "⚠️ You've already drawn this card.");
+      await answerCallback(id, "⚠️ You've already drawn this card.");
       return;
     }
 
-    // 获取当前抽到的牌
-    const card = getCard(userId, cardIndex);
+    try {
+      const card = getCard(userId, cardIndex);
+      const interpretation = getCardMeaning(card, cardIndex); // 👈 新版结构
 
-    // 推送该卡片内容
-    const position = ["Past", "Present", "Future"][cardIndex] || "Card";
-    const imageUrl = card.image || null;
-    const meaning = card.meaning || "🔮 Mysterious forces surround this card...";
+      // 更新该牌位置消息
+      await sendMessage(chatId, interpretation);
 
-    let text = `✨ <b>${position}</b> Card\n<b>${card.name}</b>\n${meaning}`;
-    await sendPhotoOrText(chatId, text, imageUrl);
+      // 更新按钮（隐藏已抽）
+      const updatedButtons = renderRemainingButtons(cardIndex, session);
+      await editMessageReplyMarkup(chatId, messageId, updatedButtons);
 
-    // 更新按钮，仅保留未抽卡
-    await editReplyMarkup(chatId, messageId, renderRemainingButtons(session.drawn, amount));
+      // 若全部抽完，追加灵性模块
+      if (isSessionComplete(userId)) {
+        await sendMessage(chatId, `🌟 All cards revealed.\nNow aligning spiritual energies...`);
+        await sendMessage(chatId, generateSpiritGuide()); // 守护灵
+        await sendMessage(chatId, generateLuckyHints()); // 幸运色数字
+        await sendMessage(chatId, generateMoonAdvice()); // 月亮建议
+      }
 
-    // 如果三张已抽完，自动推送附加灵性内容
-    if (isSessionComplete(userId)) {
-      await sendSpiritualAddons(chatId);
+      await answerCallback(id);
+    } catch (err) {
+      console.error("❌ Error handling callback_query:", err);
+      await answerCallback(id, "❌ Failed to draw card.");
     }
-
-  } catch (err) {
-    console.error("❌ Callback error:", err.message);
-    await sendMessage(chatId, "⚠️ Error occurred while processing your card. Please try again.");
   }
 }
 
-// ========= 基础发送函数 ========= //
-
-async function sendMessage(chatId, text) {
-  await axios.post(`${API_URL}/sendMessage`, {
-    chat_id: chatId,
-    text,
-    parse_mode: "HTML"
-  });
-}
-
-async function sendPhotoOrText(chatId, text, imageUrl = null) {
-  if (imageUrl) {
-    await axios.post(`${API_URL}/sendPhoto`, {
-      chat_id: chatId,
-      photo: imageUrl,
-      caption: text,
-      parse_mode: "HTML"
+/**
+ * 回答按钮点击回调（可选提示）
+ */
+async function answerCallback(callbackId, text) {
+  try {
+    await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
+      callback_query_id: callbackId,
+      text,
+      show_alert: !!text
     });
-  } else {
-    await sendMessage(chatId, text);
+  } catch (err) {
+    console.error("❌ Failed to answer callback:", err.message);
   }
 }
 
-async function editReplyMarkup(chatId, messageId, replyMarkup) {
-  await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: replyMarkup
-  });
+/**
+ * 发送消息
+ */
+async function sendMessage(chatId, text) {
+  try {
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown"
+    });
+  } catch (err) {
+    console.error("❌ Failed to send message:", err.message);
+  }
 }
 
-module.exports = { handleCallback };
+/**
+ * 编辑按钮区域（隐藏已抽）
+ */
+async function editMessageReplyMarkup(chatId, messageId, buttons) {
+  try {
+    await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: {
+        inline_keyboard: buttons
+      }
+    });
+  } catch (err) {
+    console.error("❌ Failed to edit buttons:", err.message);
+  }
+}
+
+// 灵性模块生成（可拆分为独立模块）
+function generateSpiritGuide() {
+  const guides = ["🦉 Owl", "🦋 Butterfly", "🐺 Wolf", "🐍 Snake", "🦄 Unicorn"];
+  const meanings = [
+    "Wisdom from the unseen.",
+    "Transformation is unfolding.",
+    "Trust your instincts.",
+    "Shed the old, embrace the new.",
+    "Embrace the magic within."
+  ];
+  const i = Math.floor(Math.random() * guides.length);
+  return `🧚 Your Spirit Guide: *${guides[i]}*\n${meanings[i]}`;
+}
+
+function generateLuckyHints() {
+  const colors = ["Violet", "Gold", "Turquoise", "Emerald", "Crimson"];
+  const numbers = [3, 7, 9, 11, 21];
+  const i = Math.floor(Math.random() * colors.length);
+  return `🎨 Lucky Color: *${colors[i]}*\n🔢 Lucky Number: *${numbers[i]}*`;
+}
+
+function generateMoonAdvice() {
+  const advices = [
+    "🌑 New Moon: Set your intentions.",
+    "🌓 First Quarter: Take action.",
+    "🌕 Full Moon: Release and celebrate.",
+    "🌗 Last Quarter: Reflect and renew."
+  ];
+  return `🌙 Moon Message: ${advices[Math.floor(Math.random() * advices.length)]}`;
+}
+
+module.exports = { handleTelegramUpdate };
