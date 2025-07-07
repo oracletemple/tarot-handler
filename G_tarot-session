@@ -6,7 +6,7 @@ function startSession(userId, amount) {
   const cards = Array.from({ length: 3 }, () => null); // 占位符
   const session = {
     userId,
-    amount, // ✅ 记录套餐档位
+    amount,
     cards,
     drawn: [],
     createdAt: Date.now()
@@ -30,7 +30,7 @@ function getCard(userId, index) {
   if (!session.cards || !Array.isArray(session.cards)) throw new Error('Invalid card data');
   if (session.drawn.includes(index)) throw new Error('Card already drawn');
 
-  const tarotDeck = require('./card-data');
+  const tarotDeck = require('./G_card-data'); // ✅ 修正路径
   const availableCards = tarotDeck.filter(card => !session.cards.includes(card));
   const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
 
