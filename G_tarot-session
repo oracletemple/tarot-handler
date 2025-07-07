@@ -1,15 +1,14 @@
 // G_tarot-session.js - v1.1.4
 
 const sessions = new Map();
-const tarotDeck = require('./G_card-data'); // ✅ 修正引用路径
 
 function startSession(userId, amount) {
-  const cards = Array.from({ length: 3 }, () => null); // 占位符牌位
+  const cards = Array.from({ length: 3 }, () => null); // 占位符
   const session = {
     userId,
     amount,
     cards,
-    drawn: [], // 已抽索引
+    drawn: [],
     createdAt: Date.now()
   };
   sessions.set(userId, session);
@@ -31,6 +30,7 @@ function getCard(userId, index) {
   if (!session.cards || !Array.isArray(session.cards)) throw new Error('Invalid card data');
   if (session.drawn.includes(index)) throw new Error('Card already drawn');
 
+  const tarotDeck = require('./card-data');
   const availableCards = tarotDeck.filter(card => !session.cards.includes(card));
   const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
 
@@ -42,6 +42,6 @@ function getCard(userId, index) {
 module.exports = {
   startSession,
   getSession,
-  isSessionComplete,
-  getCard
+  getCard,
+  isSessionComplete
 };
