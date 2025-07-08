@@ -1,30 +1,67 @@
-// G_oracle-card.js - v1.0.0
+// G_oracle-card.js - v1.1.0
+const axios = require("axios");
 
-/**
- * 抽取一张 Bonus 神谕卡与解释
- */
-function getOracleCard() {
-  const cards = [
-    { name: "Truth", meaning: "Speak it. Seek it. Honor it." },
-    { name: "Surrender", meaning: "Let go of the outcome. Trust the process." },
-    { name: "Rebirth", meaning: "What is dying is making space for your next self." },
-    { name: "Abundance", meaning: "You are allowed to receive without guilt." },
-    { name: "Courage", meaning: "You can be scared and still choose to rise." },
-    { name: "Alignment", meaning: "What is meant for you cannot miss you." },
-    { name: "Mystery", meaning: "Not everything must be known to be trusted." },
-    { name: "Awakening", meaning: "Your awareness is shifting. Let the light in." },
-    { name: "Healing", meaning: "Your body and soul remember how to restore." },
-    { name: "Divine Timing", meaning: "You are not late. You are on sacred time." },
-    { name: "Self-Worth", meaning: "You deserve what you keep giving others." },
-    { name: "Forgiveness", meaning: "What you release frees *you* the most." },
-    { name: "Trust", meaning: "You don’t need to know—just take the next step." },
-    { name: "Clarity", meaning: "Stillness will show you what noise cannot." },
-    { name: "Protection", meaning: "You are being guided, even in silence." },
-    { name: "Expansion", meaning: "You are being stretched for a reason. Make space." }
-  ];
+const presetOracleCards = [
+  "🦋 *Transformation*\nEmbrace the winds of change. You are being reshaped for something greater.",
+  "🪞 *Reflection*\nWhat you see in others is a mirror of yourself. Look within.",
+  "🗝 *Unlocking*\nA hidden truth is ready to reveal itself. Be willing to accept it.",
+  "🔥 *Passion*\nLet your inner fire guide you forward. Pursue what lights you up.",
+  "🌿 *Healing*\nNow is a time for restoration—physically, emotionally, and spiritually.",
+  "🕊 *Peace*\nLay down your worries. Inner stillness brings clarity.",
+  "🌀 *Flow*\nRelease resistance. Allow life to unfold in its perfect rhythm.",
+  "🌙 *Intuition*\nYour inner voice knows the way. Trust it more than logic.",
+  "💎 *Clarity*\nTruth is cutting through confusion. Welcome the light.",
+  "🪶 *Signs*\nMessages are all around. Pay attention to synchronicities.",
+  "🌈 *Hope*\nEven in darkness, a new dawn is forming. Believe in it.",
+  "🧭 *Direction*\nYou are not lost. The universe is gently steering you forward.",
+  "🔮 *Vision*\nA future glimpse is coming into focus. Stay aligned.",
+  "🌺 *Compassion*\nExtend kindness—to yourself, and others. Grace is power.",
+  "⏳ *Timing*\nNot now doesn't mean never. Divine order is in play.",
+  "🛡 *Protection*\nYou are surrounded by unseen guardians. Proceed boldly.",
+  "⚖ *Balance*\nRestore equilibrium—between giving and receiving, doing and being.",
+  "📿 *Sacredness*\nTreat this moment as holy. Your presence is a blessing.",
+  "🚪 *Opportunity*\nA new doorway is opening. Say yes to the unknown.",
+  "🌌 *Expansion*\nYour spirit is stretching. Growth is sometimes uncomfortable but always worth it.",
+  "📖 *Wisdom*\nA lesson is repeating. Are you listening differently this time?"
+];
 
-  const card = cards[Math.floor(Math.random() * cards.length)];
-  return `💫 *Bonus Oracle Card*\n\n**${card.name}** — ${card.meaning}`;
+const usedApiSet = new Set();
+
+function getOracleCard(userId) {
+  if (!usedApiSet.has(userId)) {
+    usedApiSet.add(userId);
+    const random = Math.floor(Math.random() * presetOracleCards.length);
+    return presetOracleCards[random];
+  } else {
+    return callDeepSeekOracle();
+  }
+}
+
+async function callDeepSeekOracle() {
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
+  const prompt = `Pull a symbolic oracle card for spiritual reflection. Include a title and a short poetic message in the tone of a mystic guide.`;
+
+  try {
+    const response = await axios.post(
+      "https://api.deepseek.com/v1/chat/completions",
+      {
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.9,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+      }
+    );
+
+    return response.data.choices[0].message.content.trim();
+  } catch (err) {
+    console.error("DeepSeek API error (oracle):", err.message);
+    return "⚠️ The oracle is silent for now. Try again later.";
+  }
 }
 
 module.exports = { getOracleCard };
