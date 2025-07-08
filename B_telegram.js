@@ -12,6 +12,7 @@ const { getMoonAdvice } = require("./G_moon-advice");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+// ✅ 统一发送消息函数
 async function sendMessage(chatId, text, options = {}) {
   await axios.post(`${API_URL}/sendMessage`, {
     chat_id: chatId,
@@ -21,6 +22,7 @@ async function sendMessage(chatId, text, options = {}) {
   });
 }
 
+// ✅ 处理 Telegram 回调或消息更新
 async function handleTelegramUpdate(update) {
   const message = update.message;
   const callback = update.callback_query;
@@ -29,27 +31,28 @@ async function handleTelegramUpdate(update) {
     const userId = message.from.id;
     const text = message.text?.trim();
 
-    // ✅ 测试模式：模拟客户付款流程（推送按钮）
+    // ✅ 仅允许开发者使用测试指令
     if (userId === 7685088782) {
       if (text === "/test123") {
         startSession(userId, 12);
-        const buttons = renderCardButtons(userId);
-        await sendMessage(userId, "🔮 *Test Mode (12 USDT)*\nPlease select a card:", {
-          reply_markup: { inline_keyboard: buttons }
+        await sendMessage(userId, "✅ Test mode activated (12 USDT). Please choose your card:");
+        await sendMessage(userId, "Please draw your cards:", {
+          reply_markup: renderCardButtons(userId),
         });
         return;
       }
 
       if (text === "/test30") {
         startSession(userId, 30);
-        const buttons = renderCardButtons(userId);
-        await sendMessage(userId, "🔮 *Test Mode (30 USDT)*\nPlease select a card:", {
-          reply_markup: { inline_keyboard: buttons }
+        await sendMessage(userId, "✅ Test mode activated (30 USDT). Please choose your card:");
+        await sendMessage(userId, "Please draw your cards:", {
+          reply_markup: renderCardButtons(userId),
         });
         return;
       }
     }
 
+    // 非测试指令则忽略
     return;
   }
 
@@ -67,18 +70,15 @@ async function handleTelegramUpdate(update) {
       const card = getCard(userId, index);
       const meaning = getCardMeaning(card, index);
 
-      // ✅ 替换按钮（保留未抽卡）
+      // 删除当前按钮并只保留未抽的
       await axios.post(`${API_URL}/editMessageReplyMarkup`, {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
-        reply_markup: {
-          inline_keyboard: renderCardButtons(userId),
-        },
+        reply_markup: renderCardButtons(userId),
       });
 
       await sendMessage(userId, meaning);
 
-      // ✅ 所有卡抽完后自动推送灵性模块
       const session = getSession(userId);
       if (session.drawn.length === 3) {
         await sendMessage(userId, getSpiritGuide());
