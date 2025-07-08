@@ -1,4 +1,4 @@
-// B_telegram.js - v1.2.8
+// B_telegram.js - v1.2.9
 
 const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
@@ -8,6 +8,7 @@ const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
+const { callDeepSeek } = require("./G_deepseek"); // ✅ 新增 DeepSeek 接口
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -84,6 +85,10 @@ async function handleTelegramUpdate(update) {
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
+
+        // ✅ DeepSeek 灵性回复
+        const deepReply = await callDeepSeek("Offer a spiritual reflection based on today's energy.");
+        await sendMessage(userId, `🪐 *DeepSeek Insight*\n\n${deepReply}`);
       }
     } catch (err) {
       await sendMessage(userId, `⚠️ ${err.message}`);
