@@ -1,4 +1,4 @@
-// B_telegram.js - v1.4.0
+// B_telegram.js - v1.4.1
 
 const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
@@ -67,7 +67,7 @@ async function handleTelegramUpdate(update) {
     const userId = callback.from.id;
     const data = callback.data;
 
-    // 处理高端按钮点击事件
+    // Premium button logic
     if (data.startsWith("premium_")) {
       const key = data.replace("premium_", "");
       const session = getSession(userId);
@@ -98,7 +98,7 @@ async function handleTelegramUpdate(update) {
       return;
     }
 
-    // 抽牌按钮逻辑
+    // Draw card logic
     const match = data.match(/^draw_card_(\d+)_(\d+)/);
     if (!match) return;
 
