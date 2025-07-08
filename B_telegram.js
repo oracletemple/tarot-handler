@@ -1,4 +1,4 @@
-// B_telegram.js - v1.2.9
+// B_telegram.js - v1.3.1
 
 const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
@@ -8,12 +8,16 @@ const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
-const { callDeepSeek } = require("./G_deepseek"); // ✅ 新增 DeepSeek 接口
+const { renderPremiumButtons } = require("./G_premium-buttons");
+const { markPremiumUsed, isPremiumUsed } = require("./G_premium-session");
+
+const { getGptAnalysis } = require("./G_gpt-analysis");
+const { getTarotSummary } = require("./G_tarot-summary");
+const { getJournalPrompt } = require("./G_journal-prompt");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// ✅ 统一发送消息函数
 async function sendMessage(chatId, text, options = {}) {
   await axios.post(`${API_URL}/sendMessage`, {
     chat_id: chatId,
@@ -23,7 +27,6 @@ async function sendMessage(chatId, text, options = {}) {
   });
 }
 
-// ✅ 处理 Telegram 回调或消息更新
 async function handleTelegramUpdate(update) {
   const message = update.message;
   const callback = update.callback_query;
@@ -32,7 +35,6 @@ async function handleTelegramUpdate(update) {
     const userId = message.from.id;
     const text = message.text?.trim();
 
-    // ✅ 仅允许开发者使用测试指令
     if (userId === 7685088782) {
       if (text === "/test123") {
         startSession(userId, 12);
@@ -53,7 +55,6 @@ async function handleTelegramUpdate(update) {
       }
     }
 
-    // 非测试指令则忽略
     return;
   }
 
@@ -61,6 +62,44 @@ async function handleTelegramUpdate(update) {
     const userId = callback.from.id;
     const data = callback.data;
 
+    // 高端服务按钮处理
+    if (data.startsWith("premium_")) {
+      const key = data.replace("premium_", "");
+      const session = getSession(userId);
+      if (!session) return;
+
+      if (isPremiumUsed(userId, key)) return;
+      markPremiumUsed(userId, key);
+
+      if (key === "gpt") {
+        const msg = await getGptAnalysis();
+        await sendMessage(userId, msg);
+      }
+
+      if (key === "summary") {
+        const msg = getTarotSummary();
+        await sendMessage(userId, msg);
+      }
+
+      if (key === "journal") {
+        const msg = getJournalPrompt();
+        await sendMessage(userId, msg);
+      }
+
+      await axios.post(`${API_URL}/editMessageReplyMarkup`, {
+        chat_id: callback.message.chat.id,
+        message_id: callback.message.message_id,
+        reply_markup: renderPremiumButtons(session),
+      });
+
+      await axios.post(`${API_URL}/answerCallbackQuery`, {
+        callback_query_id: callback.id,
+      });
+
+      return;
+    }
+
+    // 抽牌逻辑
     const match = data.match(/^draw_card_(\d+)_(\d+)/);
     if (!match) return;
 
@@ -71,7 +110,6 @@ async function handleTelegramUpdate(update) {
       const card = getCard(userId, index);
       const meaning = getCardMeaning(card, index);
 
-      // 删除当前按钮并只保留未抽的
       await axios.post(`${API_URL}/editMessageReplyMarkup`, {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
@@ -86,9 +124,9 @@ async function handleTelegramUpdate(update) {
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
 
-        // ✅ DeepSeek 灵性回复
-        const deepReply = await callDeepSeek("Offer a spiritual reflection based on today's energy.");
-        await sendMessage(userId, `🪐 *DeepSeek Insight*\n\n${deepReply}`);
+        await sendMessage(userId, "✨ *Unlock your deeper guidance:*", {
+          reply_markup: renderPremiumButtons(session),
+        });
       }
     } catch (err) {
       await sendMessage(userId, `⚠️ ${err.message}`);
