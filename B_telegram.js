@@ -1,4 +1,4 @@
-// B_telegram.js - v1.2.7
+// B_telegram.js - v1.2.8
 
 const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
@@ -22,6 +22,13 @@ async function sendMessage(chatId, text, options = {}) {
   });
 }
 
+// ✅ 模拟点击按钮
+async function simulateButtonClick(userId, index, amount) {
+  const card = getCard(userId, index);
+  const meaning = getCardMeaning(card, index);
+  await sendMessage(userId, meaning);
+}
+
 // ✅ 处理 Telegram 回调或消息更新
 async function handleTelegramUpdate(update) {
   const message = update.message;
@@ -34,13 +41,25 @@ async function handleTelegramUpdate(update) {
     // ✅ 仅允许开发者使用测试指令
     if (userId === 7685088782) {
       if (text === "/test123") {
-        startSession(userId, 12);
+        const amount = 12;
+        startSession(userId, amount);
         await sendMessage(userId, "✅ Test mode activated.");
+
+        // 推送按钮消息
+        await axios.post(`${API_URL}/sendMessage`, {
+          chat_id: userId,
+          text: "Please draw your cards:",
+          reply_markup: {
+            inline_keyboard: renderCardButtons(userId, amount),
+          },
+        });
+
+        // 模拟点击三张牌（顺序执行）
         for (let i = 0; i < 3; i++) {
-          const card = getCard(userId, i);
-          const meaning = getCardMeaning(card, i);
-          await sendMessage(userId, meaning);
+          await simulateButtonClick(userId, i, amount);
         }
+
+        // 推送灵性模块
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
@@ -48,13 +67,22 @@ async function handleTelegramUpdate(update) {
       }
 
       if (text === "/test30") {
-        startSession(userId, 30);
-        await sendMessage(userId, "✅ Test mode activated (30 USDT).");
+        const amount = 30;
+        startSession(userId, amount);
+        await sendMessage(userId, "✅ Test mode activated (30 USDT). Optional GPT insights coming soon.");
+
+        await axios.post(`${API_URL}/sendMessage`, {
+          chat_id: userId,
+          text: "Please draw your cards:",
+          reply_markup: {
+            inline_keyboard: renderCardButtons(userId, amount),
+          },
+        });
+
         for (let i = 0; i < 3; i++) {
-          const card = getCard(userId, i);
-          const meaning = getCardMeaning(card, i);
-          await sendMessage(userId, meaning);
+          await simulateButtonClick(userId, i, amount);
         }
+
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
@@ -62,7 +90,6 @@ async function handleTelegramUpdate(update) {
       }
     }
 
-    // 非测试指令则忽略
     return;
   }
 
@@ -82,7 +109,7 @@ async function handleTelegramUpdate(update) {
       await axios.post(`${API_URL}/editMessageReplyMarkup`, {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
-        reply_markup: renderCardButtons(userId),
+        reply_markup: renderCardButtons(userId, amount),
       });
       await sendMessage(userId, meaning);
 
