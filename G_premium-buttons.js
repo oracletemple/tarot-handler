@@ -1,22 +1,23 @@
-// G_premium-buttons.js - v1.0.0
+// G_premium-buttons.js - v1.1.0
 const { Markup } = require("telegraf");
 
 /**
- * 根据已点击的模块生成剩余按钮组
- * @param {Object} session - 用户 session 中的 premium 对象
- * @returns {Markup.InlineKeyboardMarkup}
+ * 渲染所有尚未点击的高端服务按钮（共 8 项）
  */
 function renderPremiumButtons(session) {
   const all = [
-    { key: 'gpt', label: '🌟 GPT Insight' },
-    { key: 'summary', label: '📄 Tarot Summary' },
-    { key: 'journal', label: '📝 Reflection Prompt' }
+    { key: "gpt", label: "🌟 GPT Insight" },
+    { key: "summary", label: "📄 Tarot Summary" },
+    { key: "journal", label: "📝 Reflection Prompt" },
+    { key: "shadow", label: "🔮 Shadow Message" },
+    { key: "archetype", label: "💠 Soul Archetype" },
+    { key: "higher", label: "📬 Higher Self" },
+    { key: "cosmic", label: "🌌 Cosmic Alignment" },
+    { key: "oracle", label: "💫 Oracle Card" }
   ];
 
   const remaining = all.filter(b => !session?.premium?.[b.key]);
-  const inline_keyboard = remaining.map(btn => [
-    Markup.button.callback(btn.label, `premium_${btn.key}`)
-  ]);
+  const inline_keyboard = remaining.map(b => [Markup.button.callback(b.label, `premium_${b.key}`)]);
 
   return { inline_keyboard };
 }
