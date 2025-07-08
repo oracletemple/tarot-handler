@@ -1,4 +1,4 @@
-// G_premium-buttons.js - v1.1.0
+// G_premium-buttons.js - v1.1.1
 const { Markup } = require("telegraf");
 
 /**
@@ -6,14 +6,14 @@ const { Markup } = require("telegraf");
  */
 function renderPremiumButtons(session) {
   const all = [
-    { key: "gpt", label: "🌟 GPT Insight" },
-    { key: "summary", label: "📄 Tarot Summary" },
-    { key: "journal", label: "📝 Reflection Prompt" },
-    { key: "shadow", label: "🔮 Shadow Message" },
-    { key: "archetype", label: "💠 Soul Archetype" },
-    { key: "higher", label: "📬 Higher Self" },
+    { key: "gpt", label: "🌟 Divine Insight" },
+    { key: "summary", label: "🧿 Oracle Vision" },
+    { key: "journal", label: "🪞 Inner Reflection" },
+    { key: "shadow", label: "🌑 Embrace the Shadow" },
+    { key: "archetype", label: "💠 Soul Blueprint" },
+    { key: "higher", label: "📬 Whisper from Beyond" },
     { key: "cosmic", label: "🌌 Cosmic Alignment" },
-    { key: "oracle", label: "💫 Oracle Card" }
+    { key: "oracle", label: "💫 Oracle Blessing" }
   ];
 
   const remaining = all.filter(b => !session?.premium?.[b.key]);
