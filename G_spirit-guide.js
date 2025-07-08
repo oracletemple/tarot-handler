@@ -1,10 +1,10 @@
-// G_spirit-guide.js - v1.0.0
+// G_spirit-guide.js - v1.0.1
 
 /**
  * 生成一个守护灵信息
  * @returns {string} - 完整的守护灵解读文本（含 emoji + 标题 + 描述）
  */
-function getSpiritGuideMessage() {
+function getSpiritGuide() {
   const guides = [
     {
       emoji: "🦉",
@@ -63,4 +63,4 @@ function getSpiritGuideMessage() {
   return `🌟 *Your Spirit Guide: ${chosen.emoji} ${chosen.name}*\n_${chosen.meaning}_`;
 }
 
-module.exports = { getSpiritGuideMessage };
+module.exports = { getSpiritGuide };
