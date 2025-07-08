@@ -1,53 +1,79 @@
 // G_pastlife.js - v1.0.0
-// 🔮 Past Life Echoes - 高端模块（随机 21 段）
+const axios = require("axios");
 
-function getPastLifeEcho() {
-  const echoes = [
-    `🧿 *Past Life Echo*\n\nYou once walked barefoot through sacred forests, where every leaf whispered forgotten truths. In this life, your yearning for nature is a memory calling you home.`,
+// ✅ 固定 21 段灵性文案
+const messages = [
+  "🧿 *You once stood at the gates of an ancient temple*, cloaked in midnight blue, whispering invocations to forgotten gods. Your soul still remembers the stillness between each sacred word.",
+  "🧿 *In a lifetime long past, you walked the deserts alone*, seeking silence not as absence, but as a bridge to the divine. Your footsteps echo still in moments of deep meditation.",
+  "🧿 *You were once a healer by moonlight*, mixing herbs with hymns, your fingers guided by unseen forces. This gift lingers in your intuition and compassion.",
+  "🧿 *You lived as a scribe in a marble city*, transcribing secrets of the stars into ancient scrolls. Now, you write truths in quiet moments, even if no ink is involved.",
+  "🧿 *You danced in firelit circles beneath the solstice moon*, every movement a prayer, every breath a surrender. The rhythm lives on in your heartbeat.",
+  "🧿 *In the highlands, you spoke to the wind as kin*, hearing its secrets and offering your own. The wind still finds you when you're still enough to listen.",
+  "🧿 *You wore the robes of silent orders*, vows unspoken but etched into your essence. This inner discipline anchors you in storms.",
+  "🧿 *As an artisan of sacred symbols*, your hands carved meaning into matter. Now, even your casual doodles carry energy.",
+  "🧿 *You knew exile*, and through it, the truth that belonging is not a place, but a remembrance of soul. You recognize other wanderers instantly.",
+  "🧿 *You were once the keeper of wells*, tending to underground waters as sacred veins of the Earth. Hydration still feels like communion to you.",
+  "🧿 *You passed through the veil young once*, not by accident, but initiation. You've returned now with echoes of realms most forget.",
+  "🧿 *In candlelit chambers, you interpreted dreams*, not with books but breath. Now, your own dreams carry layered voices and veiled guidance.",
+  "🧿 *You lived as a forest dweller*, antler-crowned, moss-veined, speaking fluently in the dialect of roots. Nature still bends near you.",
+  "🧿 *You studied death not to conquer it*, but to cradle its silence. You now comfort others in ways they can’t quite name.",
+  "🧿 *You stood watch at the cosmic border*, a guardian of soul passages. You still feel restless when celestial events stir.",
+  "🧿 *You crafted amulets from bone and light*, each piece encoded with blessings. Your touch still weaves invisible protection.",
+  "🧿 *You hid truths in melodies*, composing hymns that awakened sleeping hearts. Music still moves you more than reason.",
+  "🧿 *You wandered the ice-bound tundras*, not seeking warmth but vision. Cold air still awakens your ancient clarity.",
+  "🧿 *You were blind in one life, but saw more than most.* Your inner sight now guides you past illusion.",
+  "🧿 *You sang to stars before telescopes*, sensing their rhythm with your cells. You still look up and feel called home.",
+  "🧿 *You broke cycles once*, not for yourself, but for generations to come. You're still breaking them now—with greater awareness."
+];
 
-    `🧿 *Past Life Echo*\n\nYou were once a healer, crafting remedies with roots and chants. The urge to help others now is not new—it is the echo of ancient compassion.`,
+// ✅ DeepSeek API 配置
+const DEEPSEEK_KEY = "sk-cf17088ece0a4bc985dec1464cf504e1";
+const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
-    `🧿 *Past Life Echo*\n\nYou stood beneath temple arches, gazing at stars, mapping destinies for kings. Your intuition today is the echo of wisdom long studied.`,
+const headers = {
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${DEEPSEEK_KEY}`
+};
 
-    `🧿 *Past Life Echo*\n\nYou lived a quiet life by the sea, sketching ships and tides. The ocean still stirs something sacred within you.`,
+// ✅ 记录调用次数
+const userUsage = {};
 
-    `🧿 *Past Life Echo*\n\nIn a life before, you were a storyteller—your voice shaped hearts. Your gift of words still lingers; speak with intention.`,
+/**
+ * 获取前世灵性文案（首次使用随机固定，之后调用 GPT）
+ */
+async function getPastLifeMessage(userId) {
+  if (!userUsage[userId]) {
+    userUsage[userId] = 1;
+    const random = messages[Math.floor(Math.random() * messages.length)];
+    return random;
+  }
 
-    `🧿 *Past Life Echo*\n\nYou once danced under moonlight not for joy, but as offering. Today, your body remembers rhythm and ritual.`,
+  userUsage[userId]++;
 
-    `🧿 *Past Life Echo*\n\nYou were silenced once—punished for speaking truth. That ache in your throat is the soul's memory. This life, reclaim your voice.`,
+  try {
+    const payload = {
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "system",
+          content: "You are a mystical oracle who channels past life visions in poetic, symbolic language."
+        },
+        {
+          role: "user",
+          content: "Offer a past life echo in symbolic, soul-centered language. Make it immersive and spiritually resonant."
+        }
+      ],
+      temperature: 0.9
+    };
 
-    `🧿 *Past Life Echo*\n\nYou once carried scrolls of sacred geometry across deserts. The visions that come in dreams are your soul’s old maps.`,
+    const res = await axios.post(DEEPSEEK_URL, payload, { headers });
+    const content = res.data.choices?.[0]?.message?.content;
 
-    `🧿 *Past Life Echo*\n\nYou were a keeper of time, counting stars and eclipses. That strange sense of divine timing you feel now? It’s not coincidence.`,
-
-    `🧿 *Past Life Echo*\n\nYou lived in isolation, a seeker of silence. Now, solitude brings you wisdom, not loneliness.`,
-
-    `🧿 *Past Life Echo*\n\nYou once sculpted stone for lost gods. Now, you shape meaning from the invisible. Your hands still remember.`,
-
-    `🧿 *Past Life Echo*\n\nYou guided souls between worlds. Today, people turn to you for clarity without knowing why.`,
-
-    `🧿 *Past Life Echo*\n\nYou were betrayed by someone you loved. Now, you guard your heart—not out of fear, but remembrance.`,
-
-    `🧿 *Past Life Echo*\n\nYou once served as a diplomat between warring tribes. Your peacemaking instinct today echoes ancient negotiations.`,
-
-    `🧿 *Past Life Echo*\n\nYou lived in exile. Now, the feeling of not belonging is a familiar echo—an invitation to finally root.`,
-
-    `🧿 *Past Life Echo*\n\nYou danced with fire. You were fearless. That spark in you is not born of this world alone.`,
-
-    `🧿 *Past Life Echo*\n\nYou wrote verses on temple walls. Now, your creativity flows when no one watches—it’s your sacred act.`,
-
-    `🧿 *Past Life Echo*\n\nYou once failed a great mission. The urgency you feel today is your soul asking for redemption.`,
-
-    `🧿 *Past Life Echo*\n\nYou were a mother who lost her child too soon. That tenderness in you is not just emotion—it’s inherited memory.`,
-
-    `🧿 *Past Life Echo*\n\nYou were a monk who gave up everything. Now, your simplicity is sacred, not lack.`,
-
-    `🧿 *Past Life Echo*\n\nYou once followed false prophets. Now, you question everything—and that is your soul protecting itself.`
-  ];
-
-  const random = Math.floor(Math.random() * echoes.length);
-  return echoes[random];
+    return `🧿 *Past Life Echo*\n\n${content}`;
+  } catch (err) {
+    console.error("DeepSeek API error:", err.message);
+    return "🧿 *Past Life Echo*\n\nIn a forgotten chapter of your soul’s journey, something sacred still calls. 🌙";
+  }
 }
 
-module.exports = { getPastLifeEcho };
+module.exports = { getPastLifeMessage };
