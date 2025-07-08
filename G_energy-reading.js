@@ -1,6 +1,7 @@
-// G_energy-reading.js - v1.0.0
+// G_energy-reading.js - v1.1.0
 const axios = require("axios");
 
+// ✅ 固定 21 段能量文案（首次点击用）
 const presetEnergyMessages = [
   "🌌 Today your aura glows with electric anticipation. Something new is about to spark—stay receptive.",
   "🔥 A surge of creative fire surrounds you. Use it to fuel action, not just inspiration.",
@@ -25,44 +26,50 @@ const presetEnergyMessages = [
   "🔮 An intuitive gateway is open—trust the flashes that appear in your mind’s eye."
 ];
 
-// 记录用户是否已经调用过 API 的 session（可接入更完整 session 管理）
-const usedApiSet = new Set();
+// ✅ 临时记录用户是否已使用过 API（可改为 session）
+const usedApi = new Set();
 
-function getEnergyReading(userId) {
-  if (!usedApiSet.has(userId)) {
-    usedApiSet.add(userId);
-    const random = Math.floor(Math.random() * presetEnergyMessages.length);
-    return presetEnergyMessages[random];
+// ✅ 主调用函数（根据状态选择返回内容）
+async function getEnergyReading(userId) {
+  if (!usedApi.has(userId)) {
+    usedApi.add(userId);
+    return getRandomEnergyMessage();
   } else {
-    return callDeepSeekEnergy(); // 继续调用 AI 接口
+    return await getEnergyReadingFromApi();
   }
 }
 
-// ✅ DeepSeek 调用逻辑（灵性能量生成）
-async function callDeepSeekEnergy() {
+// ✅ 获取随机固定文案（首次点击）
+function getRandomEnergyMessage() {
+  const i = Math.floor(Math.random() * presetEnergyMessages.length);
+  return presetEnergyMessages[i];
+}
+
+// ✅ DeepSeek 接口调用（后续点击）
+async function getEnergyReadingFromApi() {
   const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
   const prompt = `Offer a poetic and symbolic spiritual energy reading for the user. Describe the energetic field they may carry today, using vivid metaphors and mystical tone.`;
 
   try {
-    const response = await axios.post(
+    const res = await axios.post(
       "https://api.deepseek.com/v1/chat/completions",
       {
         model: "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
+        temperature: 0.9
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
+          Authorization: `Bearer ${apiKey}`
+        }
       }
     );
 
-    return response.data.choices[0].message.content.trim();
+    return res.data.choices[0].message.content.trim();
   } catch (err) {
-    console.error("DeepSeek API error (energy):", err.message);
-    return "⚠️ The energies are too subtle to read right now. Please try again later.";
+    console.error("❌ DeepSeek API error (energy):", err.message);
+    return "⚠️ The energy field is currently unclear. Please try again later.";
   }
 }
 
