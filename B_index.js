@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 
 const { handleTelegramUpdate } = require("./B_telegram");
 const { simulateButtonClick } = require("./G_simulate-click");
-const testSimulatorRouter = require("./routes/B_test-simulator"); // ✅ 新增
+const { startSession } = require("./G_tarot-session");
 
 const app = express();
 app.use(bodyParser.json());
@@ -28,12 +28,14 @@ app.post("/webhook", async (req, res) => {
 app.get("/test123", async (req, res) => {
   const devId = 7685088782;
   try {
+    startSession(devId, 12); // ✅ 创建 session
     await simulateButtonClick(devId, 0, 12);
     await simulateButtonClick(devId, 1, 12);
     await simulateButtonClick(devId, 2, 12);
     res.send("✅ Test session triggered (card 1, 2, 3).");
   } catch (err) {
-    res.status(500).send("❌ Failed to trigger test session.");
+    console.error("❌ Test123 error:", err);
+    res.status(500).send("❌ Failed to trigger test123.");
   }
 });
 
@@ -41,11 +43,13 @@ app.get("/test123", async (req, res) => {
 app.get("/test30", async (req, res) => {
   const devId = 7685088782;
   try {
+    startSession(devId, 30); // ✅ 创建 session
     await simulateButtonClick(devId, 0, 30);
     await simulateButtonClick(devId, 1, 30);
     await simulateButtonClick(devId, 2, 30);
     res.send("✅ Test session triggered (card 1, 2, 3, amount 30).");
   } catch (err) {
+    console.error("❌ Test30 error:", err);
     res.status(500).send("❌ Failed to trigger test30.");
   }
 });
@@ -61,12 +65,10 @@ app.get("/simulate", async (req, res) => {
     await simulateButtonClick(Number(userId), Number(cardIndex), Number(amount));
     res.send(`✅ Simulated card ${cardIndex} click for user ${userId} with ${amount} USDT`);
   } catch (err) {
+    console.error("❌ Simulation error:", err);
     res.status(500).send("❌ Simulation failed.");
   }
 });
-
-// ✅ 注册 POST 测试模拟入口
-app.use("/", testSimulatorRouter); // ✅ 新增 POST 接口挂载
 
 // 🚀 启动服务
 const PORT = process.env.PORT || 3000;
