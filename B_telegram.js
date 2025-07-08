@@ -4,7 +4,7 @@ const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
 const { getCard } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
-const { renderRemainingButtons } = require("./G_button-render"); // ✅ 正确导入
+const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
@@ -12,7 +12,6 @@ const { getMoonAdvice } = require("./G_moon-advice");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// ✅ 统一发送消息函数
 async function sendMessage(chatId, text, options = {}) {
   await axios.post(`${API_URL}/sendMessage`, {
     chat_id: chatId,
@@ -22,7 +21,6 @@ async function sendMessage(chatId, text, options = {}) {
   });
 }
 
-// ✅ 处理 Telegram 回调或消息更新
 async function handleTelegramUpdate(update) {
   const message = update.message;
   const callback = update.callback_query;
@@ -31,38 +29,28 @@ async function handleTelegramUpdate(update) {
     const userId = message.from.id;
     const text = message.text?.trim();
 
-    // ✅ 仅允许开发者使用测试指令
+    // ✅ 测试模式：模拟客户付款流程（推送按钮）
     if (userId === 7685088782) {
       if (text === "/test123") {
         startSession(userId, 12);
-        await sendMessage(userId, "✅ Test mode activated.");
-        for (let i = 0; i < 3; i++) {
-          const card = getCard(userId, i);
-          const meaning = getCardMeaning(card, i);
-          await sendMessage(userId, meaning);
-        }
-        await sendMessage(userId, getSpiritGuide());
-        await sendMessage(userId, getLuckyHints());
-        await sendMessage(userId, getMoonAdvice());
+        const buttons = renderCardButtons(userId);
+        await sendMessage(userId, "🔮 *Test Mode (12 USDT)*\nPlease select a card:", {
+          reply_markup: { inline_keyboard: buttons }
+        });
         return;
       }
 
       if (text === "/test30") {
         startSession(userId, 30);
-        await sendMessage(userId, "✅ Test mode activated (30 USDT).");
-        for (let i = 0; i < 3; i++) {
-          const card = getCard(userId, i);
-          const meaning = getCardMeaning(card, i);
-          await sendMessage(userId, meaning);
-        }
-        await sendMessage(userId, getSpiritGuide());
-        await sendMessage(userId, getLuckyHints());
-        await sendMessage(userId, getMoonAdvice());
+        const buttons = renderCardButtons(userId);
+        await sendMessage(userId, "🔮 *Test Mode (30 USDT)*\nPlease select a card:", {
+          reply_markup: { inline_keyboard: buttons }
+        });
         return;
       }
     }
 
-    return; // 非测试指令忽略
+    return;
   }
 
   if (callback) {
@@ -79,16 +67,19 @@ async function handleTelegramUpdate(update) {
       const card = getCard(userId, index);
       const meaning = getCardMeaning(card, index);
 
-      const session = getSession(userId);
-      const buttons = renderRemainingButtons(session.drawn, amount); // ✅ 修复调用方式
+      // ✅ 替换按钮（保留未抽卡）
       await axios.post(`${API_URL}/editMessageReplyMarkup`, {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
-        reply_markup: buttons,
+        reply_markup: {
+          inline_keyboard: renderCardButtons(userId),
+        },
       });
 
       await sendMessage(userId, meaning);
 
+      // ✅ 所有卡抽完后自动推送灵性模块
+      const session = getSession(userId);
       if (session.drawn.length === 3) {
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
