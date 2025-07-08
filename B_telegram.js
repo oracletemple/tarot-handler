@@ -1,12 +1,12 @@
-// B_telegram.js - v1.2.8
+// B_telegram.js - v1.2.9
 
 const axios = require("axios");
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-const { getSession, isSessionComplete } = require("./G_tarot-session");
+const { getSession, isSessionComplete, startSession } = require("./G_tarot-session");
 const { getCardInfo } = require("./G_tarot");
-const { renderRemainingButtons } = require("./G_button-render"); // ✅ 正确函数名
+const { renderRemainingButtons } = require("./G_button-render");
 
 const { getSpiritGuideMessage } = require("./G_spirit-guide");
 const { getLuckyHint } = require("./G_lucky-hints");
@@ -14,26 +14,34 @@ const { getMoonAdvice } = require("./G_moon-advice");
 
 // ✅ 发送消息
 async function sendMessage(chatId, text, extra = {}) {
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
-    text,
-    parse_mode: "Markdown",
-    ...extra
-  });
+  try {
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown",
+      ...extra
+    });
+  } catch (err) {
+    console.error("❌ Failed to send message:", err.response?.data || err.message);
+  }
 }
 
-// ✅ 编辑按钮（点击后刷新按钮状态）
+// ✅ 编辑按钮
 async function editInlineKeyboard(chatId, messageId, newMarkup) {
-  await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: newMarkup
-  });
+  try {
+    await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: newMarkup
+    });
+  } catch (err) {
+    console.error("❌ Failed to edit keyboard:", err.response?.data || err.message);
+  }
 }
 
-// ✅ 主处理函数
+// ✅ 主入口处理
 async function handleTelegramUpdate(update) {
-  // 🎯 处理点击按钮
+  // ✅ 按钮点击处理
   if (update.callback_query) {
     const { message, from, data } = update.callback_query;
     const chatId = message.chat.id;
@@ -48,18 +56,12 @@ async function handleTelegramUpdate(update) {
       try {
         const card = getCardInfo(userId, index);
         if (!card) {
-          await sendMessage(chatId, "⚠️ Invalid card or session. Please try again later.");
+          await sendMessage(chatId, "⚠️ Invalid card or session.");
           return;
         }
 
-        // 🌟 每张牌都显示位置
-        const positionLabels = ["🌒 *Past*", "🌕 *Present*", "🌘 *Future*"];
-        const positionText = `${positionLabels[index]}\n${card.title}\n\n${card.meaning}`;
-
-        await sendMessage(chatId, positionText, card.image ? {
-          reply_markup: null,
-          disable_web_page_preview: false
-        } : {});
+        const label = ["🌒 *Past*", "🌕 *Present*", "🌘 *Future*"][index];
+        await sendMessage(chatId, `${label}\n${card.title}\n\n${card.meaning}`);
 
         const session = getSession(userId);
         if (!session) {
@@ -67,41 +69,36 @@ async function handleTelegramUpdate(update) {
           return;
         }
 
-        // 🧩 按钮刷新：隐藏已抽项
         if (!isSessionComplete(userId)) {
-          const remainingButtons = renderRemainingButtons(session.drawn, amount);
-          await editInlineKeyboard(chatId, messageId, remainingButtons);
+          const markup = renderRemainingButtons(session.drawn, amount);
+          await editInlineKeyboard(chatId, messageId, markup);
         } else {
-          // 🧘‍♀️ 全部抽完，推送灵性补充内容
-          await editInlineKeyboard(chatId, messageId, { inline_keyboard: [] }); // 清空按钮
+          await editInlineKeyboard(chatId, messageId, { inline_keyboard: [] });
           await sendMessage(chatId, getSpiritGuideMessage());
           await sendMessage(chatId, getLuckyHint());
           await sendMessage(chatId, getMoonAdvice());
         }
-
       } catch (err) {
-        console.error("❌ Error handling callback_query:", err);
-        await sendMessage(chatId, "❌ Error: " + err.message);
+        console.error("❌ Callback handler error:", err);
+        await sendMessage(chatId, "❌ " + err.message);
       }
 
       return;
     }
   }
 
-  // 🎯 开发者测试入口
+  // ✅ 处理测试指令（只允许开发者本人）
   if (update.message && update.message.text === "/test123") {
     const userId = update.message.from.id;
+    const chatId = update.message.chat.id;
     if (userId === 7685088782) {
-      const startSession = require("./G_tarot-session").startSession;
       startSession(userId, 12);
-      await sendMessage(update.message.chat.id, "🧪 Test session created. Run `/test123` via browser to simulate draw.");
+      await sendMessage(chatId, "🧪 Test session created. Visit `/test123` URL to simulate draws.");
     } else {
-      await sendMessage(update.message.chat.id, "❌ Unauthorized test command.");
+      await sendMessage(chatId, "❌ You are not authorized.");
     }
     return;
   }
 }
 
-module.exports = {
-  handleTelegramUpdate
-};
+module.exports = { handleTelegramUpdate };
