@@ -1,147 +1,82 @@
-// B_telegram.js - v1.3.0
+// B_telegram.js - v1.2.6
 
 const axios = require("axios");
-const { getCardInfo } = require("./G_tarot");
-const { isSessionComplete } = require("./G_tarot-session");
-const { getSpiritGuideMessage } = require("./G_spirit-guide");
-const { getLuckyHints } = require("./G_lucky-hints");
-const { getMoonAdvice } = require("./G_moon-advice");
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const { getSession, getCard, isSessionComplete } = require("./G_tarot-session");
+const { renderCardButtons } = require("./G_button-render");
+const { generateSpiritualGuidance } = require("./G_spirit-guide");
+const { generateLuckyHints } = require("./G_lucky-hints");
+const { generateMoonAdvice } = require("./G_moon-advice");
 
-/**
- * 渲染塔罗牌抽牌按钮
- */
-function buildCardButtons(drawn) {
-  const buttons = [];
+const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN}`;
 
-  for (let i = 0; i < 3; i++) {
-    if (!drawn.includes(i)) {
-      buttons.push([{ text: `🃏 Card ${i + 1}`, callback_data: `card_${i}` }]);
+async function handleTelegramUpdate(update) {
+  if (update.callback_query) {
+    const { data, from, message } = update.callback_query;
+    const userId = from.id;
+    const messageId = message.message_id;
+
+    const [prefix, indexStr] = data.split("_");
+    const cardIndex = parseInt(indexStr, 10);
+
+    const session = getSession(userId);
+    if (!session) {
+      return sendMessage(userId, "⚠️ Session not found. Please try again later.");
+    }
+
+    try {
+      const card = getCard(userId, cardIndex);
+      const cardPosition = ["Past", "Present", "Future"][cardIndex] || "Card";
+
+      const caption = `🔮 *${cardPosition}*\n${card.name}\n_${card.meaning}_`;
+      await sendMessage(userId, caption, "Markdown");
+
+      // ✅ 删除旧按钮，重发未抽部分
+      const newButtons = renderCardButtons(session);
+      await editButtons(userId, messageId, "Please select a card:", newButtons);
+
+      // ✅ 所有牌抽完后，发送附加灵性模块
+      if (isSessionComplete(userId)) {
+        const spiritualText = generateSpiritualGuidance();
+        const luckyText = generateLuckyHints();
+        const moonText = generateMoonAdvice();
+
+        await sendMessage(userId, `🧚 *Your Spirit Guide*\n${spiritualText}`, "Markdown");
+        await sendMessage(userId, `🎨 *Lucky Color & Number*\n${luckyText}`, "Markdown");
+        await sendMessage(userId, `🌕 *Moon Energy Advice*\n${moonText}`, "Markdown");
+      }
+    } catch (err) {
+      console.error("❌ handleTelegramUpdate callback error:", err);
+      await sendMessage(userId, "⚠️ An error occurred while drawing the card.");
     }
   }
 
-  return {
-    inline_keyboard: buttons
-  };
+  // ✅ /test123 测试命令（可略过处理，或加欢迎）
+  if (update.message && update.message.text === "/test123") {
+    return sendMessage(update.message.chat.id, "✅ Test mode activated.");
+  }
 }
 
-/**
- * 推送按钮选择消息
- */
-async function sendCardButtons(chatId, amount) {
-  const drawn = [];
-  const reply_markup = buildCardButtons(drawn);
-
-  const text =
-    amount >= 30
-      ? `✨ *Welcome to the Divine Reading*\nClick each card to reveal your custom Tarot insights.`
-      : `✨ *Tap each card to reveal your 3-card Tarot reading*\n(Past / Present / Future)`;
-
-  const res = await axios.post(`${TELEGRAM_API}/sendMessage`, {
+async function sendMessage(chatId, text, parseMode = null) {
+  const payload = {
     chat_id: chatId,
     text,
-    parse_mode: "Markdown",
-    reply_markup
-  });
+  };
+  if (parseMode) payload.parse_mode = parseMode;
 
-  return res.data.result.message_id;
+  await axios.post(`${TELEGRAM_API}/sendMessage`, payload);
 }
 
-/**
- * 编辑按钮（用于抽牌后更新）
- */
-async function editInlineKeyboard(chatId, messageId, reply_markup) {
+async function editButtons(chatId, messageId, text, buttons) {
   await axios.post(`${TELEGRAM_API}/editMessageReplyMarkup`, {
     chat_id: chatId,
     message_id: messageId,
-    reply_markup
+    reply_markup: {
+      inline_keyboard: buttons,
+    },
   });
-}
-
-/**
- * 回复抽到的牌
- */
-async function sendCard(chatId, card, index) {
-  const positionMap = ["🌒 *Past*", "🌕 *Present*", "🌘 *Future*"];
-  const header = positionMap[index] || "🃏 Your Card";
-
-  let text = `${header}\n*${card.title}*\n${card.meaning}`;
-
-  await axios.post(`${TELEGRAM_API}/sendMessage`, {
-    chat_id: chatId,
-    text,
-    parse_mode: "Markdown"
-  });
-
-  if (card.image) {
-    await axios.post(`${TELEGRAM_API}/sendPhoto`, {
-      chat_id: chatId,
-      photo: card.image
-    });
-  }
-}
-
-/**
- * 回复灵性附加内容
- */
-async function sendSpiritualExtras(chatId) {
-  const spirit = getSpiritGuideMessage();
-  const lucky = getLuckyHints();
-  const moon = getMoonAdvice();
-
-  const blocks = [spirit, lucky, moon];
-
-  for (const text of blocks) {
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text,
-      parse_mode: "Markdown"
-    });
-  }
-}
-
-/**
- * 处理按钮回调
- */
-async function handleCallback(query) {
-  const callbackId = query.id;
-  const userId = query.from.id;
-  const chatId = query.message.chat.id;
-  const messageId = query.message.message_id;
-
-  const data = query.data;
-  const match = data.match(/^card_(\d)$/);
-
-  if (!match) return;
-
-  const index = parseInt(match[1], 10);
-
-  try {
-    const card = getCardInfo(userId, index);
-    if (!card) throw new Error("No card found");
-
-    await sendCard(chatId, card, index);
-
-    const session = require("./G_tarot-session").getSession(userId);
-    const newMarkup = buildCardButtons(session.drawn);
-    await editInlineKeyboard(chatId, messageId, newMarkup);
-
-    if (isSessionComplete(userId)) {
-      await editInlineKeyboard(chatId, messageId, null); // ✅ 修复：清除按钮
-      await sendSpiritualExtras(chatId); // ✅ 推送灵性内容
-    }
-  } catch (err) {
-    await axios.post(`${TELEGRAM_API}/answerCallbackQuery`, {
-      callback_query_id: callbackId,
-      text: "⚠️ Something went wrong. Please try again.",
-      show_alert: true
-    });
-  }
 }
 
 module.exports = {
-  sendCardButtons,
-  handleCallback
+  handleTelegramUpdate,
 };
