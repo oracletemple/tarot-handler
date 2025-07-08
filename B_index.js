@@ -1,71 +1,77 @@
-// B_index.js - v1.2.5
+// B_telegram.js - v1.2.7
 
-require("dotenv").config();
-const express = require("express");
-const bodyParser = require("body-parser");
+const axios = require("axios");
+const { sendMessage, sendCardButtons } = require("./G_send-message");
+const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
+const { getCardMeaning } = require("./G_tarot-engine");
+const { renderRemainingButtons } = require("./G_button-render");
+const { getSpiritGuide } = require("./G_spirit-guide");
+const { getLuckyHints } = require("./G_lucky-hints");
+const { getMoonAdvice } = require("./G_moon-advice");
 
-const { handleTelegramUpdate } = require("./B_telegram");
-const { simulateButtonClick } = require("./G_simulate-click");
+// 主处理器
+async function handleTelegramUpdate(update) {
+  if (update.message && update.message.text) {
+    const message = update.message;
+    const userId = message.from.id;
+    const text = message.text;
 
-const app = express();
-app.use(bodyParser.json());
-
-// ✅ Webhook 主入口
-app.post("/webhook", async (req, res) => {
-  try {
-    const update = req.body;
-    console.log("📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
-    await handleTelegramUpdate(update);
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("❌ Webhook handler error:", err);
-    res.sendStatus(500);
-  }
-});
-
-// ✅ 测试入口：开发者专属 /test123（模拟启动 12 USDT 占卜，全自动三张）
-app.get("/test123", async (req, res) => {
-  const devId = 7685088782;
-  try {
-    await simulateButtonClick(devId, 0, 12);
-    await simulateButtonClick(devId, 1, 12);
-    await simulateButtonClick(devId, 2, 12);
-    res.send("✅ Test session triggered (card 1, 2, 3).");
-  } catch (err) {
-    res.status(500).send("❌ Failed to trigger test session.");
-  }
-});
-
-// ✅ 测试入口：开发者专属 /test30（模拟启动 30 USDT 占卜，全自动三张）
-app.get("/test30", async (req, res) => {
-  const devId = 7685088782;
-  try {
-    await simulateButtonClick(devId, 0, 30);
-    await simulateButtonClick(devId, 1, 30);
-    await simulateButtonClick(devId, 2, 30);
-    res.send("✅ Test session triggered (card 1, 2, 3, amount 30).");
-  } catch (err) {
-    res.status(500).send("❌ Failed to trigger test30.");
-  }
-});
-
-// ✅ 测试入口：任意模拟点击接口（GET 请求）
-app.get("/simulate", async (req, res) => {
-  const { userId, cardIndex, amount } = req.query;
-  if (!userId || !cardIndex || !amount) {
-    return res.status(400).send("❌ Missing parameters: userId, cardIndex, amount");
+    if (text === "/start") {
+      await sendMessage(userId, "Welcome. Please make a payment to begin your spiritual reading.");
+    } else if (text === "/test123" && userId === 7685088782) {
+      startSession(userId, 12);
+      await sendCardButtons(userId);
+    } else if (text === "/test30" && userId === 7685088782) {
+      startSession(userId, 30);
+      await sendCardButtons(userId);
+    }
   }
 
-  try {
-    await simulateButtonClick(Number(userId), Number(cardIndex), Number(amount));
-    res.send(`✅ Simulated card ${cardIndex} click for user ${userId} with ${amount} USDT`);
-  } catch (err) {
-    res.status(500).send("❌ Simulation failed.");
-  }
-});
+  if (update.callback_query) {
+    const query = update.callback_query;
+    const userId = query.from.id;
+    const data = query.data;
+    const messageId = query.message.message_id;
 
-// 🚀 启动服务
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+    if (!data.startsWith("card_")) return;
+
+    const [_, indexStr, amountStr] = data.split("_");
+    const index = parseInt(indexStr);
+    const amount = parseInt(amountStr);
+
+    let session = getSession(userId);
+    if (!session) {
+      session = startSession(userId, amount);
+    }
+
+    if (session.drawn.includes(index)) {
+      await sendMessage(userId, "⚠️ You've already drawn this card.");
+      return;
+    }
+
+    try {
+      const card = getCard(userId, index);
+      const meaning = getCardMeaning(card);
+      await sendMessage(userId, `*Your ${getPositionLabel(index)} Card:*
+
+${meaning}`);
+
+      if (isSessionComplete(userId)) {
+        // 三张牌都抽完，推送灵性模块：守护灵、幸运色与数字、月亮建议
+        await sendMessage(userId, await getSpiritGuide());
+        await sendMessage(userId, await getLuckyHints());
+        await sendMessage(userId, await getMoonAdvice());
+      } else {
+        await renderRemainingButtons(userId, session);
+      }
+    } catch (err) {
+      await sendMessage(userId, `❌ Error: ${err.message}`);
+    }
+  }
+}
+
+function getPositionLabel(index) {
+  return ["Past", "Present", "Future"][index] || "Card";
+}
+
+module.exports = { handleTelegramUpdate };
