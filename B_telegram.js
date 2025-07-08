@@ -4,7 +4,7 @@ const axios = require("axios");
 const { getSession, startSession } = require("./G_tarot-session");
 const { getCard } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
-const renderCardButtons = require("./G_button-render"); // ✅ 修复导入方式
+const { renderRemainingButtons } = require("./G_button-render"); // ✅ 正确导入
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
@@ -62,8 +62,7 @@ async function handleTelegramUpdate(update) {
       }
     }
 
-    // 非测试指令则忽略
-    return;
+    return; // 非测试指令忽略
   }
 
   if (callback) {
@@ -79,14 +78,17 @@ async function handleTelegramUpdate(update) {
     try {
       const card = getCard(userId, index);
       const meaning = getCardMeaning(card, index);
+
+      const session = getSession(userId);
+      const buttons = renderRemainingButtons(session.drawn, amount); // ✅ 修复调用方式
       await axios.post(`${API_URL}/editMessageReplyMarkup`, {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
-        reply_markup: renderCardButtons(userId, amount), // ✅ 加入 amount 参数
+        reply_markup: buttons,
       });
+
       await sendMessage(userId, meaning);
 
-      const session = getSession(userId);
       if (session.drawn.length === 3) {
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
