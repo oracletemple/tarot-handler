@@ -1,28 +1,30 @@
-// G_button-render.js - v1.0.2
+// G_button-render.js - v1.0.1
+
+const { getSession } = require("./G_tarot-session");
 
 /**
- * 生成当前还可点击的按钮（已抽卡片会被隐藏）
- * @param {Array<number>} drawn - 已抽的卡片索引列表，如 [0, 2]
- * @param {number} amount - 用户付款金额，用于构造 callback_data（如 12 / 30）
- * @returns {Object} reply_markup 对象，用于 editMessageReplyMarkup
+ * 生成抽牌按钮（仅展示未抽取的牌）
+ * @param {number} userId - Telegram 用户 ID
+ * @returns {object} - Telegram inline keyboard 格式
  */
-function renderRemainingButtons(drawn, amount) {
-  const allButtons = [
-    { index: 0, label: "🃏 Card 1" },
-    { index: 1, label: "🃏 Card 2" },
-    { index: 2, label: "🃏 Card 3" }
-  ];
+function renderCardButtons(userId) {
+  const session = getSession(userId);
+  if (!session) return { inline_keyboard: [] };
 
-  const remainingButtons = allButtons
-    .filter(btn => !drawn.includes(btn.index))
-    .map(btn => ({
-      text: btn.label,
-      callback_data: `card_${btn.index}_${amount}`
-    }));
+  const buttons = [];
 
-  return {
-    inline_keyboard: [remainingButtons]
-  };
+  for (let i = 0; i < 3; i++) {
+    if (!session.drawn.includes(i)) {
+      buttons.push([
+        {
+          text: `🃏 Card ${i + 1}`,
+          callback_data: `draw_card_${i}_${session.amount}`,
+        },
+      ]);
+    }
+  }
+
+  return { inline_keyboard: buttons };
 }
 
-module.exports = { renderRemainingButtons };
+module.exports = { renderCardButtons };
