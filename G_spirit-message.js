@@ -1,4 +1,4 @@
-// G_spirit-message.js - v1.1.0
+// G_spirit-message.js - v1.1.1
 const axios = require("axios");
 
 // ✅ 第一次点击使用：灵性指引短语（预设 21 段）
@@ -28,13 +28,13 @@ const presetSpiritMessages = [
 
 const usedApiSet = new Set();
 
-function getSpiritMessage(userId) {
+async function getSpiritMessage(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * presetSpiritMessages.length);
     return presetSpiritMessages[random];
   } else {
-    return callDeepSeekSpirit();
+    return await callDeepSeekSpirit();
   }
 }
 
