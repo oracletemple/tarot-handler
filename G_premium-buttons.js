@@ -1,10 +1,14 @@
-// G_premium-buttons.js - v1.3.0
+// G_premium-buttons.js - v1.3.1
 
 const { premiumModules } = require('./G_premium-modules');
 
 function renderPremiumButtons(session) {
-  const completed = session.completed || [];
-  const remaining = premiumModules.filter(mod => !completed.includes(mod.key));
+  // ✅ 容错初始化
+  if (!session.completed || !Array.isArray(session.completed)) {
+    session.completed = [];
+  }
+
+  const remaining = premiumModules.filter(mod => !session.completed.includes(mod.key));
   if (remaining.length === 0) return null;
 
   const rows = [];
