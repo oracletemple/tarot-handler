@@ -1,45 +1,40 @@
-// B_test-simulator.js // v1.0.0
+// test-simulator.js - v1.0.2
 
-const express = require("express");
-const router = express.Router();
 const axios = require("axios");
 
-// POST /simulate-test-click
-router.post("/simulate-test-click", async (req, res) => {
-  const { userId, cardIndex, amount } = req.body;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.RECEIVER_ID; // 7685088782
+const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-  const payload = {
-    update_id: Math.floor(Math.random() * 10000000),
-    callback_query: {
-      id: "fake-callback-id",
-      from: {
-        id: userId,
-        is_bot: false,
-        first_name: "TestUser",
-        username: "testuser"
-      },
-      message: {
-        message_id: 222,
-        date: Math.floor(Date.now() / 1000),
-        chat: {
-          id: userId,
-          type: "private"
-        },
-        text: "Your spiritual reading is ready. Please choose a card to reveal:"
-      },
-      chat_instance: "test_instance",
-      data: `card_${cardIndex}_${amount}`
-    }
-  };
+const premiumKeys = [
+  "pastlife", "purpose", "karma",
+  "energy", "timing", "symbol",
+  "spirit", "mirror", "journal"
+];
 
+async function simulateButtonClick(callback_data) {
   try {
-    await axios.post(process.env.WEBHOOK_URL, payload, {
-      headers: { "Content-Type": "application/json" }
+    const res = await axios.post(`${API_URL}/webhook`, {
+      callback_query: {
+        id: String(Date.now()),
+        from: { id: CHAT_ID, is_bot: false, first_name: "Dev" },
+        message: {
+          message_id: Math.floor(Math.random() * 10000),
+          chat: { id: CHAT_ID, type: "private" },
+          text: "Button test"
+        },
+        data: `premium_${callback_data}`
+      }
     });
-    res.send("✅ Test click simulated.");
-  } catch (error) {
-    res.status(500).send("❌ Error simulating click: " + (error.response?.data || error.message));
+    console.log(`✅ Clicked: ${callback_data}`, res.data);
+  } catch (err) {
+    console.error(`❌ Error clicking ${callback_data}`, err.response?.data || err.message);
   }
-});
+}
 
-module.exports = router;
+(async () => {
+  for (const key of premiumKeys) {
+    await simulateButtonClick(key);
+    await new Promise(res => setTimeout(res, 1500)); // 每次间隔 1.5 秒
+  }
+})();
