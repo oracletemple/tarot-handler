@@ -1,6 +1,6 @@
-// G_simulate-click.js - v1.1.4
+// G_simulate-click.js - v1.1.5
 
-require("dotenv").config(); // ✅ 加入这一行，确保能读取 .env
+require("dotenv").config();
 const axios = require("axios");
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
@@ -8,10 +8,9 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL;
 /**
  * 模拟按钮点击，向 Webhook 推送 callback_query 数据
  * @param {number} userId - Telegram 用户 ID
- * @param {number} cardIndex - 1 / 2 / 3
- * @param {number} amount - 12 / 30
+ * @param {number} cardIndex - 0 / 1 / 2
  */
-async function simulateButtonClick(userId, cardIndex, amount) {
+async function simulateButtonClick(userId, cardIndex) {
   const payload = {
     update_id: Math.floor(Math.random() * 10000000),
     callback_query: {
@@ -32,7 +31,7 @@ async function simulateButtonClick(userId, cardIndex, amount) {
         text: "Your spiritual reading is ready. Please choose a card to reveal:"
       },
       chat_instance: "test_instance",
-      data: `card_${cardIndex}_${amount}`
+      data: `card_${cardIndex}`
     }
   };
 
@@ -40,7 +39,7 @@ async function simulateButtonClick(userId, cardIndex, amount) {
     await axios.post(WEBHOOK_URL, payload, {
       headers: { "Content-Type": "application/json" }
     });
-    console.log(`✅ Simulated card ${cardIndex} click for user ${userId} (${amount} USDT)`);
+    console.log(`✅ Simulated card ${cardIndex} click for user ${userId}`);
   } catch (err) {
     console.error("❌ simulateButtonClick failed:", err.response?.data || err.message);
   }
