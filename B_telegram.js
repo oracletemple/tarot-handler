@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.2
+// B_telegram.js - v1.5.3
 
 const axios = require("axios");
 const { getSession, startSession, getCard } = require("./G_tarot-session");
@@ -9,7 +9,6 @@ const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 
 const { renderPremiumButtons, getLoadingMessage, getHeaderTitle } = require("./G_premium-buttons");
-const { premiumModules } = require("./G_premium-modules");
 
 const {
   getGptAnalysis,
@@ -121,7 +120,9 @@ async function handleTelegramUpdate(update) {
 
       const buttons = renderPremiumButtons(session);
       if (buttons) {
-        await sendMessage(userId, "Choose your next insight:", buttons);
+        await sendMessage(userId, "Choose your next insight:", {
+          reply_markup: buttons,
+        });
       }
 
       await axios.post(`${API_URL}/answerCallbackQuery`, {
@@ -150,7 +151,6 @@ async function handleTelegramUpdate(update) {
 
       await sendMessage(userId, meaning);
 
-      // ✅ 强制刷新最新 session，防止判定失败
       const sessionAfterDraw = getSession(userId);
 
       if (sessionAfterDraw.drawn.length === 3) {
