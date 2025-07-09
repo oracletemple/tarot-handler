@@ -25,15 +25,13 @@ async function handleTelegramUpdate(update) {
     if ((text === "/test123" || text === "/test12") && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 12);
       console.log("✅ /test123 or /test12 triggered, session started:", session);
-      const { reply_markup } = renderCardButtons(session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", reply_markup);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 30);
       console.log("✅ /test30 triggered, session started:", session);
-      const { reply_markup } = renderCardButtons(session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", reply_markup);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
   }
 
@@ -47,19 +45,17 @@ async function handleTelegramUpdate(update) {
       try {
         const card = getCard(userId, index);
         const meaning = getCardMeaning(card, index);
-        await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
         await sendMessage(userId, meaning);
 
         const session = getSession(userId);
         if (!isSessionComplete(userId)) {
-          const { reply_markup } = renderCardButtons(session);
-          await sendMessage(userId, "🔮 Continue drawing:", reply_markup);
+          await updateMessageButtons(userId, msgId, renderCardButtons(session));
         } else {
+          await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
           await sendMessage(userId, await getSpiritGuide());
           await sendMessage(userId, await getLuckyHints());
           await sendMessage(userId, await getMoonAdvice());
-          const premiumMarkup = renderPremiumButtonsInline();
-          await sendMessage(userId, "✨ Unlock your deeper guidance:", premiumMarkup);
+          await sendMessage(userId, "✨ Unlock your deeper guidance:", renderPremiumButtonsInline());
         }
       } catch (err) {
         await sendMessage(userId, `⚠️ ${err.message}`);
@@ -69,13 +65,27 @@ async function handleTelegramUpdate(update) {
     if (premiumHandlers[data]) {
       console.log("📥 Callback received:", data);
 
+      // 先渲染为 Loading 占位
       await updateMessageButtons(userId, msgId, {
         inline_keyboard: [[{ text: "🔄 Loading...", callback_data: "loading_disabled" }]]
       });
 
       try {
         const response = await premiumHandlers[data](userId);
-        await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
+
+        // 移除已点击按钮，其它按钮保留
+        const originalMarkup = callback.message.reply_markup;
+        const updatedButtons = originalMarkup.inline_keyboard.filter(row => row.length > 0).map(row => {
+          const btn = row[0];
+          if (btn.callback_data === data) return []; // 移除该按钮
+          return [btn];
+        });
+
+        const newMarkup = {
+          inline_keyboard: updatedButtons.filter(row => row.length > 0)
+        };
+
+        await updateMessageButtons(userId, msgId, newMarkup);
         await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
