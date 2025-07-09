@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.9
+// B_telegram.js - v1.5.8
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -8,10 +8,14 @@ const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 const { renderPremiumButtonsInline, premiumHandlers } = require("./G_premium-buttons");
-const { logPremiumClick } = require("./G_flow-monitor");
+const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = require("./G_flow-monitor");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+function escapeMarkdownV2(text) {
+  return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
+}
 
 async function handleTelegramUpdate(update) {
   console.log("\n📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
@@ -25,20 +29,21 @@ async function handleTelegramUpdate(update) {
 
     if ((text === "/test123" || text === "/test12") && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 12);
+      startFlow(chatId);
       console.log("✅ /test123 or /test12 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 30);
+      startFlow(chatId);
       console.log("✅ /test30 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/debugflow" && chatId == process.env.RECEIVER_ID) {
-      const { getFlowState } = require("./G_flow-monitor");
-      const debug = getFlowState(chatId);
-      await sendMessage(chatId, "🛠 Flow State:\n" + "```json\n" + JSON.stringify(debug, null, 2) + "\n```");
+      const debug = debugFlow(chatId);
+      await sendMessage(chatId, debug);
     }
   }
 
@@ -54,6 +59,7 @@ async function handleTelegramUpdate(update) {
         const card = getCard(userId, index);
         const meaning = getCardMeaning(card, index);
         await sendMessage(userId, meaning);
+        incrementDraw(userId);
 
         const session = getSession(userId);
         if (!isSessionComplete(userId)) {
@@ -61,9 +67,16 @@ async function handleTelegramUpdate(update) {
         } else {
           await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
           await sendMessage(userId, await getSpiritGuide());
+          markStep(userId, "spiritGuide");
+
           await sendMessage(userId, await getLuckyHints());
+          markStep(userId, "luckyHints");
+
           await sendMessage(userId, await getMoonAdvice());
+          markStep(userId, "moonAdvice");
+
           await sendMessage(userId, "✨ Unlock your deeper guidance:", renderPremiumButtonsInline());
+          markStep(userId, "premiumButtonsShown");
         }
       } catch (err) {
         await sendMessage(userId, `⚠️ ${err.message}`);
@@ -87,11 +100,8 @@ async function handleTelegramUpdate(update) {
 
       try {
         const response = await premiumHandlers[data](userId);
+        markPremiumClick(userId, data);
 
-        // ✅ 记录点击行为
-        logPremiumClick(userId, data);
-
-        // 移除该按钮
         const filteredButtons = originalButtons
           .map(row => row.filter(btn => btn.callback_data !== data))
           .filter(row => row.length > 0);
@@ -112,8 +122,8 @@ async function handleTelegramUpdate(update) {
 async function sendMessage(chatId, text, reply_markup = null) {
   const payload = {
     chat_id: chatId,
-    text,
-    parse_mode: "Markdown"
+    text: escapeMarkdownV2(text),
+    parse_mode: "MarkdownV2",
   };
   if (reply_markup) payload.reply_markup = reply_markup;
 
