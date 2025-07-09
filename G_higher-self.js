@@ -1,4 +1,5 @@
-// G_higher-self.js - v1.1.0
+// G_higher-self.js - v1.1.1
+
 const axios = require("axios");
 
 const presetMessages = [
@@ -27,18 +28,18 @@ const presetMessages = [
 
 const usedApiSet = new Set();
 
-function getHigherSelfMessage(userId) {
+async function getHigherSelfInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const i = Math.floor(Math.random() * presetMessages.length);
     return presetMessages[i];
   } else {
-    return callDeepSeekHigher();
+    return await callDeepSeekHigher();
   }
 }
 
 async function callDeepSeekHigher() {
-  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Offer a spiritual and poetic message from the user's Higher Self. Focus on empowerment, inner truth, and soul remembrance.`;
 
   try {
@@ -47,13 +48,13 @@ async function callDeepSeekHigher() {
       {
         model: "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
+        temperature: 0.9
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
+          Authorization: `Bearer ${apiKey}`
+        }
       }
     );
 
@@ -64,4 +65,4 @@ async function callDeepSeekHigher() {
   }
 }
 
-module.exports = { getHigherSelfMessage };
+module.exports = { getHigherSelfInsight };
