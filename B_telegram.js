@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.1
+// B_telegram.js - v1.5.2
 
 const axios = require("axios");
 const { getSession, startSession, getCard } = require("./G_tarot-session");
@@ -92,10 +92,8 @@ async function handleTelegramUpdate(update) {
         return;
       }
 
-      // 1. 显示灵性加载提示
       await sendMessage(userId, getLoadingMessage());
 
-      // 2. 获取内容
       let msg = "";
       if (key === "gpt") msg = await getGptAnalysis();
       else if (key === "summary") msg = getTarotSummary();
@@ -119,10 +117,8 @@ async function handleTelegramUpdate(update) {
         await sendMessage(userId, `*${title}*\n\n${msg}`);
       }
 
-      // 3. 标记为已完成
       session.completed.push(key);
 
-      // 4. 插入剩余按钮
       const buttons = renderPremiumButtons(session);
       if (buttons) {
         await sendMessage(userId, "Choose your next insight:", buttons);
@@ -135,7 +131,7 @@ async function handleTelegramUpdate(update) {
       return;
     }
 
-    // ✅ 抽牌逻辑
+    // ✅ 抽牌逻辑（修复）
     const match = data.match(/^draw_card_(\d+)_(\d+)/);
     if (!match) return;
 
@@ -154,14 +150,16 @@ async function handleTelegramUpdate(update) {
 
       await sendMessage(userId, meaning);
 
-      const session = getSession(userId);
-      if (session.drawn.length === 3) {
+      // ✅ 强制刷新最新 session，防止判定失败
+      const sessionAfterDraw = getSession(userId);
+
+      if (sessionAfterDraw.drawn.length === 3) {
         await sendMessage(userId, getSpiritGuide());
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
 
         await sendMessage(userId, "✨ *Unlock your deeper guidance:*", {
-          reply_markup: renderPremiumButtons(session),
+          reply_markup: renderPremiumButtons(sessionAfterDraw),
         });
       }
     } catch (err) {
