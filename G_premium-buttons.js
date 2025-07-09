@@ -1,67 +1,65 @@
 // G_premium-buttons.js - v1.3.1
 
-const { sendMessage } = require("./G_send-message");
-const { getHigherSelf } = require("./G_higher-self");
+const { getPastLife } = require("./G_pastlife");
 const { getMirrorMessage } = require("./G_mirror-message");
+const { getKarmicCycle } = require("./G_karmic-cycle");
 const { getEnergyReading } = require("./G_energy-reading");
-// 其他高端模块依次引入...
+const { getSoulPurpose } = require("./G_soul-purpose");
+const { getMessageFromSpirit } = require("./G_spirit-message");
+const { getSacredSymbol } = require("./G_sacred-symbol");
+const { getDivineTiming } = require("./G_divine-timing");
+const { getOracleCard } = require("./G_oracle-card");
+const { getHigherSelf } = require("./G_higher-self");
 
-// 定义按钮组（每组最多展示三个按钮）
-const premiumGroups = [
+const premiumHandlers = {
+  premium_pastlife: getPastLife,
+  premium_mirror: getMirrorMessage,
+  premium_karma: getKarmicCycle,
+  premium_energy: getEnergyReading,
+  premium_purpose: getSoulPurpose,
+  premium_spirit: getMessageFromSpirit,
+  premium_symbol: getSacredSymbol,
+  premium_timing: getDivineTiming,
+  premium_oracle: getOracleCard,
+  premium_higher: getHigherSelf
+};
+
+const buttonGroups = [
   [
     { text: "🧘 Higher Self", callback_data: "premium_higher" },
     { text: "🪞 Mirror Message", callback_data: "premium_mirror" },
     { text: "🌀 Energy Reading", callback_data: "premium_energy" }
+  ],
+  [
+    { text: "🔭 Soul Purpose", callback_data: "premium_purpose" },
+    { text: "🧿 Past Life Echoes", callback_data: "premium_pastlife" },
+    { text: "🕯 Karmic Cycle", callback_data: "premium_karma" }
+  ],
+  [
+    { text: "🌬 Message from Spirit", callback_data: "premium_spirit" },
+    { text: "⛩ Sacred Symbol", callback_data: "premium_symbol" },
+    { text: "⏳ Divine Timing", callback_data: "premium_timing" }
+  ],
+  [
+    { text: "🪄 Oracle Card", callback_data: "premium_oracle" }
   ]
-  // 后续组可追加...
 ];
 
-// 渲染当前组按钮
-async function renderPremiumButtons(ctx, groupIndex = 0) {
-  const group = premiumGroups[groupIndex];
-  if (!group) return;
-
-  const buttons = group.map((item) => [{ text: item.text, callback_data: item.callback_data }]);
-
-  // 加入“下一组”按钮（如有）
-  if (groupIndex < premiumGroups.length - 1) {
-    buttons.push([{ text: "Next ➡️", callback_data: `next_${groupIndex + 1}` }]);
-  }
-
-  await sendMessage(ctx.chat.id, "✨ Choose your premium guidance:", {
+function renderPremiumButtons(groupIndex = 0) {
+  if (groupIndex < 0 || groupIndex >= buttonGroups.length) return null;
+  return {
     reply_markup: {
-      inline_keyboard: buttons
+      inline_keyboard: buttonGroups[groupIndex].map((btn) => [{ text: btn.text, callback_data: btn.callback_data }])
     }
-  });
+  };
 }
 
-// 高端模块处理函数映射
-const premiumHandlers = {
-  premium_higher: getHigherSelf,
-  premium_mirror: getMirrorMessage,
-  premium_energy: getEnergyReading
-  // 其他模块注册...
-};
-
-// 响应按钮点击（渲染 Loading，再显示内容）
-async function handlePremiumCallback(ctx, key) {
-  const handler = premiumHandlers[key];
-  if (typeof handler !== "function") return;
-
-  // 显示 Loading
-  await ctx.editMessageReplyMarkup({
-    inline_keyboard: [[{ text: "⏳ Loading...", callback_data: "loading" }]]
-  });
-
-  // 获取解读内容
-  const content = await handler(ctx.from.id);
-
-  // 删除按钮，发送内容
-  await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
-  await sendMessage(ctx.chat.id, content);
+function getPremiumHandler(key) {
+  return premiumHandlers[key] || null;
 }
 
 module.exports = {
   renderPremiumButtons,
-  handlePremiumCallback
+  getPremiumHandler,
+  buttonGroups
 };
