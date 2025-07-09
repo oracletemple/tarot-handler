@@ -1,52 +1,31 @@
-// B_telegram.js - v1.5.5
+// B_telegram.js - v1.5.6
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
 const { renderCardButtons } = require("./G_button-render");
-
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 
-const {
-  renderPremiumButtons,
-  getNextPremiumGroupIndex,
-  getPremiumButtonsByGroup
-} = require("./G_premium-buttons");
+const { renderPremiumButtons, getNextPremiumGroupIndex } = require("./G_premium-buttons");
 
-const {
-  getTarotSummary,
-  getJournalPrompt,
-  getShadowMessage,
-  getSoulArchetype,
-  getHigherSelf,
-  getCosmicAlignment,
-  getOracleCard,
-  getPastLifeEcho,
-  getSoulPurpose,
-  getKarmicCycle,
-  getEnergyReading,
-  getDivineTiming,
-  getSacredSymbol,
-  getMessageFromSpirit,
-  getMirrorMessage,
-} = {
-  ...require("./G_tarot-summary"),
-  ...require("./G_journal-prompt"),
-  ...require("./G_shadow-message"),
-  ...require("./G_soul-archetype"),
-  ...require("./G_higher-self"),
-  ...require("./G_cosmic-alignment"),
-  ...require("./G_oracle-card"),
-  ...require("./G_pastlife"),
-  ...require("./G_soul-purpose"),
-  ...require("./G_karmic-cycle"),
-  ...require("./G_energy-reading"),
-  ...require("./G_divine-timing"),
-  ...require("./G_sacred-symbol"),
-  ...require("./G_spirit-message"),
-  ...require("./G_mirror-message"),
+const premiumHandlers = {
+  premium_summary: require("./G_tarot-summary").getTarotSummary,
+  premium_journal: require("./G_journal-prompt").getJournalPrompt,
+  premium_shadow: require("./G_shadow-message").getShadowMessage,
+  premium_archetype: require("./G_soul-archetype").getSoulArchetype,
+  premium_higher: require("./G_higher-self").getHigherSelf,
+  premium_cosmic: require("./G_cosmic-alignment").getCosmicAlignment,
+  premium_oracle: require("./G_oracle-card").getOracleCard,
+  premium_pastlife: require("./G_pastlife").getPastLifeEcho,
+  premium_purpose: require("./G_soul-purpose").getSoulPurpose,
+  premium_karma: require("./G_karmic-cycle").getKarmicCycle,
+  premium_energy: require("./G_energy-reading").getEnergyReading,
+  premium_timing: require("./G_divine-timing").getDivineTiming,
+  premium_symbol: require("./G_sacred-symbol").getSacredSymbol,
+  premium_spirit: require("./G_spirit-message").getMessageFromSpirit,
+  premium_mirror: require("./G_mirror-message").getMirrorMessage,
 };
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -103,7 +82,6 @@ async function handleTelegramUpdate(req, res) {
     const messageId = callback.message.message_id;
     const data = callback.data;
 
-    // ===== 抽卡逻辑 =====
     if (data.startsWith("card_")) {
       const index = parseInt(data.split("_")[1], 10);
       try {
@@ -120,7 +98,6 @@ async function handleTelegramUpdate(req, res) {
         const meaning = getCardMeaning(randomCard.name);
         await editMessage(chatId, messageId, `🔮 *${label}*\n${randomCard.name}\n_${meaning}_`);
 
-        // 更新按钮（隐藏已点击项）
         if (session.drawn.length < 3) {
           await axios.post(`${API_URL}/editMessageReplyMarkup`, {
             chat_id: chatId,
@@ -128,7 +105,6 @@ async function handleTelegramUpdate(req, res) {
             reply_markup: renderCardButtons(session).reply_markup,
           });
         } else {
-          // 推送灵性内容（基础 + 高端按钮）
           await sendMessage(chatId, await getSpiritGuide());
           await sendMessage(chatId, await getLuckyHints());
           await sendMessage(chatId, await getMoonAdvice());
@@ -140,25 +116,6 @@ async function handleTelegramUpdate(req, res) {
 
       return res.sendStatus(200);
     }
-
-    // ===== 高端模块回调处理 =====
-    const premiumHandlers = {
-      premium_summary: getTarotSummary,
-      premium_journal: getJournalPrompt,
-      premium_shadow: getShadowMessage,
-      premium_archetype: getSoulArchetype,
-      premium_higher: getHigherSelf,
-      premium_cosmic: getCosmicAlignment,
-      premium_oracle: getOracleCard,
-      premium_pastlife: getPastLifeEcho,
-      premium_purpose: getSoulPurpose,
-      premium_karma: getKarmicCycle,
-      premium_energy: getEnergyReading,
-      premium_timing: getDivineTiming,
-      premium_symbol: getSacredSymbol,
-      premium_spirit: getMessageFromSpirit,
-      premium_mirror: getMirrorMessage,
-    };
 
     if (data in premiumHandlers) {
       const session = getSession(userId);
@@ -173,7 +130,6 @@ async function handleTelegramUpdate(req, res) {
       return res.sendStatus(200);
     }
 
-    // ===== 下一组按钮分页 =====
     if (data.startsWith("next_")) {
       const groupIndex = parseInt(data.split("_")[1], 10);
       await renderPremiumButtons(chatId, messageId, groupIndex);
