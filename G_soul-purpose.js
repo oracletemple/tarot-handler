@@ -1,9 +1,9 @@
-// G_soul-purpose.js - v1.0.1
+// G_soul-purpose.js - v1.1.0
 const axios = require("axios");
 
-const deepseekKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
+const DEEPSEEK_KEY = "sk-cf17088ece0a4bc985dec1464cf504e1";
 
-const fixedMessages = [
+const presetSoulPurposes = [
   `🔭 *Soul Purpose Insight*\n\nYou were born to be a light bearer—someone who guides others through dark transitions. Your presence brings clarity, even when you feel uncertain within.`,
   `🔭 *Soul Purpose Insight*\n\nYour soul carries the blueprint of a healer. Whether through words, presence, or touch, you are meant to soothe, restore, and realign those around you.`,
   `🔭 *Soul Purpose Insight*\n\nYou are a truth-seeker. Your purpose involves questioning, breaking illusions, and revealing what lies beneath the surface—no matter how uncomfortable.`,
@@ -27,40 +27,43 @@ const fixedMessages = [
   `🔭 *Soul Purpose Insight*\n\nYour purpose is to awaken hearts. You carry the courage to feel deeply and help others open.`
 ];
 
-function getRandomSoulPurpose() {
-  const i = Math.floor(Math.random() * fixedMessages.length);
-  return fixedMessages[i];
+const usedApiSet = new Set();
+
+async function getSoulPurposeInsight(userId) {
+  if (!usedApiSet.has(userId)) {
+    usedApiSet.add(userId);
+    const random = Math.floor(Math.random() * presetSoulPurposes.length);
+    return presetSoulPurposes[random];
+  } else {
+    return await callDeepSeekPurpose();
+  }
 }
 
-async function getSoulPurpose(wasUsedBefore = false) {
-  if (!wasUsedBefore) {
-    return getRandomSoulPurpose();
-  }
-
+async function callDeepSeekPurpose() {
   const prompt = `Offer a deep and poetic spiritual message that helps someone understand their soul purpose. Avoid cliches. Use symbolic, wise language.`;
+
   try {
     const response = await axios.post(
       "https://api.deepseek.com/v1/chat/completions",
       {
         model: "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
-        max_tokens: 600,
+        temperature: 0.85,
+        max_tokens: 600
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${deepseekKey}`,
-        },
+          Authorization: `Bearer ${DEEPSEEK_KEY}`
+        }
       }
     );
 
-    const text = response.data.choices[0].message.content.trim();
-    return `🔭 *Soul Purpose Insight*\n\n${text}`;
+    return `🔭 *Soul Purpose Insight*\n\n${response.data.choices[0].message.content.trim()}`;
   } catch (err) {
-    console.error("DeepSeek API Error:", err.message);
+    console.error("DeepSeek API error (soul purpose):", err.message);
     return "🌀 Your soul purpose is still forming... try again later.";
   }
 }
 
-module.exports = { getSoulPurpose };
+module.exports = { getSoulPurposeInsight };
