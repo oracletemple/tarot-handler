@@ -1,8 +1,10 @@
 // G_premium-buttons.js - v1.3.0
+
 const { premiumModules } = require('./G_premium-modules');
 
 function renderPremiumButtons(session) {
-  const remaining = premiumModules.filter(mod => !session.completed.includes(mod.key));
+  const completed = session.completed || [];
+  const remaining = premiumModules.filter(mod => !completed.includes(mod.key));
   if (remaining.length === 0) return null;
 
   const rows = [];
@@ -10,7 +12,7 @@ function renderPremiumButtons(session) {
     rows.push(
       remaining.slice(i, i + 3).map(mod => ({
         text: `${mod.icon} ${mod.label}`,
-        callback_data: mod.key,
+        callback_data: `premium_${mod.key}`,
       }))
     );
   }
@@ -27,9 +29,8 @@ function getLoadingMessage() {
 }
 
 function getHeaderTitle(callbackKey) {
-  const mod = premiumModules.find(m => m.key === callbackKey);
-  if (!mod) return '🔮 Oracle\'s Message';
-  return `🔮 ${mod.label}`;
+  const mod = premiumModules.find(m => `premium_${mod.key}` === callbackKey);
+  return mod ? `🔮 ${mod.label}` : `🔮 Oracle's Message`;
 }
 
 module.exports = {
