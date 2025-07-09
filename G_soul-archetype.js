@@ -1,4 +1,4 @@
-// G_soul-archetype.js - v1.1.0
+// G_soul-archetype.js - v1.1.1
 const axios = require("axios");
 
 const presetArchetypes = [
@@ -27,18 +27,18 @@ const presetArchetypes = [
 
 const usedApiSet = new Set();
 
-function getSoulArchetype(userId) {
+async function getSoulArchetypeInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const idx = Math.floor(Math.random() * presetArchetypes.length);
     return presetArchetypes[idx];
   } else {
-    return callDeepSeekArchetype();
+    return await callDeepSeekArchetype();
   }
 }
 
 async function callDeepSeekArchetype() {
-  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Offer a mystical and symbolic soul archetype reading. Describe the user as an archetypal energy using poetic, mythic, or elemental language.`;
 
   try {
@@ -47,13 +47,13 @@ async function callDeepSeekArchetype() {
       {
         model: "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.85,
+        temperature: 0.85
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
+          Authorization: `Bearer ${apiKey}`
+        }
       }
     );
 
@@ -64,4 +64,4 @@ async function callDeepSeekArchetype() {
   }
 }
 
-module.exports = { getSoulArchetype };
+module.exports = { getSoulArchetypeInsight };
