@@ -1,7 +1,6 @@
-// G_pastlife.js - v1.0.0
+// G_pastlife.js - v1.0.1
 const axios = require("axios");
 
-// ✅ 固定 21 段灵性文案
 const messages = [
   "🧿 *You once stood at the gates of an ancient temple*, cloaked in midnight blue, whispering invocations to forgotten gods. Your soul still remembers the stillness between each sacred word.",
   "🧿 *In a lifetime long past, you walked the deserts alone*, seeking silence not as absence, but as a bridge to the divine. Your footsteps echo still in moments of deep meditation.",
@@ -26,7 +25,6 @@ const messages = [
   "🧿 *You broke cycles once*, not for yourself, but for generations to come. You're still breaking them now—with greater awareness."
 ];
 
-// ✅ DeepSeek API 配置
 const DEEPSEEK_KEY = "sk-cf17088ece0a4bc985dec1464cf504e1";
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
@@ -35,12 +33,8 @@ const headers = {
   "Authorization": `Bearer ${DEEPSEEK_KEY}`
 };
 
-// ✅ 记录调用次数
 const userUsage = {};
 
-/**
- * 获取前世灵性文案（首次使用随机固定，之后调用 GPT）
- */
 async function getPastLifeMessage(userId) {
   if (!userUsage[userId]) {
     userUsage[userId] = 1;
@@ -76,4 +70,5 @@ async function getPastLifeMessage(userId) {
   }
 }
 
-module.exports = { getPastLifeMessage };
+// ✅ 用系统预期的函数名导出
+module.exports = { getPastLifeEcho: getPastLifeMessage };
