@@ -29,4 +29,6 @@ async function getEnergyReading(userId) {
   }
 }
 
-module.exports = { getEnergyReading };
+module.exports = { 
+  getEnergyReading,
+  getPremiumEnergy: getEnergyReading };
