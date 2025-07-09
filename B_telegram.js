@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.3
+// B_telegram.js - v1.5.4
 
 const axios = require("axios");
 const { getSession, startSession, getCard } = require("./G_tarot-session");
@@ -8,7 +8,8 @@ const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 
-const { renderPremiumButtons, getLoadingMessage, getHeaderTitle } = require("./G_premium-buttons");
+const { getNextButtonGroup, resetPremiumProgress } = require("./G_premium-buttons");
+const { premiumModules } = require("./G_premium-modules");
 
 const {
   getGptAnalysis,
@@ -52,6 +53,7 @@ async function handleTelegramUpdate(update) {
     if (userId === 7685088782) {
       if (text === "/test123") {
         startSession(userId, 12);
+        resetPremiumProgress(userId);
         await sendMessage(userId, "✅ Test mode activated (12 USDT). Please choose your card:");
         await sendMessage(userId, "Please draw your cards:", {
           reply_markup: renderCardButtons(userId),
@@ -61,6 +63,7 @@ async function handleTelegramUpdate(update) {
 
       if (text === "/test30") {
         startSession(userId, 30);
+        resetPremiumProgress(userId);
         await sendMessage(userId, "✅ Test mode activated (30 USDT). Please choose your card:");
         await sendMessage(userId, "Please draw your cards:", {
           reply_markup: renderCardButtons(userId),
@@ -91,7 +94,7 @@ async function handleTelegramUpdate(update) {
         return;
       }
 
-      await sendMessage(userId, getLoadingMessage());
+      await sendMessage(userId, "_Retrieving guidance..._");
 
       let msg = "";
       if (key === "gpt") msg = await getGptAnalysis();
@@ -112,16 +115,15 @@ async function handleTelegramUpdate(update) {
       else if (key === "mirror") msg = await getMirrorMessage(userId);
 
       if (msg) {
-        const title = getHeaderTitle(`premium_${key}`);
-        await sendMessage(userId, `*${title}*\n\n${msg}`);
+        await sendMessage(userId, `*${premiumModules.find(m => m.key === key)?.label || "Insight"}*\n\n${msg}`);
       }
 
       session.completed.push(key);
 
-      const buttons = renderPremiumButtons(session);
-      if (buttons) {
-        await sendMessage(userId, "Choose your next insight:", {
-          reply_markup: buttons,
+      const nextGroup = getNextButtonGroup(userId);
+      if (nextGroup) {
+        await sendMessage(userId, "✨ *Unlock your deeper guidance:*", {
+          reply_markup: { inline_keyboard: [nextGroup] },
         });
       }
 
@@ -132,7 +134,7 @@ async function handleTelegramUpdate(update) {
       return;
     }
 
-    // ✅ 抽牌逻辑（修复）
+    // ✅ 抽牌逻辑
     const match = data.match(/^draw_card_(\d+)_(\d+)/);
     if (!match) return;
 
@@ -158,9 +160,12 @@ async function handleTelegramUpdate(update) {
         await sendMessage(userId, getLuckyHints());
         await sendMessage(userId, getMoonAdvice());
 
-        await sendMessage(userId, "✨ *Unlock your deeper guidance:*", {
-          reply_markup: renderPremiumButtons(sessionAfterDraw),
-        });
+        const nextGroup = getNextButtonGroup(userId);
+        if (nextGroup) {
+          await sendMessage(userId, "✨ *Unlock your deeper guidance:*", {
+            reply_markup: { inline_keyboard: [nextGroup] },
+          });
+        }
       }
     } catch (err) {
       await sendMessage(userId, `⚠️ ${err.message}`);
