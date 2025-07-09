@@ -1,4 +1,4 @@
-// G_button-render.js - v1.0.4
+// G_button-render.js - v1.0.5
 
 function renderCardButtons(session) {
   if (!session || !session.cards || !Array.isArray(session.cards)) {
@@ -25,9 +25,7 @@ function renderCardButtons(session) {
   }
 
   return {
-    reply_markup: {
-      inline_keyboard: buttons,
-    },
+    inline_keyboard: buttons,
   };
 }
 
