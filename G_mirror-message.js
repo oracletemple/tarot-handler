@@ -29,4 +29,8 @@ async function getMirrorMessage(userId) {
   }
 }
 
-module.exports = { getMirrorMessage };
+module.exports = {
+  getMirrorMessage,
+  getPremiumMirror: getMirrorMessage
+};
+
