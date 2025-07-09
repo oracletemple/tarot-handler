@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.8
+// B_telegram.js - v1.5.9
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -8,7 +8,7 @@ const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 const { renderPremiumButtonsInline, premiumHandlers } = require("./G_premium-buttons");
-const { startFlow, incrementDraw, markStep, markPremiumClick, getFlowStatus } = require("./G_flow-monitor");
+const { logPremiumClick } = require("./G_flow-monitor");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
@@ -25,21 +25,20 @@ async function handleTelegramUpdate(update) {
 
     if ((text === "/test123" || text === "/test12") && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 12);
-      startFlow(chatId); // flow record
       console.log("✅ /test123 or /test12 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 30);
-      startFlow(chatId); // flow record
       console.log("✅ /test30 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/debugflow" && chatId == process.env.RECEIVER_ID) {
-      const status = getFlowStatus(chatId);
-      await sendMessage(chatId, `📊 Flow Status:\n\n\`\`\`\n${JSON.stringify(status, null, 2)}\n\`\`\``, null);
+      const { getFlowState } = require("./G_flow-monitor");
+      const debug = getFlowState(chatId);
+      await sendMessage(chatId, "🛠 Flow State:\n" + "```json\n" + JSON.stringify(debug, null, 2) + "\n```");
     }
   }
 
@@ -48,6 +47,7 @@ async function handleTelegramUpdate(update) {
     const data = callback.data;
     const msgId = callback.message.message_id;
 
+    // === 基础卡牌互动 ===
     if (data.startsWith("card_")) {
       const index = parseInt(data.split("_")[1]);
       try {
@@ -55,33 +55,22 @@ async function handleTelegramUpdate(update) {
         const meaning = getCardMeaning(card, index);
         await sendMessage(userId, meaning);
 
-        incrementDraw(userId); // record draw
-
         const session = getSession(userId);
         if (!isSessionComplete(userId)) {
           await updateMessageButtons(userId, msgId, renderCardButtons(session));
         } else {
           await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
-
-          const guide = await getSpiritGuide();
-          const hints = await getLuckyHints();
-          const moon = await getMoonAdvice();
-
-          await sendMessage(userId, guide);
-          markStep(userId, "spiritGuide");
-          await sendMessage(userId, hints);
-          markStep(userId, "luckyHints");
-          await sendMessage(userId, moon);
-          markStep(userId, "moonAdvice");
-
+          await sendMessage(userId, await getSpiritGuide());
+          await sendMessage(userId, await getLuckyHints());
+          await sendMessage(userId, await getMoonAdvice());
           await sendMessage(userId, "✨ Unlock your deeper guidance:", renderPremiumButtonsInline());
-          markStep(userId, "premiumButtonsShown");
         }
       } catch (err) {
         await sendMessage(userId, `⚠️ ${err.message}`);
       }
     }
 
+    // === 高端灵性模块按钮点击 ===
     if (premiumHandlers[data]) {
       console.log("📥 Callback received:", data);
 
@@ -98,6 +87,11 @@ async function handleTelegramUpdate(update) {
 
       try {
         const response = await premiumHandlers[data](userId);
+
+        // ✅ 记录点击行为
+        logPremiumClick(userId, data);
+
+        // 移除该按钮
         const filteredButtons = originalButtons
           .map(row => row.filter(btn => btn.callback_data !== data))
           .filter(row => row.length > 0);
@@ -107,7 +101,6 @@ async function handleTelegramUpdate(update) {
         });
 
         await sendMessage(userId, response);
-        markPremiumClick(userId, data); // flow record
       } catch (err) {
         console.error("❌ Premium handler error:", err);
         await sendMessage(userId, `⚠️ Failed to load: ${data}`);
