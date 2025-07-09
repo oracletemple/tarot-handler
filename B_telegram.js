@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.6
+// B_telegram.js - v1.5.7
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -25,13 +25,15 @@ async function handleTelegramUpdate(update) {
     if ((text === "/test123" || text === "/test12") && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 12);
       console.log("✅ /test123 or /test12 triggered, session started:", session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
+      const { reply_markup } = renderCardButtons(session);
+      await sendMessage(chatId, "🃏 Please draw your cards:", reply_markup);
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       const session = startSession(chatId, 30);
       console.log("✅ /test30 triggered, session started:", session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
+      const { reply_markup } = renderCardButtons(session);
+      await sendMessage(chatId, "🃏 Please draw your cards:", reply_markup);
     }
   }
 
@@ -45,17 +47,19 @@ async function handleTelegramUpdate(update) {
       try {
         const card = getCard(userId, index);
         const meaning = getCardMeaning(card, index);
+        await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
         await sendMessage(userId, meaning);
 
         const session = getSession(userId);
         if (!isSessionComplete(userId)) {
-          await updateMessageButtons(userId, msgId, renderCardButtons(session));
+          const { reply_markup } = renderCardButtons(session);
+          await sendMessage(userId, "🔮 Continue drawing:", reply_markup);
         } else {
-          await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
           await sendMessage(userId, await getSpiritGuide());
           await sendMessage(userId, await getLuckyHints());
           await sendMessage(userId, await getMoonAdvice());
-          await sendMessage(userId, "✨ Unlock your deeper guidance:", renderPremiumButtonsInline());
+          const premiumMarkup = renderPremiumButtonsInline();
+          await sendMessage(userId, "✨ Unlock your deeper guidance:", premiumMarkup);
         }
       } catch (err) {
         await sendMessage(userId, `⚠️ ${err.message}`);
@@ -65,7 +69,6 @@ async function handleTelegramUpdate(update) {
     if (premiumHandlers[data]) {
       console.log("📥 Callback received:", data);
 
-      // 👇 加载中提示按钮（静态占位）
       await updateMessageButtons(userId, msgId, {
         inline_keyboard: [[{ text: "🔄 Loading...", callback_data: "loading_disabled" }]]
       });
