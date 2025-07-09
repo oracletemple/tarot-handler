@@ -1,4 +1,4 @@
-// G_tarot-session.js - v1.1.5
+// G_tarot-session.js - v1.1.6
 
 const sessions = new Map();
 
@@ -30,10 +30,15 @@ function getCard(userId, index) {
   if (!session.cards || !Array.isArray(session.cards)) throw new Error('Invalid card data');
   if (session.drawn.includes(index)) throw new Error('Card already drawn');
 
-  const tarotDeck = require('./G_card-data'); // ✅ 修正路径
-  const availableCards = tarotDeck.filter(card => !session.cards.includes(card));
-  const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+  const tarotDeck = require('./G_card-data');
+  const usedCards = session.cards.filter(c => c !== null);
+  const availableCards = tarotDeck.filter(card =>
+    !usedCards.some(used => used.name === card.name)
+  );
 
+  if (availableCards.length === 0) throw new Error('No more unique cards to draw');
+
+  const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
   session.cards[index] = randomCard;
   session.drawn.push(index);
   return randomCard;
