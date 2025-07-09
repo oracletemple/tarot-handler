@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.7
+// B_telegram.js - v1.5.8
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -65,27 +65,13 @@ async function handleTelegramUpdate(update) {
     if (premiumHandlers[data]) {
       console.log("📥 Callback received:", data);
 
-      // 先渲染为 Loading 占位
       await updateMessageButtons(userId, msgId, {
         inline_keyboard: [[{ text: "🔄 Loading...", callback_data: "loading_disabled" }]]
       });
 
       try {
         const response = await premiumHandlers[data](userId);
-
-        // 移除已点击按钮，其它按钮保留
-        const originalMarkup = callback.message.reply_markup;
-        const updatedButtons = originalMarkup.inline_keyboard.filter(row => row.length > 0).map(row => {
-          const btn = row[0];
-          if (btn.callback_data === data) return []; // 移除该按钮
-          return [btn];
-        });
-
-        const newMarkup = {
-          inline_keyboard: updatedButtons.filter(row => row.length > 0)
-        };
-
-        await updateMessageButtons(userId, msgId, newMarkup);
+        await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
         await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
