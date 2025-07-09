@@ -1,9 +1,9 @@
-// G_premium-buttons.js - v1.3.1
+// G_premium-buttons.js - v1.3.2
 
 const { premiumModules } = require('./G_premium-modules');
 
 function renderPremiumButtons(session) {
-  // ✅ 容错初始化
+  // ✅ 防错：确保 completed 存在
   if (!session.completed || !Array.isArray(session.completed)) {
     session.completed = [];
   }
