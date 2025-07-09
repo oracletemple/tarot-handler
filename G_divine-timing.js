@@ -29,4 +29,6 @@ async function getDivineTiming(userId) {
   }
 }
 
-module.exports = { getDivineTiming };
+module.exports = { 
+  getDivineTiming,
+  getPremiumTiming: getDivineTiming };
