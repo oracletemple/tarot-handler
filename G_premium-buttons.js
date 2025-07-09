@@ -1,4 +1,4 @@
-// G_premium-buttons.js - v1.4.0
+// G_premium-buttons.js - v1.5.0
 
 const PREMIUM_BUTTON_GROUPS = [
   [
@@ -17,8 +17,15 @@ const PREMIUM_BUTTON_GROUPS = [
     { text: "📜 Journal Prompt", callback_data: "premium_journal" }
   ],
   [
-    { text: "🪄 Oracle Card", callback_data: "premium_oracle" },
+    { text: "🔮 Oracle Card", callback_data: "premium_oracle" },
     { text: "🧘 Higher Self", callback_data: "premium_higher" }
+  ],
+  [
+    { text: "🌌 Cosmic Alignment", callback_data: "premium_cosmic" },
+    { text: "🌑 Shadow Message", callback_data: "premium_shadow" }
+  ],
+  [
+    { text: "🧬 Soul Archetype", callback_data: "premium_archetype" }
   ]
 ];
 
