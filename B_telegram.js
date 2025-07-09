@@ -1,9 +1,9 @@
-// B_telegram.js - v1.5.5
+// B_telegram.js - v1.5.6-debug
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
-const { renderCardButtons } = require("./G_button-render"); // ✅ 已切换为新版渲染器
+const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
@@ -23,12 +23,14 @@ async function handleTelegramUpdate(update) {
     if (text === "/test123" && chatId == process.env.RECEIVER_ID) {
       startSession(chatId, 12);
       const session = getSession(chatId);
+      console.log("✅ /test123 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       startSession(chatId, 30);
       const session = getSession(chatId);
+      console.log("✅ /test30 triggered, session started:", session);
       await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
   }
@@ -77,8 +79,9 @@ async function sendMessage(chatId, text, reply_markup = null) {
 
   try {
     await axios.post(`${API_URL}/sendMessage`, payload);
+    console.log("✅ Message sent to Telegram:", JSON.stringify(payload, null, 2));
   } catch (err) {
-    console.error("Telegram sendMessage error:", err.response?.data || err.message);
+    console.error("❌ Telegram sendMessage error:", err.response?.data || err.message);
   }
 }
 
@@ -89,8 +92,9 @@ async function updateMessageButtons(chatId, messageId, reply_markup) {
       message_id: messageId,
       reply_markup,
     });
+    console.log("✅ Updated inline buttons for message:", messageId);
   } catch (err) {
-    console.error("Telegram update buttons error:", err.response?.data || err.message);
+    console.error("❌ Telegram update buttons error:", err.response?.data || err.message);
   }
 }
 
