@@ -1,4 +1,4 @@
-// G_divine-timing.js - v1.1.0
+// G_divine-timing.js - v1.1.1
 const axios = require("axios");
 
 const presetTimingMessages = [
@@ -27,13 +27,14 @@ const presetTimingMessages = [
 
 const usedApiSet = new Set();
 
-function getDivineTiming(userId) {
+// ✅ 主导出函数：统一命名为 getTimingInsight
+async function getTimingInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * presetTimingMessages.length);
     return presetTimingMessages[random];
   } else {
-    return callDeepSeekTiming();
+    return await callDeepSeekTiming();
   }
 }
 
@@ -65,4 +66,4 @@ async function callDeepSeekTiming() {
   }
 }
 
-module.exports = { getDivineTiming };
+module.exports = { getTimingInsight };
