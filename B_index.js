@@ -1,4 +1,4 @@
-// B_index.js - v1.2.6
+// B_index.js - v1.2.7
 
 require("dotenv").config();
 const express = require("express");
@@ -14,10 +14,8 @@ app.use(bodyParser.json());
 // ✅ Webhook 主入口
 app.post("/webhook", async (req, res) => {
   try {
-    const update = req.body;
-    console.log("📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
-    await handleTelegramUpdate(update);
-    res.sendStatus(200);
+    console.log("📥 Received Webhook Payload:", JSON.stringify(req.body, null, 2));
+    await handleTelegramUpdate(req, res);  // ✅ 正确传入 req 和 res
   } catch (err) {
     console.error("❌ Webhook handler error:", err);
     res.sendStatus(500);
@@ -28,7 +26,7 @@ app.post("/webhook", async (req, res) => {
 app.get("/test123", async (req, res) => {
   const devId = 7685088782;
   try {
-    startSession(devId, 12); // ✅ 创建 session
+    startSession(devId, 12);
     await simulateButtonClick(devId, 0, 12);
     await simulateButtonClick(devId, 1, 12);
     await simulateButtonClick(devId, 2, 12);
@@ -43,7 +41,7 @@ app.get("/test123", async (req, res) => {
 app.get("/test30", async (req, res) => {
   const devId = 7685088782;
   try {
-    startSession(devId, 30); // ✅ 创建 session
+    startSession(devId, 30);
     await simulateButtonClick(devId, 0, 30);
     await simulateButtonClick(devId, 1, 30);
     await simulateButtonClick(devId, 2, 30);
@@ -54,7 +52,7 @@ app.get("/test30", async (req, res) => {
   }
 });
 
-// ✅ 测试入口：任意模拟点击接口（GET 请求）
+// ✅ 通用模拟点击接口
 app.get("/simulate", async (req, res) => {
   const { userId, cardIndex, amount } = req.query;
   if (!userId || !cardIndex || !amount) {
