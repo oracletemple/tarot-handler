@@ -1,99 +1,113 @@
-// B_telegram.js - v1.2.9
+// B_telegram.js - v1.5.4
 
-const axios = require("axios");
-const { getSession, startSession } = require("./G_tarot-session");
-const { getCard } = require("./G_tarot-session");
+const { Telegraf } = require("telegraf");
+const { getSession, startSession, isSessionComplete, getCard } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
 const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
-const { callDeepSeek } = require("./G_deepseek"); // ✅ 新增 DeepSeek 接口
+const { getPremiumButtonsByGroup, getNextPremiumGroupIndex } = require("./G_premium-buttons");
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+// 🔮 GPT 高端灵性模块
+const { getTarotSummary } = require("./G_tarot-summary");
+const { getJournalPrompt } = require("./G_journal-prompt");
+const { getShadowMessage } = require("./G_shadow-message");
+const { getSoulArchetype } = require("./G_soul-archetype");
+const { getHigherSelf } = require("./G_higher-self");
+const { getCosmicAlignment } = require("./G_cosmic-alignment");
+const { getOracleCard } = require("./G_oracle-card");
+const { getPastLifeEcho } = require("./G_pastlife");
+const { getSoulPurpose } = require("./G_soul-purpose");
+const { getKarmaCycle } = require("./G_karma-cycle");
+const { getEnergyReading } = require("./G_energy-reading");
+const { getDivineTiming } = require("./G_divine-timing");
+const { getSacredSymbol } = require("./G_sacred-symbol");
+const { getSpiritMessage } = require("./G_spirit-message");
+const { getMirrorMessage } = require("./G_mirror-message");
 
-// ✅ 统一发送消息函数
-async function sendMessage(chatId, text, options = {}) {
-  await axios.post(`${API_URL}/sendMessage`, {
-    chat_id: chatId,
-    text,
-    parse_mode: "Markdown",
-    ...options,
-  });
-}
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✅ 处理 Telegram 回调或消息更新
-async function handleTelegramUpdate(update) {
-  const message = update.message;
-  const callback = update.callback_query;
+bot.start((ctx) => ctx.reply("🔮 Welcome to Divine Oracle Bot!"));
 
-  if (message) {
-    const userId = message.from.id;
-    const text = message.text?.trim();
+bot.command("test30", async (ctx) => {
+  const userId = ctx.from.id;
+  const session = startSession(userId, 30);
+  await ctx.reply("✅ Test mode activated (30 USDT). Please choose your card:");
+  await ctx.reply("Please draw your cards:", renderCardButtons(userId));
+});
 
-    // ✅ 仅允许开发者使用测试指令
-    if (userId === 7685088782) {
-      if (text === "/test123") {
-        startSession(userId, 12);
-        await sendMessage(userId, "✅ Test mode activated (12 USDT). Please choose your card:");
-        await sendMessage(userId, "Please draw your cards:", {
-          reply_markup: renderCardButtons(userId),
-        });
-        return;
+bot.command("test123", async (ctx) => {
+  const userId = ctx.from.id;
+  const session = startSession(userId, 12);
+  await ctx.reply("✅ Test mode activated (12 USDT). Please choose your card:");
+  await ctx.reply("Please draw your cards:", renderCardButtons(userId));
+});
+
+bot.on("callback_query", async (ctx) => {
+  const userId = ctx.from.id;
+  const data = ctx.callbackQuery.data;
+  const session = getSession(userId);
+
+  if (data.startsWith("draw_card_")) {
+    const index = parseInt(data.split("_")[2]);
+    if (!session) return ctx.reply("⚠️ Session not found. Please try again later.");
+    try {
+      const card = getCard(userId, index);
+      const meaning = getCardMeaning(card.name);
+      const position = ["🌒 Past", "🌕 Present", "🌘 Future"][index];
+      await ctx.reply(`${position}\n🃏 ${card.name}\n\n${meaning}`);
+      const updated = renderCardButtons(userId);
+      if (updated) {
+        await ctx.editMessageReplyMarkup(updated.reply_markup);
       }
-
-      if (text === "/test30") {
-        startSession(userId, 30);
-        await sendMessage(userId, "✅ Test mode activated (30 USDT). Please choose your card:");
-        await sendMessage(userId, "Please draw your cards:", {
-          reply_markup: renderCardButtons(userId),
-        });
-        return;
+      if (isSessionComplete(userId)) {
+        const guide = await getSpiritGuide();
+        const hints = await getLuckyHints();
+        const moon = await getMoonAdvice();
+        await ctx.reply(guide);
+        await ctx.reply(hints);
+        await ctx.reply(moon);
+        if (session.amount === 30) {
+          await ctx.reply("✨ Unlock your deeper guidance:", getPremiumButtonsByGroup(0));
+        }
       }
+    } catch (err) {
+      console.error("Draw card error:", err);
+      ctx.reply("⚠️ Error drawing card. Please try again.");
     }
-
-    // 非测试指令则忽略
     return;
   }
 
-  if (callback) {
-    const userId = callback.from.id;
-    const data = callback.data;
+  // 高端互动模块
+  const premiumMap = {
+    premium_summary: getTarotSummary,
+    premium_journal: getJournalPrompt,
+    premium_shadow: getShadowMessage,
+    premium_archetype: getSoulArchetype,
+    premium_higher: getHigherSelf,
+    premium_cosmic: getCosmicAlignment,
+    premium_oracle: getOracleCard,
+    premium_pastlife: getPastLifeEcho,
+    premium_purpose: getSoulPurpose,
+    premium_karma: getKarmaCycle,
+    premium_energy: getEnergyReading,
+    premium_timing: getDivineTiming,
+    premium_symbol: getSacredSymbol,
+    premium_spirit: getSpiritMessage,
+    premium_mirror: getMirrorMessage,
+  };
 
-    const match = data.match(/^draw_card_(\d+)_(\d+)/);
-    if (!match) return;
-
-    const index = parseInt(match[1]);
-    const amount = parseInt(match[2]);
-
-    try {
-      const card = getCard(userId, index);
-      const meaning = getCardMeaning(card, index);
-
-      // 删除当前按钮并只保留未抽的
-      await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-        chat_id: callback.message.chat.id,
-        message_id: callback.message.message_id,
-        reply_markup: renderCardButtons(userId),
-      });
-
-      await sendMessage(userId, meaning);
-
-      const session = getSession(userId);
-      if (session.drawn.length === 3) {
-        await sendMessage(userId, getSpiritGuide());
-        await sendMessage(userId, getLuckyHints());
-        await sendMessage(userId, getMoonAdvice());
-
-        // ✅ DeepSeek 灵性回复
-        const deepReply = await callDeepSeek("Offer a spiritual reflection based on today's energy.");
-        await sendMessage(userId, `🪐 *DeepSeek Insight*\n\n${deepReply}`);
-      }
-    } catch (err) {
-      await sendMessage(userId, `⚠️ ${err.message}`);
+  if (premiumMap[data]) {
+    const reply = await premiumMap[data](userId, session?.cards);
+    await ctx.reply(reply);
+    const nextGroup = getNextPremiumGroupIndex(data);
+    if (nextGroup !== null) {
+      const nextButtons = getPremiumButtonsByGroup(nextGroup);
+      if (nextButtons) await ctx.reply("✨ Keep exploring:", nextButtons);
     }
+    return;
   }
-}
+});
 
-module.exports = { handleTelegramUpdate };
+module.exports = bot;
