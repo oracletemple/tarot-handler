@@ -1,4 +1,4 @@
-// G_sacred-symbol.js - v1.1.0
+// G_sacred-symbol.js - v1.1.1
 const axios = require("axios");
 
 // ✅ 预设象征性灵性符号解读（首次点击用）
@@ -28,13 +28,14 @@ const presetSymbolMessages = [
 
 const usedApiSet = new Set();
 
-function getSacredSymbol(userId) {
+// ✅ 主导出函数：统一命名为 getSymbolInsight
+async function getSymbolInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * presetSymbolMessages.length);
     return presetSymbolMessages[random];
   } else {
-    return callDeepSeekSymbol();
+    return await callDeepSeekSymbol();
   }
 }
 
@@ -66,4 +67,4 @@ async function callDeepSeekSymbol() {
   }
 }
 
-module.exports = { getSacredSymbol };
+module.exports = { getSymbolInsight };
