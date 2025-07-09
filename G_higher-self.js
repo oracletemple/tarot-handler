@@ -62,4 +62,6 @@ async function getPremiumPastLife(userId) {
   }
 }
 
-module.exports = { getPremiumPastLife };
+module.exports = { 
+  getPremiumPastLife,
+  getPremiumHigher: getPremiumPastLife };
