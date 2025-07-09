@@ -40,4 +40,6 @@ async function getOracleCard(userId) {
   }
 }
 
-module.exports = { getOracleCard };
+module.exports = { 
+  getOracleCard,
+  getPremiumOracle: getOracleCard };
