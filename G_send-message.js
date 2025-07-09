@@ -1,4 +1,4 @@
-// G_send-message.js - v1.1.3
+// G_send-message.js - v1.2.0
 
 const axios = require("axios");
 
@@ -10,7 +10,7 @@ const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
  * @param {number} chatId 
  * @param {string} text 
  */
-async function sendText(chatId, text) {
+async function sendTelegramMessage(chatId, text) {
   try {
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
@@ -18,7 +18,7 @@ async function sendText(chatId, text) {
       parse_mode: "Markdown"
     });
   } catch (err) {
-    console.error("❌ sendText error:", err.response?.data || err.message);
+    console.error("❌ sendTelegramMessage error:", err.response?.data || err.message);
   }
 }
 
@@ -28,7 +28,7 @@ async function sendText(chatId, text) {
  * @param {string} text 
  * @param {Array[]} buttons - 二维数组格式：[ [ { text, callback_data } ] ]
  */
-async function sendButtons(chatId, text, buttons) {
+async function sendTelegramButtons(chatId, text, buttons) {
   try {
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
@@ -39,7 +39,7 @@ async function sendButtons(chatId, text, buttons) {
       }
     });
   } catch (err) {
-    console.error("❌ sendButtons error:", err.response?.data || err.message);
+    console.error("❌ sendTelegramButtons error:", err.response?.data || err.message);
   }
 }
 
@@ -49,7 +49,7 @@ async function sendButtons(chatId, text, buttons) {
  * @param {string} imageUrl 
  * @param {string} caption 
  */
-async function sendImage(chatId, imageUrl, caption = "") {
+async function sendTelegramPhoto(chatId, imageUrl, caption = "") {
   try {
     await axios.post(`${API_URL}/sendPhoto`, {
       chat_id: chatId,
@@ -58,12 +58,12 @@ async function sendImage(chatId, imageUrl, caption = "") {
       parse_mode: "Markdown"
     });
   } catch (err) {
-    console.error("❌ sendImage error:", err.response?.data || err.message);
+    console.error("❌ sendTelegramPhoto error:", err.response?.data || err.message);
   }
 }
 
 module.exports = {
-  sendText,
-  sendButtons,
-  sendImage
+  sendTelegramMessage,
+  sendTelegramButtons,
+  sendTelegramPhoto
 };
