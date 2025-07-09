@@ -1,50 +1,55 @@
-// G_premium-buttons.js - v1.3.0
+// G_premium-buttons.js - v1.3.1
 
-const { Markup } = require("telegraf");
-
-// 分组结构，每组最多 3 个按钮
-const premiumButtonGroups = [
+const { InlineKeyboard } = require("telegraf");
+const premiumGroups = [
   [
-    { label: "🧿 Past Life Echoes", callback_data: "premium_pastlife" },
-    { label: "🔭 Soul Purpose", callback_data: "premium_purpose" },
-    { label: "🕯 Karmic Cycle", callback_data: "premium_karma" }
+    { text: "🧘 Higher Self", callback_data: "premium_higher" },
+    { text: "🪞 Mirror Message", callback_data: "premium_mirror" },
+    { text: "🌀 Energy Reading", callback_data: "premium_energy" },
   ],
   [
-    { label: "🌀 Energy Reading", callback_data: "premium_energy" },
-    { label: "⏳ Divine Timing", callback_data: "premium_timing" },
-    { label: "⛩ Sacred Symbol", callback_data: "premium_symbol" }
+    { text: "🔭 Soul Purpose", callback_data: "premium_purpose" },
+    { text: "🧿 Past Life Echoes", callback_data: "premium_pastlife" },
+    { text: "🕯 Karmic Cycle", callback_data: "premium_karma" },
   ],
   [
-    { label: "🌬 Message from Spirit", callback_data: "premium_spirit" },
-    { label: "🪞 Mirror Message", callback_data: "premium_mirror" },
-    { label: "🪄 Oracle Card", callback_data: "premium_oracle" }
+    { text: "⛩ Sacred Symbol", callback_data: "premium_symbol" },
+    { text: "🌬 Message from Spirit", callback_data: "premium_spirit" },
+    { text: "⏳ Divine Timing", callback_data: "premium_timing" },
   ],
   [
-    { label: "🧘 Higher Self", callback_data: "premium_higher" },
-    { label: "🌌 Cosmic Alignment", callback_data: "premium_cosmic" },
-    { label: "🪶 Soul Archetype", callback_data: "premium_archetype" }
+    { text: "🪄 Oracle Card", callback_data: "premium_oracle" },
+    { text: "🌌 Cosmic Alignment", callback_data: "premium_cosmic" },
+    { text: "📝 Journal Prompt", callback_data: "premium_journal" },
   ],
   [
-    { label: "📝 Journal Prompt", callback_data: "premium_journal" },
-    { label: "🌑 Shadow Message", callback_data: "premium_shadow" },
-    { label: "🔮 Tarot Summary", callback_data: "premium_summary" }
+    { text: "🕳 Shadow Message", callback_data: "premium_shadow" },
+    { text: "👤 Soul Archetype", callback_data: "premium_archetype" },
+    { text: "🔮 Tarot Summary", callback_data: "premium_summary" },
   ]
 ];
 
-function getPremiumButtonsByGroup(groupIndex) {
-  if (groupIndex < 0 || groupIndex >= premiumButtonGroups.length) return null;
-  const buttons = premiumButtonGroups[groupIndex].map((btn) => [Markup.button.callback(btn.label, btn.callback_data)]);
-  return Markup.inlineKeyboard(buttons);
-}
+async function renderPremiumButtons(chatId, messageId, index = 0) {
+  const group = premiumGroups[index] || [];
+  const nextGroupExists = index + 1 < premiumGroups.length;
 
-function getNextPremiumGroupIndex(currentCallbackData) {
-  for (let i = 0; i < premiumButtonGroups.length; i++) {
-    const group = premiumButtonGroups[i];
-    if (group.some(btn => btn.callback_data === currentCallbackData)) {
-      return i + 1 < premiumButtonGroups.length ? i + 1 : null;
-    }
+  const buttons = group.map((item) => [{ text: item.text, callback_data: item.callback_data }]);
+
+  if (nextGroupExists) {
+    buttons.push([{ text: "Next ➡️", callback_data: `next_${index + 1}` }]);
   }
-  return null;
+
+  const axios = require("axios");
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+  await axios.post(`${API_URL}/sendMessage`, {
+    chat_id: chatId,
+    text: "✨ Choose your premium guidance:",
+    reply_markup: {
+      inline_keyboard: buttons
+    },
+  });
 }
 
-module.exports = { getPremiumButtonsByGroup, getNextPremiumGroupIndex };
+module.exports = { renderPremiumButtons };
