@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.8
+// B_telegram.js - v1.5.9
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -8,16 +8,14 @@ const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 const { renderPremiumButtonsInline, premiumHandlers } = require("./G_premium-buttons");
-const {
-  startFlow,
-  incrementDraw,
-  markStep,
-  markPremiumClick,
-  debugFlow
-} = require("./G_flow-monitor");
+const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = require("./G_flow-monitor");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+function escapeMarkdown(text) {
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
 
 async function handleTelegramUpdate(update) {
   console.log("\n📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
@@ -44,8 +42,8 @@ async function handleTelegramUpdate(update) {
     }
 
     if (text === "/debugflow" && chatId == process.env.RECEIVER_ID) {
-      const result = debugFlow(chatId);
-      await sendMessage(chatId, result);
+      const status = debugFlow(chatId);
+      await sendMessage(chatId, status);
     }
   }
 
@@ -68,13 +66,18 @@ async function handleTelegramUpdate(update) {
           await updateMessageButtons(userId, msgId, renderCardButtons(session));
         } else {
           await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
-          await sendMessage(userId, await getSpiritGuide());
+
+          const guide = await getSpiritGuide();
+          const hints = await getLuckyHints();
+          const moon = await getMoonAdvice();
+
+          await sendMessage(userId, guide);
           markStep(userId, "spiritGuide");
 
-          await sendMessage(userId, await getLuckyHints());
+          await sendMessage(userId, hints);
           markStep(userId, "luckyHints");
 
-          await sendMessage(userId, await getMoonAdvice());
+          await sendMessage(userId, moon);
           markStep(userId, "moonAdvice");
 
           await sendMessage(userId, "✨ Unlock your deeper guidance:", renderPremiumButtonsInline());
@@ -90,7 +93,6 @@ async function handleTelegramUpdate(update) {
       console.log("📥 Callback received:", data);
 
       const originalButtons = callback.message.reply_markup?.inline_keyboard || [];
-
       const updatedButtons = originalButtons.map(row =>
         row.map(btn =>
           btn.callback_data === data
@@ -103,8 +105,8 @@ async function handleTelegramUpdate(update) {
 
       try {
         const response = await premiumHandlers[data](userId);
-        markPremiumClick(userId, data);
 
+        // 清除已点击按钮
         const filteredButtons = originalButtons
           .map(row => row.filter(btn => btn.callback_data !== data))
           .filter(row => row.length > 0);
@@ -113,6 +115,7 @@ async function handleTelegramUpdate(update) {
           inline_keyboard: filteredButtons.length > 0 ? filteredButtons : []
         });
 
+        markPremiumClick(userId, data);
         await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
@@ -125,8 +128,8 @@ async function handleTelegramUpdate(update) {
 async function sendMessage(chatId, text, reply_markup = null) {
   const payload = {
     chat_id: chatId,
-    text,
-    parse_mode: "Markdown"
+    text: escapeMarkdown(text),
+    parse_mode: "MarkdownV2"
   };
   if (reply_markup) payload.reply_markup = reply_markup;
 
