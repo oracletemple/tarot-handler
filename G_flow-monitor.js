@@ -1,6 +1,18 @@
-// G_flow-monitor.js - v1.0.1
+// G_flow-monitor.js - v1.1.0
 
 const flowStatus = new Map(); // key: userId, value: { stage: string, steps: object }
+// List of all premium step keys
+const PREMIUM_KEYS = [
+  "premium_pastlife",
+  "premium_mirror",
+  "premium_energy",
+  "premium_purpose",
+  "premium_spirit",
+  "premium_symbol",
+  "premium_timing",
+  "premium_oracle",
+  "premium_higher"
+];
 
 function startFlow(userId) {
   flowStatus.set(userId, {
@@ -13,8 +25,8 @@ function startFlow(userId) {
       luckyHints: false,
       moonAdvice: false,
       premiumButtonsShown: false,
-      premiumClicks: {}
-    }
+      premiumClicks: {},
+    },
   });
 }
 
@@ -31,7 +43,7 @@ function incrementDraw(userId) {
 
 function markStep(userId, step) {
   const flow = flowStatus.get(userId);
-  if (flow && flow.steps.hasOwnProperty(step)) {
+  if (flow && Object.prototype.hasOwnProperty.call(flow.steps, step)) {
     flow.steps[step] = true;
   }
 }
@@ -53,21 +65,22 @@ function debugFlow(userId) {
   const steps = flow.steps;
 
   const missing = [];
-  if (!steps.tarotComplete) missing.push("🃏 Tarot not complete");
-  if (!steps.spiritGuide) missing.push("🧚 Spirit guide not sent");
-  if (!steps.luckyHints) missing.push("🎨 Lucky hints not sent");
-  if (!steps.moonAdvice) missing.push("🌕 Moon advice not sent");
-  if (!steps.premiumButtonsShown) missing.push("✨ Premium buttons not shown");
+  if (!steps.tarotComplete) missing.push("[Tarot not complete]");
+  if (!steps.spiritGuide) missing.push("[Spirit guide not sent]");
+  if (!steps.luckyHints) missing.push("[Lucky hints not sent]");
+  if (!steps.moonAdvice) missing.push("[Moon advice not sent]");
+  if (!steps.premiumButtonsShown) missing.push("[Premium buttons not shown]");
 
-  const clicked = Object.keys(steps.premiumClicks || {});
-  const clickSummary = clicked.length
-    ? `✅ Clicked: ${clicked.join(", ")}`
-    : "⚠️ No premium buttons clicked";
+  // Check premium clicks
+  if (steps.premiumButtonsShown) {
+    const unclicked = PREMIUM_KEYS.filter(key => !steps.premiumClicks[key]);
+    unclicked.forEach(key => missing.push(`[Premium not clicked: ${key}]`));
+  }
 
   if (missing.length === 0) {
-    return `✅ All flow steps completed.\n${clickSummary}`;
+    return "✅ All flow steps completed.";
   } else {
-    return `⚠️ Incomplete flow:\n- ${missing.join("\n- ")}\n${clickSummary}`;
+    return "⚠️ Incomplete flow:" + missing.join(" ");
   }
 }
 
@@ -77,5 +90,5 @@ module.exports = {
   markStep,
   markPremiumClick,
   getFlowStatus,
-  debugFlow
+  debugFlow,
 };
