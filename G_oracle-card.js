@@ -1,4 +1,4 @@
-// G_oracle-card.js - v1.1.0
+// G_oracle-card.js - v1.2.0
 const axios = require("axios");
 
 const presetOracleCards = [
@@ -27,11 +27,11 @@ const presetOracleCards = [
 
 const usedApiSet = new Set();
 
-function getOracleCard(userId) {
+function getOracleCardMessage(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * presetOracleCards.length);
-    return presetOracleCards[random];
+    return `🔮 *Oracle Card*\n\n${presetOracleCards[random]}`;
   } else {
     return callDeepSeekOracle();
   }
@@ -39,7 +39,7 @@ function getOracleCard(userId) {
 
 async function callDeepSeekOracle() {
   const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
-  const prompt = `Pull a symbolic oracle card for spiritual reflection. Include a title and a short poetic message in the tone of a mystic guide.`;
+  const prompt = `Offer a symbolic oracle card message. Include a poetic card title and 1–2 sentence message that speaks with mystical insight and inner guidance.`;
 
   try {
     const response = await axios.post(
@@ -47,21 +47,21 @@ async function callDeepSeekOracle() {
       {
         model: "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
+        temperature: 0.9
       },
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
+          Authorization: `Bearer ${apiKey}`
+        }
       }
     );
 
-    return response.data.choices[0].message.content.trim();
+    return `🔮 *Oracle Card*\n\n${response.data.choices[0].message.content.trim()}`;
   } catch (err) {
     console.error("DeepSeek API error (oracle):", err.message);
     return "⚠️ The oracle is silent for now. Try again later.";
   }
 }
 
-module.exports = { getOracleCard };
+module.exports = { getOracleCardMessage };
