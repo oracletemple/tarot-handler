@@ -1,7 +1,6 @@
-// G_karma.js - v1.0.1
+// G_karma.js - v1.0.2
 const axios = require("axios");
 
-// ✅ 首次点击时使用的预设文案，共 21 段
 const karmicMessages = [
   "🕯 You are repeating a lesson your soul chose to master. Reflect—what keeps circling back?",
   "🔁 The pattern is not punishment; it’s a mirror. What is life trying to show you through repetition?",
@@ -26,11 +25,9 @@ const karmicMessages = [
   "🌱 Where pain once rooted, plant understanding. Let this be the new seed."
 ];
 
-// ✅ 已调用过 API 的用户记录
 const usedApiSet = new Set();
 
-// 🔄 获取业力信息（重命名为统一风格）
-async function getKarmicCycle(userId) {
+async function getKarmaInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * karmicMessages.length);
@@ -40,7 +37,6 @@ async function getKarmicCycle(userId) {
   }
 }
 
-// 🔮 DeepSeek API 调用逻辑
 async function callDeepSeekKarma() {
   const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Provide a symbolic, mystical and reflective message about the user's current karmic cycle. Use poetic, spiritual, and archetypal language.`;
@@ -68,4 +64,4 @@ async function callDeepSeekKarma() {
   }
 }
 
-module.exports = { getKarmicCycle };
+module.exports = { getKarmaInsight };
