@@ -1,8 +1,6 @@
-// G_button-render.js - v1.0.3-debug
+// G_button-render.js - v1.0.4
 
 function renderCardButtons(session) {
-  console.log("🧪 Session received for button render:", session);
-
   if (!session || !session.cards || !Array.isArray(session.cards)) {
     console.log("⚠️ Invalid session or card structure.");
     return null;
@@ -26,14 +24,11 @@ function renderCardButtons(session) {
     return null;
   }
 
-  const result = {
+  return {
     reply_markup: {
       inline_keyboard: buttons,
     },
   };
-
-  console.log("✅ Rendered card buttons:", JSON.stringify(result, null, 2));
-  return result;
 }
 
 module.exports = { renderCardButtons };
