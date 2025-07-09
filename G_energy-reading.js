@@ -1,5 +1,5 @@
-// G_energy-reading.js - v1.1.1
-const axios = require("axios");
+// G_energy-reading.js - v1.1.2
+const { callDeepSeek } = require("./G_deepseek");
 
 // ✅ 固定 21 段能量文案（首次点击用）
 const presetEnergyMessages = [
@@ -29,8 +29,7 @@ const presetEnergyMessages = [
 // ✅ 临时记录用户是否已使用过 API（可改为 session）
 const usedApi = new Set();
 
-// ✅ 主调用函数（根据状态选择返回内容）
-// 🔄 统一命名为 getEnergyInsight
+// ✅ 主调用函数：统一命名为 getEnergyInsight
 async function getEnergyInsight(userId) {
   if (!usedApi.has(userId)) {
     usedApi.add(userId);
@@ -40,38 +39,16 @@ async function getEnergyInsight(userId) {
   }
 }
 
-// ✅ 获取随机固定文案（首次点击）
+// ✅ 获取随机文案
 function getRandomEnergyMessage() {
   const i = Math.floor(Math.random() * presetEnergyMessages.length);
   return presetEnergyMessages[i];
 }
 
-// ✅ DeepSeek 接口调用（后续点击）
+// ✅ 调用 DeepSeek 接口（后续使用）
 async function getEnergyReadingFromApi() {
-  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Offer a poetic and symbolic spiritual energy reading for the user. Describe the energetic field they may carry today, using vivid metaphors and mystical tone.`;
-
-  try {
-    const res = await axios.post(
-      "https://api.deepseek.com/v1/chat/completions",
-      {
-        model: "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`
-        }
-      }
-    );
-
-    return res.data.choices[0].message.content.trim();
-  } catch (err) {
-    console.error("❌ DeepSeek API error (energy):", err.message);
-    return "⚠️ The energy field is currently unclear. Please try again later.";
-  }
+  return await callDeepSeek(prompt);
 }
 
 module.exports = { getEnergyInsight };
