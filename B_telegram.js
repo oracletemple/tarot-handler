@@ -1,9 +1,9 @@
-// B_telegram.js - v1.5.4
+// B_telegram.js - v1.5.5
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
-const { renderCardButtons } = require("./G_tarot-buttons");
+const { renderCardButtons } = require("./G_button-render"); // ✅ 已切换为新版渲染器
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
@@ -22,12 +22,14 @@ async function handleTelegramUpdate(update) {
 
     if (text === "/test123" && chatId == process.env.RECEIVER_ID) {
       startSession(chatId, 12);
-      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons());
+      const session = getSession(chatId);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
       startSession(chatId, 30);
-      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons());
+      const session = getSession(chatId);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
   }
 
@@ -58,7 +60,6 @@ async function handleTelegramUpdate(update) {
       }
     }
 
-    // 高级模块处理
     if (premiumHandlers[data]) {
       const response = await premiumHandlers[data](userId);
       await sendMessage(userId, response);
