@@ -8,14 +8,16 @@ const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
 const { renderPremiumButtonsInline, premiumHandlers } = require("./G_premium-buttons");
-const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = require("./G_flow-monitor");
+const {
+  startFlow,
+  incrementDraw,
+  markStep,
+  markPremiumClick,
+  debugFlow
+} = require("./G_flow-monitor");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-function escapeMarkdownV2(text) {
-  return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
-}
 
 async function handleTelegramUpdate(update) {
   console.log("\n📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
@@ -42,8 +44,8 @@ async function handleTelegramUpdate(update) {
     }
 
     if (text === "/debugflow" && chatId == process.env.RECEIVER_ID) {
-      const debug = debugFlow(chatId);
-      await sendMessage(chatId, debug);
+      const result = debugFlow(chatId);
+      await sendMessage(chatId, result);
     }
   }
 
@@ -88,6 +90,7 @@ async function handleTelegramUpdate(update) {
       console.log("📥 Callback received:", data);
 
       const originalButtons = callback.message.reply_markup?.inline_keyboard || [];
+
       const updatedButtons = originalButtons.map(row =>
         row.map(btn =>
           btn.callback_data === data
@@ -122,8 +125,8 @@ async function handleTelegramUpdate(update) {
 async function sendMessage(chatId, text, reply_markup = null) {
   const payload = {
     chat_id: chatId,
-    text: escapeMarkdownV2(text),
-    parse_mode: "MarkdownV2",
+    text,
+    parse_mode: "Markdown"
   };
   if (reply_markup) payload.reply_markup = reply_markup;
 
