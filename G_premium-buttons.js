@@ -1,44 +1,38 @@
 // G_premium-buttons.js - v1.3.2
 
-const { premiumModules } = require('./G_premium-modules');
+const PREMIUM_BUTTON_GROUPS = [
+  [
+    { text: "🧿 Past Life Echoes", callback_data: "premium_pastlife" },
+    { text: "🔭 Soul Purpose", callback_data: "premium_purpose" },
+    { text: "🕯 Karmic Cycle", callback_data: "premium_karma" }
+  ],
+  [
+    { text: "🌀 Energy Reading", callback_data: "premium_energy" },
+    { text: "⏳ Divine Timing", callback_data: "premium_timing" },
+    { text: "⛩ Sacred Symbol", callback_data: "premium_symbol" }
+  ],
+  [
+    { text: "🌬 Message from Spirit", callback_data: "premium_spirit" },
+    { text: "🪞 Mirror Message", callback_data: "premium_mirror" },
+    { text: "📜 Journal Prompt", callback_data: "premium_journal" }
+  ]
+];
 
-function renderPremiumButtons(session) {
-  // ✅ 防错：确保 completed 存在
-  if (!session.completed || !Array.isArray(session.completed)) {
-    session.completed = [];
-  }
+const userPremiumProgress = new Map(); // userId -> current group index
 
-  const remaining = premiumModules.filter(mod => !session.completed.includes(mod.key));
-  if (remaining.length === 0) return null;
-
-  const rows = [];
-  for (let i = 0; i < remaining.length; i += 3) {
-    rows.push(
-      remaining.slice(i, i + 3).map(mod => ({
-        text: `${mod.icon} ${mod.label}`,
-        callback_data: `premium_${mod.key}`,
-      }))
-    );
-  }
-
-  return {
-    reply_markup: {
-      inline_keyboard: rows,
-    },
-  };
+function getNextButtonGroup(userId) {
+  const currentIndex = userPremiumProgress.get(userId) || 0;
+  if (currentIndex >= PREMIUM_BUTTON_GROUPS.length) return null;
+  const group = PREMIUM_BUTTON_GROUPS[currentIndex];
+  userPremiumProgress.set(userId, currentIndex + 1);
+  return group;
 }
 
-function getLoadingMessage() {
-  return `🔄 Channeling sacred insight...\n(please allow a few seconds)`;
-}
-
-function getHeaderTitle(callbackKey) {
-  const mod = premiumModules.find(m => `premium_${mod.key}` === callbackKey);
-  return mod ? `🔮 ${mod.label}` : `🔮 Oracle's Message`;
+function resetPremiumProgress(userId) {
+  userPremiumProgress.set(userId, 0);
 }
 
 module.exports = {
-  renderPremiumButtons,
-  getLoadingMessage,
-  getHeaderTitle,
+  getNextButtonGroup,
+  resetPremiumProgress
 };
