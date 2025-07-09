@@ -1,46 +1,41 @@
-// G_premium-buttons.js - v1.3.3
+// G_premium-buttons.js - v1.3.2
 
-const { getPastLife } = require('./G_pastlife');
-const { getMirrorMessage } = require('./G_mirror-message');
-const { getEnergyReading } = require('./G_energy-reading');
-const { getSoulPurpose } = require('./G_soul-purpose');
-const { getMessageFromSpirit } = require('./G_message-spirit');
-const { getSacredSymbol } = require('./G_sacred-symbol');
-const { getDivineTiming } = require('./G_divine-timing');
-const { getOracleCard } = require('./G_oracle-card');
-const { getHigherSelf } = require('./G_higher-self');
+const { getPremiumPastLife } = require("./G_pastlife");
+const { getPremiumMirror } = require("./G_mirror-message");
+const { getPremiumEnergy } = require("./G_energy-reading");
+const { getPremiumPurpose } = require("./G_soul-purpose");
+const { getPremiumSpirit } = require("./G_message-spirit");
+const { getPremiumSymbol } = require("./G_sacred-symbol");
+const { getPremiumTiming } = require("./G_divine-timing");
+const { getPremiumOracle } = require("./G_oracle-card");
+const { getPremiumHigher } = require("./G_higher-self");
 
-// ✅ 当前有效按钮（已剔除被删除模块）
-const PREMIUM_BUTTONS = [
-  { text: '🧿 Past Life Echoes', callback_data: 'premium_pastlife' },
-  { text: '🪞 Mirror Message', callback_data: 'premium_mirror' },
-  { text: '🌀 Energy Reading', callback_data: 'premium_energy' },
-  { text: '🔭 Soul Purpose', callback_data: 'premium_purpose' },
-  { text: '🌬 Message from Spirit', callback_data: 'premium_spirit' },
-  { text: '⛩ Sacred Symbol', callback_data: 'premium_symbol' },
-  { text: '⏳ Divine Timing', callback_data: 'premium_timing' },
-  { text: '🪄 Oracle Card', callback_data: 'premium_oracle' },
-  { text: '🧘 Higher Self', callback_data: 'premium_higher' }
-];
-
-// ✅ 一次性渲染所有按钮（不分页）
 function renderPremiumButtonsInline() {
   return {
-    inline_keyboard: PREMIUM_BUTTONS.map(btn => [{ text: btn.text, callback_data: btn.callback_data }])
+    inline_keyboard: [
+      [{ text: "🧿 Past Life Echoes", callback_data: "premium_pastlife" }],
+      [{ text: "🪞 Mirror Message", callback_data: "premium_mirror" }],
+      [{ text: "🌀 Energy Reading", callback_data: "premium_energy" }],
+      [{ text: "🔭 Soul Purpose", callback_data: "premium_purpose" }],
+      [{ text: "🌬 Message from Spirit", callback_data: "premium_spirit" }],
+      [{ text: "⛩ Sacred Symbol", callback_data: "premium_symbol" }],
+      [{ text: "⏳ Divine Timing", callback_data: "premium_timing" }],
+      [{ text: "🪄 Oracle Card", callback_data: "premium_oracle" }],
+      [{ text: "🧘 Higher Self", callback_data: "premium_higher" }]
+    ]
   };
 }
 
-// ✅ 回调映射表（对应内容生成函数）
 const premiumHandlers = {
-  premium_pastlife: getPastLife,
-  premium_mirror: getMirrorMessage,
-  premium_energy: getEnergyReading,
-  premium_purpose: getSoulPurpose,
-  premium_spirit: getMessageFromSpirit,
-  premium_symbol: getSacredSymbol,
-  premium_timing: getDivineTiming,
-  premium_oracle: getOracleCard,
-  premium_higher: getHigherSelf
+  premium_pastlife: getPremiumPastLife,
+  premium_mirror: getPremiumMirror,
+  premium_energy: getPremiumEnergy,
+  premium_purpose: getPremiumPurpose,
+  premium_spirit: getPremiumSpirit,
+  premium_symbol: getPremiumSymbol,
+  premium_timing: getPremiumTiming,
+  premium_oracle: getPremiumOracle,
+  premium_higher: getPremiumHigher
 };
 
 module.exports = {
