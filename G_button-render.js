@@ -1,15 +1,7 @@
-// G_button-render.js - v1.0.1
+// G_button-render.js - v1.0.2
 
-const { getSession } = require("./G_tarot-session");
-
-/**
- * 生成抽牌按钮（仅展示未抽取的牌）
- * @param {number} userId - Telegram 用户 ID
- * @returns {object} - Telegram inline keyboard 格式
- */
-function renderCardButtons(userId) {
-  const session = getSession(userId);
-  if (!session) return { inline_keyboard: [] };
+function renderCardButtons(session) {
+  if (!session || !session.cards || !Array.isArray(session.cards)) return null;
 
   const buttons = [];
 
@@ -18,13 +10,19 @@ function renderCardButtons(userId) {
       buttons.push([
         {
           text: `🃏 Card ${i + 1}`,
-          callback_data: `draw_card_${i}_${session.amount}`,
+          callback_data: `card_${i}`,
         },
       ]);
     }
   }
 
-  return { inline_keyboard: buttons };
+  if (buttons.length === 0) return null;
+
+  return {
+    reply_markup: {
+      inline_keyboard: buttons,
+    },
+  };
 }
 
 module.exports = { renderCardButtons };
