@@ -1,10 +1,11 @@
-// G_spirit-guide.js - v1.0.1
+// G_spirit-guide.js - v1.1.0
 
 /**
- * 生成一个守护灵信息
- * @returns {string} - 完整的守护灵解读文本（含 emoji + 标题 + 描述）
+ * Return a randomly selected spirit guide message
+ * Includes symbolic animal, name, and spiritual meaning
+ * @returns {string}
  */
-function getSpiritGuide() {
+function getSpiritGuideMessage() {
   const guides = [
     {
       emoji: "🦉",
@@ -58,9 +59,8 @@ function getSpiritGuide() {
     }
   ];
 
-  const chosen = guides[Math.floor(Math.random() * guides.length)];
-
-  return `🌟 *Your Spirit Guide: ${chosen.emoji} ${chosen.name}*\n_${chosen.meaning}_`;
+  const selected = guides[Math.floor(Math.random() * guides.length)];
+  return `🌟 *Your Spirit Guide: ${selected.emoji} ${selected.name}*\n_${selected.meaning}_`;
 }
 
-module.exports = { getSpiritGuide };
+module.exports = { getSpiritGuideMessage };
