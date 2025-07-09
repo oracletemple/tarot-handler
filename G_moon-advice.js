@@ -1,7 +1,7 @@
-// G_moon-advice.js - v1.0.0
+// G_moon-advice.js - v1.1.0
 
 /**
- * 获取当前月相建议（简化版基于日期计算，非天文精准）
+ * 获取当前月相建议（基于简化天文算法，非精准但较贴近真实月相）
  * @returns {string} - 灵性风格的月亮能量建议
  */
 function getMoonAdvice() {
@@ -40,9 +40,16 @@ function getMoonAdvice() {
     }
   ];
 
+  // 简化月相计算（基于平均周期与当前日期）
   const today = new Date();
-  const dayOfCycle = today.getDate() % moonPhases.length;
-  const phase = moonPhases[dayOfCycle];
+  const synodicMonth = 29.53058867; // 平均朔望月天数
+  const knownNewMoon = new Date(Date.UTC(2000, 0, 6, 18, 14)); // 2000年1月6日新月（基准）
+  const daysSince = (today.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
+  const currentPhase = daysSince % synodicMonth;
+
+  // 根据当前月相天数判断阶段（划分 8 个阶段）
+  const index = Math.floor((currentPhase / synodicMonth) * 8) % 8;
+  const phase = moonPhases[index];
 
   return `🌕 *${phase.name}*\n_${phase.advice}_`;
 }
