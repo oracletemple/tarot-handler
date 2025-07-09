@@ -1,3 +1,5 @@
+// B_telegram.js - v1.5.7
+
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -38,6 +40,7 @@ async function handleTelegramUpdate(update) {
     const data = callback.data;
     const msgId = callback.message.message_id;
 
+    // === 基础卡牌互动 ===
     if (data.startsWith("card_")) {
       const index = parseInt(data.split("_")[1]);
       try {
@@ -60,38 +63,40 @@ async function handleTelegramUpdate(update) {
       }
     }
 
+    // === 高端灵性模块按钮点击 ===
     if (premiumHandlers[data]) {
       console.log("📥 Callback received:", data);
 
-      // 👇 替换按钮为“加载中”
-      await updateMessageButtons(userId, msgId, {
-        inline_keyboard: [[{ text: "🔄 Loading...", callback_data: "loading_disabled" }]]
-      });
+      // 替换该按钮为 Loading 状态
+      const originalButtons = callback.message.reply_markup?.inline_keyboard || [];
+      const updatedButtons = originalButtons.map(row =>
+        row.map(btn =>
+          btn.callback_data === data
+            ? { text: "🔄 Loading...", callback_data: "loading_disabled" }
+            : btn
+        )
+      );
+
+      await updateMessageButtons(userId, msgId, { inline_keyboard: updatedButtons });
 
       try {
         const response = await premiumHandlers[data](userId);
-        await sendMessage(userId, response);
+        // 移除当前按钮，保留其他未点击按钮
+        const filteredButtons = originalButtons
+          .map(row => row.filter(btn => btn.callback_data !== data))
+          .filter(row => row.length > 0);
 
-        // 👇 从按钮中移除当前点击项
-        const currentMarkup = callback.message.reply_markup;
-        const updatedMarkup = removeClickedButton(currentMarkup, data);
-        await updateMessageButtons(userId, msgId, updatedMarkup);
+        await updateMessageButtons(userId, msgId, {
+          inline_keyboard: filteredButtons.length > 0 ? filteredButtons : []
+        });
+
+        await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
         await sendMessage(userId, `⚠️ Failed to load: ${data}`);
       }
     }
   }
-}
-
-function removeClickedButton(replyMarkup, clickedCallbackData) {
-  if (!replyMarkup || !replyMarkup.inline_keyboard) return { inline_keyboard: [] };
-
-  const newKeyboard = replyMarkup.inline_keyboard
-    .map(row => row.filter(btn => btn.callback_data !== clickedCallbackData))
-    .filter(row => row.length > 0);
-
-  return { inline_keyboard: newKeyboard };
 }
 
 async function sendMessage(chatId, text, reply_markup = null) {
