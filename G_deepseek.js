@@ -1,16 +1,16 @@
-// G_deepseek.js - v1.0.0
+// G_deepseek.js - v1.1.0
 const axios = require('axios');
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-cf17088ece0a4bc985dec1464cf504e1';
 
-async function callDeepSeek(promptText) {
+async function callDeepSeek(promptText, systemRole = 'You are a mystical oracle. Speak in elegant, poetic English with spiritual insight.') {
   const url = 'https://api.deepseek.com/v1/chat/completions';
   const payload = {
     model: 'deepseek-chat',
     messages: [
       {
         role: 'system',
-        content: 'You are a mystical oracle. Speak in elegant, poetic English with spiritual insight.'
+        content: systemRole
       },
       {
         role: 'user',
@@ -26,7 +26,7 @@ async function callDeepSeek(promptText) {
 
   try {
     const response = await axios.post(url, payload, { headers });
-    return response.data.choices[0].message.content;
+    return response.data.choices[0].message.content.trim();
   } catch (err) {
     console.error('[DeepSeek API Error]', err?.response?.data || err.message);
     return '⚠️ Failed to get spiritual response.';
