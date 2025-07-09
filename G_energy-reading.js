@@ -1,4 +1,4 @@
-// G_energy-reading.js - v1.1.0
+// G_energy-reading.js - v1.1.1
 const axios = require("axios");
 
 // ✅ 固定 21 段能量文案（首次点击用）
@@ -30,7 +30,8 @@ const presetEnergyMessages = [
 const usedApi = new Set();
 
 // ✅ 主调用函数（根据状态选择返回内容）
-async function getEnergyReading(userId) {
+// 🔄 统一命名为 getEnergyInsight
+async function getEnergyInsight(userId) {
   if (!usedApi.has(userId)) {
     usedApi.add(userId);
     return getRandomEnergyMessage();
@@ -47,7 +48,7 @@ function getRandomEnergyMessage() {
 
 // ✅ DeepSeek 接口调用（后续点击）
 async function getEnergyReadingFromApi() {
-  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Offer a poetic and symbolic spiritual energy reading for the user. Describe the energetic field they may carry today, using vivid metaphors and mystical tone.`;
 
   try {
@@ -73,4 +74,4 @@ async function getEnergyReadingFromApi() {
   }
 }
 
-module.exports = { getEnergyReading };
+module.exports = { getEnergyInsight };
