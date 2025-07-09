@@ -1,4 +1,4 @@
-// G_tarot-engine.js - v1.1.5
+// G_tarot-engine.js - v1.1.6
 
 const cards = require("./G_card-data");
 
@@ -17,8 +17,18 @@ function getCardByIndex(index) {
  * @returns {object[]} - 随机抽取的卡牌数组
  */
 function drawRandomCards(count = 3) {
-  const shuffled = [...cards].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  const unique = new Set();
+  const result = [];
+
+  while (result.length < count && unique.size < cards.length) {
+    const random = cards[Math.floor(Math.random() * cards.length)];
+    if (!unique.has(random.name)) {
+      unique.add(random.name);
+      result.push(random);
+    }
+  }
+
+  return result;
 }
 
 /**
