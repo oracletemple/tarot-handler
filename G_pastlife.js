@@ -1,7 +1,7 @@
-// G_pastlife.js - v1.0.1
+// G_pastlife.js - v1.1.0
 const axios = require("axios");
 
-const messages = [
+const presetMessages = [
   "🧿 *You once stood at the gates of an ancient temple*, cloaked in midnight blue, whispering invocations to forgotten gods. Your soul still remembers the stillness between each sacred word.",
   "🧿 *In a lifetime long past, you walked the deserts alone*, seeking silence not as absence, but as a bridge to the divine. Your footsteps echo still in moments of deep meditation.",
   "🧿 *You were once a healer by moonlight*, mixing herbs with hymns, your fingers guided by unseen forces. This gift lingers in your intuition and compassion.",
@@ -25,50 +25,57 @@ const messages = [
   "🧿 *You broke cycles once*, not for yourself, but for generations to come. You're still breaking them now—with greater awareness."
 ];
 
-const DEEPSEEK_KEY = "sk-cf17088ece0a4bc985dec1464cf504e1";
-const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
+const usedSet = new Set(); // 控制避免重复
+const apiUsed = new Set(); // 用户调用记录
 
-const headers = {
-  "Content-Type": "application/json",
-  "Authorization": `Bearer ${DEEPSEEK_KEY}`
-};
-
-const userUsage = {};
-
-async function getPastLifeMessage(userId) {
-  if (!userUsage[userId]) {
-    userUsage[userId] = 1;
-    const random = messages[Math.floor(Math.random() * messages.length)];
-    return random;
-  }
-
-  userUsage[userId]++;
-
-  try {
-    const payload = {
-      model: "deepseek-chat",
-      messages: [
-        {
-          role: "system",
-          content: "You are a mystical oracle who channels past life visions in poetic, symbolic language."
-        },
-        {
-          role: "user",
-          content: "Offer a past life echo in symbolic, soul-centered language. Make it immersive and spiritually resonant."
-        }
-      ],
-      temperature: 0.9
-    };
-
-    const res = await axios.post(DEEPSEEK_URL, payload, { headers });
-    const content = res.data.choices?.[0]?.message?.content;
-
-    return `🧿 *Past Life Echo*\n\n${content}`;
-  } catch (err) {
-    console.error("DeepSeek API error:", err.message);
-    return "🧿 *Past Life Echo*\n\nIn a forgotten chapter of your soul’s journey, something sacred still calls. 🌙";
+async function getPastLifeEcho(userId) {
+  if (!apiUsed.has(userId)) {
+    apiUsed.add(userId);
+    const unused = presetMessages.filter(msg => !usedSet.has(msg));
+    const message = unused.length > 0
+      ? unused[Math.floor(Math.random() * unused.length)]
+      : presetMessages[Math.floor(Math.random() * presetMessages.length)];
+    usedSet.add(message);
+    return message;
+  } else {
+    return await callDeepSeekPastlife();
   }
 }
 
-// ✅ 用系统预期的函数名导出
-module.exports = { getPastLifeEcho: getPastLifeMessage };
+async function callDeepSeekPastlife() {
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
+  const prompt = `Offer a symbolic and poetic vision of the user's past life. Use spiritual, mysterious language, filled with emotional resonance.`;
+
+  try {
+    const res = await axios.post(
+      "https://api.deepseek.com/v1/chat/completions",
+      {
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "You are a mystical oracle who channels symbolic past life visions."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    return `🧿 *Past Life Echo*\n\n${res.data.choices[0].message.content.trim()}`;
+  } catch (err) {
+    console.error("DeepSeek API error (pastlife):", err.message);
+    return "🧿 *Past Life Echo*\n\nSomething ancient stirs but remains veiled. Try again later.";
+  }
+}
+
+module.exports = { getPastLifeEcho };
