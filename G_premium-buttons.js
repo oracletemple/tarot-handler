@@ -1,4 +1,4 @@
-// G_premium-buttons.js - v1.3.2
+// G_premium-buttons.js - v1.4.0
 
 const PREMIUM_BUTTON_GROUPS = [
   [
@@ -15,6 +15,10 @@ const PREMIUM_BUTTON_GROUPS = [
     { text: "🌬 Message from Spirit", callback_data: "premium_spirit" },
     { text: "🪞 Mirror Message", callback_data: "premium_mirror" },
     { text: "📜 Journal Prompt", callback_data: "premium_journal" }
+  ],
+  [
+    { text: "🪄 Oracle Card", callback_data: "premium_oracle" },
+    { text: "🧘 Higher Self", callback_data: "premium_higher" }
   ]
 ];
 
