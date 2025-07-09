@@ -1,4 +1,4 @@
-// G_soul-purpose.js - v1.0.0
+// G_soul-purpose.js - v1.0.1
 const axios = require("axios");
 
 const deepseekKey = "sk-cf17088ece0a4bc985dec1464cf504e1"; // tarot-bot-key
@@ -32,12 +32,11 @@ function getRandomSoulPurpose() {
   return fixedMessages[i];
 }
 
-async function getSoulPurposeMessage(wasUsedBefore = false) {
+async function getSoulPurpose(wasUsedBefore = false) {
   if (!wasUsedBefore) {
     return getRandomSoulPurpose();
   }
 
-  // 调用 DeepSeek GPT API 获取动态内容
   const prompt = `Offer a deep and poetic spiritual message that helps someone understand their soul purpose. Avoid cliches. Use symbolic, wise language.`;
   try {
     const response = await axios.post(
@@ -64,4 +63,4 @@ async function getSoulPurposeMessage(wasUsedBefore = false) {
   }
 }
 
-module.exports = { getSoulPurposeMessage };
+module.exports = { getSoulPurpose };
