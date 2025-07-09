@@ -29,4 +29,6 @@ async function getSacredSymbol(userId) {
   }
 }
 
-module.exports = { getSacredSymbol };
+module.exports = { 
+  getSacredSymbol,
+  getPremiumSymbol: getSacredSymbol };
