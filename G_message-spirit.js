@@ -70,5 +70,5 @@ async function getMessageFromSpirit(userId) {
 }
 
 module.exports = { 
-  getMessageFromSpirit
+  getMessageFromSpirit,
   getPremiumSpirit: getMessageFromSpirit };
