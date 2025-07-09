@@ -1,4 +1,4 @@
-// G_tarot-engine.js - v1.1.4
+// G_tarot-engine.js - v1.1.5
 
 const cards = require("./G_card-data");
 
@@ -35,7 +35,9 @@ function getCardMeaning(card, position = 0) {
   };
 
   const header = positionMap[position] || "*Unknown Position*";
-  return `${header}\n🃏 *${card.name}*\n\n${card.meaning}`;
+  const name = card?.name || "Unknown Card";
+  const meaning = card?.meaning || "No interpretation available.";
+  return `${header}\n🃏 *${name}*\n\n${meaning}`;
 }
 
 module.exports = {
