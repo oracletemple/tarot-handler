@@ -1,7 +1,12 @@
-// G_button-render.js - v1.0.2
+// G_button-render.js - v1.0.3-debug
 
 function renderCardButtons(session) {
-  if (!session || !session.cards || !Array.isArray(session.cards)) return null;
+  console.log("🧪 Session received for button render:", session);
+
+  if (!session || !session.cards || !Array.isArray(session.cards)) {
+    console.log("⚠️ Invalid session or card structure.");
+    return null;
+  }
 
   const buttons = [];
 
@@ -16,13 +21,19 @@ function renderCardButtons(session) {
     }
   }
 
-  if (buttons.length === 0) return null;
+  if (buttons.length === 0) {
+    console.log("⚠️ No buttons to render.");
+    return null;
+  }
 
-  return {
+  const result = {
     reply_markup: {
       inline_keyboard: buttons,
     },
   };
+
+  console.log("✅ Rendered card buttons:", JSON.stringify(result, null, 2));
+  return result;
 }
 
 module.exports = { renderCardButtons };
