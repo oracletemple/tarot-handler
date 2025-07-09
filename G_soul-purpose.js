@@ -29,4 +29,6 @@ async function getSoulPurpose(userId) {
   }
 }
 
-module.exports = { getSoulPurpose };
+module.exports = { 
+  getSoulPurpose,
+  getPremiumPurpose: getSoulPurpose };
