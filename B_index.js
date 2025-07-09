@@ -1,4 +1,4 @@
-// B_index.js - v1.2.6
+// B_index.js - v1.2.7
 
 require("dotenv").config();
 const express = require("express");
