@@ -1,5 +1,5 @@
-// G_divine-timing.js - v1.1.1
-const axios = require("axios");
+// G_divine-timing.js - v1.2.0
+const { callDeepSeek } = require("./G_deepseek");
 
 const presetTimingMessages = [
   "⏳ The doors you long to walk through are not locked—just not yet opened. Trust the tempo.",
@@ -27,43 +27,21 @@ const presetTimingMessages = [
 
 const usedApiSet = new Set();
 
-// ✅ 主导出函数：统一命名为 getTimingInsight
+// ✅ 主调用函数（首点用预设，后续调 API）
 async function getTimingInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
-    const random = Math.floor(Math.random() * presetTimingMessages.length);
-    return presetTimingMessages[random];
+    const i = Math.floor(Math.random() * presetTimingMessages.length);
+    return presetTimingMessages[i];
   } else {
     return await callDeepSeekTiming();
   }
 }
 
-// ✅ DeepSeek 灵性时间回应
+// ✅ API 请求逻辑统一封装
 async function callDeepSeekTiming() {
-  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
   const prompt = `Offer a poetic, mystical reflection about divine timing. Use symbolic metaphors to help the user understand that their path is unfolding in perfect rhythm. Make it spiritually uplifting.`;
-
-  try {
-    const response = await axios.post(
-      "https://api.deepseek.com/v1/chat/completions",
-      {
-        model: "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.9,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-      }
-    );
-
-    return response.data.choices[0].message.content.trim();
-  } catch (err) {
-    console.error("DeepSeek API error (timing):", err.message);
-    return "⚠️ The divine clock is silent now. Try again a little later.";
-  }
+  return await callDeepSeek(prompt);
 }
 
 module.exports = { getTimingInsight };
