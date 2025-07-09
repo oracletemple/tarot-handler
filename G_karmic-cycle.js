@@ -1,8 +1,7 @@
-// G_karmic-cycle.js - v1.0.0
+// G_karmic-cycle.js - v1.1.0
+const axios = require("axios");
 
-const usedOnce = new Set();
-
-const karmicInsights = [
+const presetMessages = [
   "You are walking a path once walked before. This moment is not new, but a karmic echo asking to be heard.",
   "The energy you feel today is an answer to choices made in lifetimes past. Listen to what repeats.",
   "There is a lesson in every cycle. Yours now is patience — with others, with fate, and with yourself.",
@@ -26,42 +25,56 @@ const karmicInsights = [
   "You are not broken. You are being re-aligned through the invisible currents of time."
 ];
 
-function getKarmicCycle() {
-  const unused = karmicInsights.filter(text => !usedOnce.has(text));
-  const pick = unused.length > 0 ? unused[Math.floor(Math.random() * unused.length)] : karmicInsights[Math.floor(Math.random() * karmicInsights.length)];
-  usedOnce.add(pick);
-  return `🕯 *Karmic Cycle*
+const usedSet = new Set(); // global usage
+const apiUsed = new Set(); // per userId tracking
 
-${pick}`;
-}
-
-// ✅ DeepSeek 接入（第二次调用开始使用）
-const axios = require("axios");
-const DEEPSEEK_KEY = "sk-cf17088ece0a4bc985dec1464cf504e1";
-
-async function getKarmicCycleFromAPI() {
-  try {
-    const res = await axios.post("https://api.deepseek.com/chat/completions", {
-      model: "deepseek-chat",
-      messages: [
-        { role: "system", content: "You are a spiritual guide offering symbolic, insightful reflections on karmic cycles." },
-        { role: "user", content: "Please offer a spiritual reflection on a karmic cycle I may be in now."
-        }
-      ]
-    }, {
-      headers: {
-        Authorization: `Bearer ${DEEPSEEK_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
-    return `🕯 *Karmic Cycle*
-
-${res.data.choices[0].message.content.trim()}`;
-  } catch (e) {
-    return "🕯 *Karmic Cycle*
-
-The karmic threads are tangled today. Please try again soon.";
+async function getKarmaCycleInsight(userId) {
+  if (!apiUsed.has(userId)) {
+    apiUsed.add(userId);
+    const unused = presetMessages.filter(m => !usedSet.has(m));
+    const message = unused.length > 0
+      ? unused[Math.floor(Math.random() * unused.length)]
+      : presetMessages[Math.floor(Math.random() * presetMessages.length)];
+    usedSet.add(message);
+    return `🕯 *Karmic Cycle*\n\n${message}`;
+  } else {
+    return await callKarmaCycleAPI();
   }
 }
 
-module.exports = { getKarmicCycle, getKarmicCycleFromAPI };
+async function callKarmaCycleAPI() {
+  const apiKey = "sk-cf17088ece0a4bc985dec1464cf504e1";
+  const prompt = `Please offer a spiritual reflection on a karmic cycle I may be in now. Be symbolic, mystical, poetic and reflective.`;
+
+  try {
+    const res = await axios.post(
+      "https://api.deepseek.com/v1/chat/completions",
+      {
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "You are a spiritual guide offering symbolic, insightful reflections on karmic cycles."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.85
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    return `🕯 *Karmic Cycle*\n\n${res.data.choices[0].message.content.trim()}`;
+  } catch (e) {
+    console.error("DeepSeek API error (karmic cycle):", e.message);
+    return `🕯 *Karmic Cycle*\n\nThe karmic threads are tangled today. Please try again soon.`;
+  }
+}
+
+module.exports = { getKarmaCycleInsight };
