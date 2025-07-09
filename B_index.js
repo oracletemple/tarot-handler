@@ -1,4 +1,4 @@
-// B_index.js - v1.2.8
+// B_index.js - v1.2.9
 
 require("dotenv").config();
 const express = require("express");
@@ -11,11 +11,12 @@ const { startSession } = require("./G_tarot-session");
 const app = express();
 app.use(bodyParser.json());
 
-// ✅ Webhook 主入口
+// ✅ Webhook 主入口（修复超时）
 app.post("/webhook", async (req, res) => {
   try {
     console.log("📥 Received Webhook Payload:", JSON.stringify(req.body, null, 2));
-    await handleTelegramUpdate(req, res); // ✅ 修复：正确传入 req 和 res
+    await handleTelegramUpdate(req.body); // ✅ 只传 req.body，不传 req/res
+    res.send("OK"); // ✅ 添加这行响应 Telegram，避免超时
   } catch (err) {
     console.error("❌ Webhook handler error:", err);
     res.sendStatus(500);
