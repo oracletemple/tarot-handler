@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.4
+// B_telegram.js - v1.5.5
 
 const axios = require("axios");
 const { getCardInfo } = require("./G_tarot");
@@ -12,7 +12,7 @@ const { getNextButtonGroup, resetPremiumProgress } = require("./G_premium-button
 const { sendTelegramMessage, sendTelegramPhoto, sendTelegramButtons } = require("./G_send-message");
 const { startSession, isSessionComplete, storeCard, getCard } = require("./G_tarot-session");
 
-module.exports = async function handleTelegramUpdate(req, res) {
+async function handleTelegramUpdate(req, res) {
   const body = req.body;
   if (!body) return res.sendStatus(200);
 
@@ -101,4 +101,6 @@ module.exports = async function handleTelegramUpdate(req, res) {
   }
 
   return res.sendStatus(200);
-};
+}
+
+module.exports = { handleTelegramUpdate };
