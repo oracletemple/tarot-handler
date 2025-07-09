@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.7
+// B_telegram.js - v1.5.6
 
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -13,28 +13,25 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function handleTelegramUpdate(update) {
+  console.log("\n📥 Received Webhook Payload:", JSON.stringify(update, null, 2));
+
   const message = update.message;
   const callback = update.callback_query;
 
   if (message) {
     const chatId = message.chat.id;
     const text = message.text;
-    console.log("📥 Received Telegram message:", text);
 
-    if (text === "/test123" && chatId == process.env.RECEIVER_ID) {
-      startSession(chatId, 12);
-      const session = getSession(chatId);
-      console.log("✅ /test123 triggered, session started:", session);
-      const buttons = renderCardButtons(session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", buttons?.reply_markup);
+    if ((text === "/test123" || text === "/test12") && chatId == process.env.RECEIVER_ID) {
+      const session = startSession(chatId, 12);
+      console.log("✅ /test123 or /test12 triggered, session started:", session);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
 
     if (text === "/test30" && chatId == process.env.RECEIVER_ID) {
-      startSession(chatId, 30);
-      const session = getSession(chatId);
+      const session = startSession(chatId, 30);
       console.log("✅ /test30 triggered, session started:", session);
-      const buttons = renderCardButtons(session);
-      await sendMessage(chatId, "🃏 Please draw your cards:", buttons?.reply_markup);
+      await sendMessage(chatId, "🃏 Please draw your cards:", renderCardButtons(session));
     }
   }
 
@@ -42,7 +39,6 @@ async function handleTelegramUpdate(update) {
     const userId = callback.from.id;
     const data = callback.data;
     const msgId = callback.message.message_id;
-    console.log("📥 Callback received:", data);
 
     if (data.startsWith("card_")) {
       const index = parseInt(data.split("_")[1]);
@@ -52,9 +48,8 @@ async function handleTelegramUpdate(update) {
         await sendMessage(userId, meaning);
 
         const session = getSession(userId);
-        const buttons = renderCardButtons(session);
         if (!isSessionComplete(userId)) {
-          await updateMessageButtons(userId, msgId, buttons?.reply_markup);
+          await updateMessageButtons(userId, msgId, renderCardButtons(session));
         } else {
           await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
           await sendMessage(userId, await getSpiritGuide());
@@ -68,9 +63,21 @@ async function handleTelegramUpdate(update) {
     }
 
     if (premiumHandlers[data]) {
-      console.log("✨ Triggering premium module:", data);
-      const response = await premiumHandlers[data](userId);
-      await sendMessage(userId, response);
+      console.log("📥 Callback received:", data);
+
+      // 👇 加载中提示按钮（静态占位）
+      await updateMessageButtons(userId, msgId, {
+        inline_keyboard: [[{ text: "🔄 Loading...", callback_data: "loading_disabled" }]]
+      });
+
+      try {
+        const response = await premiumHandlers[data](userId);
+        await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
+        await sendMessage(userId, response);
+      } catch (err) {
+        console.error("❌ Premium handler error:", err);
+        await sendMessage(userId, `⚠️ Failed to load: ${data}`);
+      }
     }
   }
 }
@@ -79,7 +86,7 @@ async function sendMessage(chatId, text, reply_markup = null) {
   const payload = {
     chat_id: chatId,
     text,
-    parse_mode: "Markdown",
+    parse_mode: "Markdown"
   };
   if (reply_markup) payload.reply_markup = reply_markup;
 
@@ -97,9 +104,8 @@ async function updateMessageButtons(chatId, messageId, reply_markup) {
     await axios.post(`${API_URL}/editMessageReplyMarkup`, {
       chat_id: chatId,
       message_id: messageId,
-      reply_markup,
+      reply_markup
     });
-    console.log("✅ Buttons updated.");
   } catch (err) {
     console.error("Telegram update buttons error:", err.response?.data || err.message);
   }
