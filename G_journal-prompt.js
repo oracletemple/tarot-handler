@@ -1,4 +1,4 @@
-// G_journal-prompt.js - v1.1.0
+// G_journal-prompt.js - v1.1.1
 const axios = require("axios");
 
 const presetPrompts = [
@@ -27,13 +27,13 @@ const presetPrompts = [
 
 const usedApiSet = new Set();
 
-function getJournalPrompt(userId) {
+async function getJournalInsight(userId) {
   if (!usedApiSet.has(userId)) {
     usedApiSet.add(userId);
     const random = Math.floor(Math.random() * presetPrompts.length);
     return presetPrompts[random];
   } else {
-    return callDeepSeekPrompt();
+    return await callDeepSeekPrompt();
   }
 }
 
@@ -64,4 +64,4 @@ async function callDeepSeekPrompt() {
   }
 }
 
-module.exports = { getJournalPrompt };
+module.exports = { getJournalInsight };
