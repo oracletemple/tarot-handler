@@ -1,5 +1,4 @@
-// G_premium-buttons.js - v1.3.3
-
+// G_premium-buttons.js - v1.3.4
 const { getPremiumPastLife } = require("./G_pastlife");
 const { getPremiumMirror } = require("./G_mirror-message");
 const { getPremiumEnergy } = require("./G_energy-reading");
@@ -11,23 +10,24 @@ const { getPremiumOracle } = require("./G_oracle-card");
 const { getPremiumHigher } = require("./G_higher-self");
 
 function renderPremiumButtonsInline() {
-  return {
-    inline_keyboard: [
-      [{ text: "🧟 Past Life Echoes", callback_data: "premium_pastlife" }],
-      [{ text: "🪞 Mirror Message", callback_data: "premium_mirror" }],
-      [{ text: "🌀 Energy Reading", callback_data: "premium_energy" }],
-      [{ text: "🔭 Soul Purpose", callback_data: "premium_purpose" }],
-      [{ text: "🌌 Message from Spirit", callback_data: "premium_spirit" }],
-      [{ text: "⛩ Sacred Symbol", callback_data: "premium_symbol" }],
-      [{ text: "⏳ Divine Timing", callback_data: "premium_timing" }],
-      [{ text: "🪄 Oracle Card", callback_data: "premium_oracle" }],
-      [{ text: "🧘 Higher Self", callback_data: "premium_higher" }]
-    ]
-  };
+  const modules = [
+    { key: 'pastlife', label: '🧿 Past Life Echoes' },
+    { key: 'mirror', label: '🪞 Mirror Message' },
+    { key: 'energy', label: '🌀 Energy Reading' },
+    { key: 'purpose', label: '🔭 Soul Purpose' },
+    { key: 'spirit', label: '🌬 Message from Spirit' },
+    { key: 'symbol', label: '⛩ Sacred Symbol' },
+    { key: 'timing', label: '⏳ Divine Timing' },
+    { key: 'oracle', label: '🪄 Oracle Card' },
+    { key: 'higher', label: '🧘 Higher Self' }
+  ];
+
+  const buttons = modules.map(m => [{ text: m.label, callback_data: `premium_${m.key}` }]);
+  return { inline_keyboard: buttons };
 }
 
 function removeClickedButton(currentMarkup, callbackDataToRemove) {
-  if (!currentMarkup || !currentMarkup.inline_keyboard) return null;
+  if (!currentMarkup || !currentMarkup.inline_keyboard) return { inline_keyboard: [] };
 
   const newKeyboard = currentMarkup.inline_keyboard
     .map(row => row.filter(btn => btn.callback_data !== callbackDataToRemove))
