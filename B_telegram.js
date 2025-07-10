@@ -142,7 +142,21 @@ async function handleTelegramUpdate(update) {
 }
 
 async function sendMessage(chatId, text, reply_markup = null) {
-  await axios.post(`${API_URL}/sendMessage`, {
+  const payload = {
+    chat_id: chatId,
+    text: escapeMarkdown(text),
+    parse_mode: "MarkdownV2"
+  };
+  if (reply_markup) {
+    payload.reply_markup = reply_markup;
+  }
+  try {
+    const res = await axios.post(`${API_URL}/sendMessage`, payload);
+    return res;
+  } catch (err) {
+    console.error("Telegram sendMessage error:", err.response?.data || err.message);
+  }
+}/sendMessage`, {
     chat_id: chatId,
     text: escapeMarkdown(text),
     parse_mode: "MarkdownV2",
