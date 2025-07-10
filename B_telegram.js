@@ -1,7 +1,7 @@
 // ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
 // - tarot-handler/B_telegram.js
 
-// B_telegram.js - v1.5.18
+// B_telegram.js - v1.5.19
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -152,18 +152,14 @@ async function handleTelegramUpdate(update) {
         await editReplyMarkup(userId, msgId, renderCardButtons(session));
       } else {
         await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
-        if (session.amount < 30) {
-          // 基础版：仅基础按钮
-          await sendMessage(userId, '✨ Explore your guidance modules:', renderBasicButtons());
-          markStep(userId, 'basicButtonsShown');
-        } else {
-          // 高级版：基础+高级按钮
-          const basicKb   = renderBasicButtons().inline_keyboard;
-          const premiumKb = renderPremiumButtonsInline().inline_keyboard;
-          const combined  = basicKb.concat(premiumKb);
-          await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: combined });
-          markStep(userId, 'bothButtonsShown');
-        }
+        const basicKb   = renderBasicButtons().inline_keyboard;
+        const premiumKb = renderPremiumButtonsInline().inline_keyboard;
+        // 分隔线行
+        const separator = [[{ text: '── Premium Modules ──', callback_data: 'noop' }]];
+        const combined  = basicKb.concat(separator, premiumKb);
+
+        await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: combined });
+        markStep(userId, 'bothButtonsShown');
       }
     } catch (err) {
       await sendMessage(userId, `⚠️ ${err.message}`);
