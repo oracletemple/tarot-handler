@@ -1,7 +1,7 @@
 // ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
 // - tarot-handler/B_telegram.js
 
-// B_telegram.js - v1.5.19
+// B_telegram.js - v1.5.20
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -155,7 +155,7 @@ async function handleTelegramUpdate(update) {
         const basicKb   = renderBasicButtons().inline_keyboard;
         const premiumKb = renderPremiumButtonsInline().inline_keyboard;
         // 分隔线行
-        const separator = [[{ text: '── Premium Modules ──', callback_data: 'noop' }]];
+        const separator = [[{ text: '── Advanced Exclusive Insights ──', callback_data: 'noop' }]];
         const combined  = basicKb.concat(separator, premiumKb);
 
         await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: combined });
