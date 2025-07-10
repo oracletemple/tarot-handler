@@ -1,3 +1,6 @@
+// ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
+// - tarot-handler/B_telegram.js
+
 // B_telegram.js - v1.5.11
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
@@ -13,11 +16,16 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 async function answerCallbackQuery(callbackQueryId, text, alert = false) {
-  await axios.post(`${API_URL}/answerCallbackQuery`, {
-    callback_query_id: callbackQueryId,
-    text,
-    show_alert: alert
-  });
+  try {
+    await axios.post(`${API_URL}/answerCallbackQuery`, {
+      callback_query_id: callbackQueryId,
+      text,
+      show_alert: alert
+    });
+    console.log(`🔔 answerCbQuery: ${text} (alert=${alert})`);
+  } catch (err) {
+    console.error("❌ answerCbQuery error:", err.response?.data || err.message);
+  }
 }
 
 function escapeMarkdown(text) {
@@ -30,6 +38,7 @@ async function handleTelegramUpdate(update) {
   const message = update.message;
   const callback = update.callback_query;
 
+  // 处理文本命令
   if (message) {
     const chatId = message.chat.id;
     const text = message.text;
@@ -54,29 +63,32 @@ async function handleTelegramUpdate(update) {
     }
   }
 
+  // 处理回调按钮
   if (callback) {
     const userId = callback.from.id;
     const data = callback.data;
     const msgId = callback.message.message_id;
 
     const session = getSession(userId);
-    // === 基础版访问高级模块 ===
+
+    // ✨ 基础版访问高级模块：需要支付
     if (premiumHandlers[data] && session.amount < 30) {
-      await answerCallbackQuery(callback.id, 'Unlock advanced modules by paying the remaining ' + (30 - session.amount) + ' USDT.', true);
+      await answerCallbackQuery(callback.id, `Unlock by paying ${30 - session.amount} USDT.`, true);
       await sendMessage(userId,
-        'To access premium guidance, please complete your payment:',
+        'To access premium guidance, complete payment:',
         { inline_keyboard: [[{ text: `Pay ${30 - session.amount} USDT Now`, url: 'https://divinepay.onrender.com/' }]] }
       );
       return;
     }
 
-    // === 基础卡牌互动 ===
+    // 🃏 基础卡牌互动
     if (data.startsWith("card_")) {
-      const index = parseInt(data.split("_")[1]);
+      const index = parseInt(data.split("_")[1], 10);
       try {
         const card = getCard(userId, index);
         const meaning = getCardMeaning(card, index);
 
+        console.log(`🎴 Card clicked: ${data}, meaning fetched.`);
         await sendMessage(userId, meaning);
         incrementDraw(userId);
 
@@ -101,28 +113,32 @@ async function handleTelegramUpdate(update) {
           markStep(userId, "premiumButtonsShown");
         }
       } catch (err) {
+        console.error("❌ Card handler error:", err);
         await sendMessage(userId, `⚠️ ${err.message}`);
       }
       return;
     }
 
-    // === 高端灵性模块按钮点击 ===
+    // 🏆 高端灵性模块按钮点击
     if (premiumHandlers[data] && session.amount >= 30) {
-      // 防止重复点击
+      console.log(`🔄 Premium handler triggered: ${data}`);
       session._premiumHandled = session._premiumHandled || new Set();
       if (session._premiumHandled.has(data)) {
+        console.log(`⚠️ Duplicate click ignored: ${data}`);
         return;
       }
       session._premiumHandled.add(data);
 
-      await answerCallbackQuery(callback.id, 'Loading content...', false);
-      // 立即移除按钮
-      const removedMarkup = removeClickedButton(callback.message.reply_markup, data);
-      await updateMessageButtons(userId, msgId, removedMarkup);
+      // 弹出加载提示（Alert）
+      await answerCallbackQuery(callback.id, 'Loading...', true);
+      // 移除已点击按钮
+      const newMarkup = removeClickedButton(callback.message.reply_markup, data);
+      await updateMessageButtons(userId, msgId, newMarkup);
 
       try {
         const response = await premiumHandlers[data](userId);
         markPremiumClick(userId, data);
+        console.log(`✅ Premium content sent: ${data}`);
         await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
@@ -143,7 +159,7 @@ async function sendMessage(chatId, text, reply_markup = null) {
 
   try {
     const res = await axios.post(`${API_URL}/sendMessage`, payload);
-    console.log("✅ Message sent to Telegram:", JSON.stringify(payload, null, 2));
+    console.log("✅ Message sent:", text.replace(/\n/g, ' | '));
     return res;
   } catch (err) {
     console.error("Telegram sendMessage error:", err.response?.data || err.message);
@@ -163,4 +179,3 @@ async function updateMessageButtons(chatId, messageId, reply_markup) {
 }
 
 module.exports = { handleTelegramUpdate };
-
