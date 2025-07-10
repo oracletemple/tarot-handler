@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.10
+// B_telegram.js - v1.5.11
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
