@@ -1,4 +1,4 @@
-// B_telegram.js - v1.5.13
+// B_telegram.js - v1.5.14
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -131,7 +131,7 @@ async function handleTelegramUpdate(update) {
       return;
     }
 
-    // 高级模块点击：倒计时 + 内容置顶 + 按钮移除
+    // 高级模块点击：倒计时 + 内容累积于同一消息下
     if (premiumHandlers[data] && session.amount >= 30) {
       session._premiumHandled = session._premiumHandled || new Set();
       if (session._premiumHandled.has(data)) return;
@@ -139,7 +139,7 @@ async function handleTelegramUpdate(update) {
 
       // 倒计时显示5秒
       let countdown = 5;
-      const interval = setInterval(async () => {
+      const countdownInterval = setInterval(async () => {
         const kb = callback.message.reply_markup.inline_keyboard.map(row =>
           row.map(btn => btn.callback_data === data
             ? { ...btn, text: `正在读取 ${countdown}s` }
@@ -148,20 +148,24 @@ async function handleTelegramUpdate(update) {
         );
         await updateMessageButtons(userId, msgId, { inline_keyboard: kb });
         countdown--;
-        if (countdown < 0) clearInterval(interval);
+        if (countdown < 0) clearInterval(countdownInterval);
       }, 1000);
 
       try {
         const content = await premiumHandlers[data](userId);
-        clearInterval(interval);
+        clearInterval(countdownInterval);
         const newKb = removeClickedButton(callback.message.reply_markup, data);
-        const fullText = `✨ Unlock your deeper guidance:\n\n${content}`;
-        await editMessageText(userId, msgId, fullText, newKb);
+        // 累积内容
+        const existing = callback.message.text || "✨ Unlock your deeper guidance:";
+        const updatedText = existing + "\n\n" + content;
+        await editMessageText(userId, msgId, updatedText, newKb);
         markPremiumClick(userId, data);
       } catch (err) {
-        clearInterval(interval);
-        const errText = `⚠️ Failed to load: ${data}`;
-        await editMessageText(userId, msgId, `✨ Unlock your deeper guidance:\n\n${errText}`, callback.message.reply_markup);
+        clearInterval(countdownInterval);
+        const errorMsg = `⚠️ Failed to load: ${data}`;
+        const existing = callback.message.text || "✨ Unlock your deeper guidance:";
+        const updatedText = existing + "\n\n" + errorMsg;
+        await editMessageText(userId, msgId, updatedText, callback.message.reply_markup);
       }
       return;
     }
