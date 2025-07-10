@@ -1,60 +1,94 @@
-/* ---------------------- G_flow-monitor.js - v1.0.1 ---------------------- */
-const sessions = new Map();
-const flowData = new Map();
+// G_flow-monitor.js - v1.1.0
+
+const flowStatus = new Map(); // key: userId, value: { stage: string, steps: object }
+// List of all premium step keys
+const PREMIUM_KEYS = [
+  "premium_pastlife",
+  "premium_mirror",
+  "premium_energy",
+  "premium_purpose",
+  "premium_spirit",
+  "premium_symbol",
+  "premium_timing",
+  "premium_oracle",
+  "premium_higher"
+];
 
 function startFlow(userId) {
-  sessions.set(userId, { steps: [] });
-  flowData.set(userId, { sequence: [], responses: {} });
-}
-
-function getSession(userId) {
-  return sessions.get(userId);
-}
-
-function isSessionComplete(userId) {
-  const s = sessions.get(userId);
-  return s && s.steps.includes('premiumButtonsShown');
+  flowStatus.set(userId, {
+    stage: "START",
+    steps: {
+      started: true,
+      drawnCards: 0,
+      tarotComplete: false,
+      spiritGuide: false,
+      luckyHints: false,
+      moonAdvice: false,
+      premiumButtonsShown: false,
+      premiumClicks: {},
+    },
+  });
 }
 
 function incrementDraw(userId) {
-  const s = sessions.get(userId);
-  const count = (s.steps.filter(st => st.startsWith('draw_')).length || 0) + 1;
-  s.steps.push('draw_' + count);
+  const flow = flowStatus.get(userId);
+  if (flow) {
+    flow.steps.drawnCards += 1;
+    if (flow.steps.drawnCards >= 3) {
+      flow.steps.tarotComplete = true;
+      flow.stage = "TAROT_DONE";
+    }
+  }
 }
 
 function markStep(userId, step) {
-  const s = sessions.get(userId);
-  s.steps.push(step);
+  const flow = flowStatus.get(userId);
+  if (flow && Object.prototype.hasOwnProperty.call(flow.steps, step)) {
+    flow.steps[step] = true;
+  }
 }
 
-function markPremiumClick(userId, moduleKey, responseText) {
-  const data = flowData.get(userId);
-  if (!data.sequence.includes(moduleKey)) data.sequence.push(moduleKey);
-  data.responses[moduleKey] = responseText;
-  markStep(userId, `premium_${moduleKey}`);
+function markPremiumClick(userId, key) {
+  const flow = flowStatus.get(userId);
+  if (flow) {
+    flow.steps.premiumClicks[key] = true;
+  }
 }
 
-function getDirectoryData(userId) {
-  const allKeys = ['pastlife','mirror','energy','purpose','spirit','symbol','timing','oracle','higher'];
-  const data = flowData.get(userId) || { sequence: [], responses: {} };
-  const clicked = data.sequence;
-  const pending = allKeys.filter(k => !clicked.includes(k));
-  return { clicked, pending, responses: data.responses };
+function getFlowStatus(userId) {
+  return flowStatus.get(userId);
 }
 
 function debugFlow(userId) {
-  const s = sessions.get(userId) || { steps: [] };
-  return `Steps: ${s.steps.join(', ')}`;
+  const flow = flowStatus.get(userId);
+  if (!flow) return "❌ No session found.";
+  const steps = flow.steps;
+
+  const missing = [];
+  if (!steps.tarotComplete) missing.push("[Tarot not complete]");
+  if (!steps.spiritGuide) missing.push("[Spirit guide not sent]");
+  if (!steps.luckyHints) missing.push("[Lucky hints not sent]");
+  if (!steps.moonAdvice) missing.push("[Moon advice not sent]");
+  if (!steps.premiumButtonsShown) missing.push("[Premium buttons not shown]");
+
+  // Check premium clicks
+  if (steps.premiumButtonsShown) {
+    const unclicked = PREMIUM_KEYS.filter(key => !steps.premiumClicks[key]);
+    unclicked.forEach(key => missing.push(`[Premium not clicked: ${key}]`));
+  }
+
+  if (missing.length === 0) {
+    return "✅ All flow steps completed.";
+  } else {
+    return "⚠️ Incomplete flow:" + missing.join(" ");
+  }
 }
 
 module.exports = {
   startFlow,
-  getSession,
-  isSessionComplete,
   incrementDraw,
   markStep,
   markPremiumClick,
-  getDirectoryData,
-  debugFlow
+  getFlowStatus,
+  debugFlow,
 };
-
