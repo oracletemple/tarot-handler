@@ -32,20 +32,16 @@ function escapeMarkdown(text) {
   return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
 
-function updateLoadingButtonMarkup(currentMarkup, targetCallback, displayText) {
-  const kb = currentMarkup.inline_keyboard.map(row =>
-    row.map(btn =>
-      btn.callback_data === targetCallback
-        ? { ...btn, text: displayText }
-        : btn
-    )
-  );
-  return { inline_keyboard: kb };
-}
-
-async function editReplyMarkup(chatId, messageId, reply_markup) {
-  try {
-    await axios.post(`${API_URL}/editMessageReplyMarkup`, { chat_id: chatId, message_id: messageId, reply_markup });
+function // 启动倒计时显示
+    let remaining = countdown;
+    const interval = setInterval(async () => {
+      try {
+        const newMarkup = updateLoadingButtonMarkup(callback.message.reply_markup, data, `Fetching insight... ${remaining}s`);
+        await editReplyMarkup(userId, msgId, newMarkup);
+        remaining--;
+        if (remaining < 0) clearInterval(interval);
+      } catch {}      
+    }, 1000);
   } catch (err) {
     console.error("❌ editMessageReplyMarkup error:", err.response?.data || err.message);
   }
