@@ -1,7 +1,7 @@
 // ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
 // - tarot-handler/B_telegram.js
 
-// B_telegram.js - v1.5.13
+// B_telegram.js - v1.5.14
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -14,15 +14,18 @@ const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = requ
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const DEFAULT_MS = 15000;        // 默认 15s
-const BUFFER_MS = 2000;          // 缓冲 2s
-
-// 存储各模块历史加载时间（ms）
+const DEFAULT_MS = 15000;
+const BUFFER_MS = 2000;
+// 记录各模块加载时长的历史数组
 const loadHistory = {};
 
 async function answerCallbackQuery(callbackQueryId, text, alert = false) {
   try {
-    await axios.post(`${API_URL}/answerCallbackQuery`, { callback_query_id: callbackQueryId, text, show_alert: alert });
+    await axios.post(`${API_URL}/answerCallbackQuery`, {
+      callback_query_id: callbackQueryId,
+      text,
+      show_alert: alert
+    });
   } catch (err) {
     console.error("❌ answerCbQuery error:", err.response?.data || err.message);
   }
@@ -32,18 +35,29 @@ function escapeMarkdown(text) {
   return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
 
-function // 启动倒计时显示
-    let remaining = countdown;
-    const interval = setInterval(async () => {
-      try {
-        const newMarkup = updateLoadingButtonMarkup(callback.message.reply_markup, data, `Fetching insight... ${remaining}s`);
-        await editReplyMarkup(userId, msgId, newMarkup);
-        remaining--;
-        if (remaining < 0) clearInterval(interval);
-      } catch {}      
-    }, 1000);
+async function editReplyMarkup(chatId, messageId, reply_markup) {
+  try {
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup
+    });
   } catch (err) {
     console.error("❌ editMessageReplyMarkup error:", err.response?.data || err.message);
+  }
+}
+
+async function sendMessage(chatId, text, reply_markup = null) {
+  const payload = {
+    chat_id: chatId,
+    text: escapeMarkdown(text),
+    parse_mode: "MarkdownV2"
+  };
+  if (reply_markup) payload.reply_markup = reply_markup;
+  try {
+    await axios.post(`${API_URL}/sendMessage`, payload);
+  } catch (err) {
+    console.error("❌ sendMessage error:", err.response?.data || err.message);
   }
 }
 
@@ -120,37 +134,35 @@ async function handleTelegramUpdate(update) {
 
     // 计算动态倒计时
     const history = loadHistory[data] || [];
-    const avgMs = history.length ? history.reduce((a,b)=>a+b,0)/history.length : DEFAULT_MS;
-    const countdown = Math.ceil((avgMs + BUFFER_MS)/1000);
+    const avgMs = history.length ? history.reduce((a, b) => a + b, 0) / history.length : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
 
-    // 弹出无声回调以避免用户卡死
+    // 禁用其他按钮，仅保留倒计时按钮
     await answerCallbackQuery(callback.id, '', false);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
-    // 启动倒计时显示
     let remaining = countdown;
     const interval = setInterval(async () => {
       try {
-        const newMarkup = updateLoadingButtonMarkup(callback.message.reply_markup, data, `读取中 ${remaining}s`);
-        await editReplyMarkup(userId, msgId, newMarkup);
         remaining--;
+        if (remaining >= 0) {
+          await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${remaining}s`, callback_data: data }]] });
+        }
         if (remaining < 0) clearInterval(interval);
-      } catch {}      
+      } catch {}
     }, 1000);
 
-    // 调用处理器并测时
-    let start = Date.now();
+    // 调用模块并测时
+    const startTime = Date.now();
     try {
       const response = await premiumHandlers[data](userId);
-      let duration = Date.now() - start;
-      // 更新历史
+      const duration = Date.now() - startTime;
       loadHistory[data] = loadHistory[data] || [];
       loadHistory[data].push(duration);
 
       clearInterval(interval);
-      // 移除按钮
-      const removed = removeClickedButton(callback.message.reply_markup, data);
-      await editReplyMarkup(userId, msgId, removed);
-
+      const removedMarkup = removeClickedButton(callback.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, removedMarkup);
       await sendMessage(userId, response);
       markPremiumClick(userId, data);
     } catch (err) {
@@ -158,16 +170,6 @@ async function handleTelegramUpdate(update) {
       await sendMessage(userId, `⚠️ Failed to load: ${data}`);
     }
     return;
-  }
-}
-
-async function sendMessage(chatId, text, reply_markup = null) {
-  const payload = { chat_id: chatId, text: escapeMarkdown(text), parse_mode: "MarkdownV2" };
-  if (reply_markup) payload.reply_markup = reply_markup;
-  try {
-    await axios.post(`${API_URL}/sendMessage`, payload);
-  } catch (err) {
-    console.error("❌ sendMessage error:", err.response?.data || err.message);
   }
 }
 
