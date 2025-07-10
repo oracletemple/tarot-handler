@@ -1,5 +1,4 @@
-// B_telegram.js - v1.5.9
-
+// B_telegram.js - v1.5.10
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -7,14 +6,22 @@ const { renderCardButtons } = require("./G_button-render");
 const { getSpiritGuide } = require("./G_spirit-guide");
 const { getLuckyHints } = require("./G_lucky-hints");
 const { getMoonAdvice } = require("./G_moon-advice");
-const { renderPremiumButtonsInline, premiumHandlers } = require("./G_premium-buttons");
+const { renderPremiumButtonsInline, premiumHandlers, removeClickedButton } = require("./G_premium-buttons");
 const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = require("./G_flow-monitor");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+async function answerCallbackQuery(callbackQueryId, text, alert = false) {
+  await axios.post(`${API_URL}/answerCallbackQuery`, {
+    callback_query_id: callbackQueryId,
+    text,
+    show_alert: alert
+  });
+}
+
 function escapeMarkdown(text) {
-  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
 
 async function handleTelegramUpdate(update) {
@@ -52,31 +59,41 @@ async function handleTelegramUpdate(update) {
     const data = callback.data;
     const msgId = callback.message.message_id;
 
+    const session = getSession(userId);
+    // === 基础版访问高级模块 ===
+    if (premiumHandlers[data] && session.amount < 30) {
+      await answerCallbackQuery(callback.id, 'Unlock advanced modules by paying the remaining ' + (30 - session.amount) + ' USDT.', true);
+      await sendMessage(userId,
+        'To access premium guidance, please complete your payment:',
+        { inline_keyboard: [[{ text: `Pay ${30 - session.amount} USDT Now`, url: 'https://divinepay.onrender.com/' }]] }
+      );
+      return;
+    }
+
     // === 基础卡牌互动 ===
     if (data.startsWith("card_")) {
       const index = parseInt(data.split("_")[1]);
       try {
         const card = getCard(userId, index);
         const meaning = getCardMeaning(card, index);
+
         await sendMessage(userId, meaning);
         incrementDraw(userId);
 
-        const session = getSession(userId);
         if (!isSessionComplete(userId)) {
           await updateMessageButtons(userId, msgId, renderCardButtons(session));
         } else {
           await updateMessageButtons(userId, msgId, { inline_keyboard: [] });
 
           const guide = await getSpiritGuide();
-          const hints = await getLuckyHints();
-          const moon = await getMoonAdvice();
-
           await sendMessage(userId, guide);
           markStep(userId, "spiritGuide");
 
+          const hints = await getLuckyHints();
           await sendMessage(userId, hints);
           markStep(userId, "luckyHints");
 
+          const moon = await getMoonAdvice();
           await sendMessage(userId, moon);
           markStep(userId, "moonAdvice");
 
@@ -86,41 +103,32 @@ async function handleTelegramUpdate(update) {
       } catch (err) {
         await sendMessage(userId, `⚠️ ${err.message}`);
       }
+      return;
     }
 
     // === 高端灵性模块按钮点击 ===
-    if (premiumHandlers[data]) {
-      console.log("📥 Callback received:", data);
+    if (premiumHandlers[data] && session.amount >= 30) {
+      // 防止重复点击
+      session._premiumHandled = session._premiumHandled || new Set();
+      if (session._premiumHandled.has(data)) {
+        return;
+      }
+      session._premiumHandled.add(data);
 
-      const originalButtons = callback.message.reply_markup?.inline_keyboard || [];
-      const updatedButtons = originalButtons.map(row =>
-        row.map(btn =>
-          btn.callback_data === data
-            ? { text: "🔄 Loading...", callback_data: "loading_disabled" }
-            : btn
-        )
-      );
-
-      await updateMessageButtons(userId, msgId, { inline_keyboard: updatedButtons });
+      await answerCallbackQuery(callback.id, 'Loading content...', false);
+      // 立即移除按钮
+      const removedMarkup = removeClickedButton(callback.message.reply_markup, data);
+      await updateMessageButtons(userId, msgId, removedMarkup);
 
       try {
         const response = await premiumHandlers[data](userId);
-
-        // 清除已点击按钮
-        const filteredButtons = originalButtons
-          .map(row => row.filter(btn => btn.callback_data !== data))
-          .filter(row => row.length > 0);
-
-        await updateMessageButtons(userId, msgId, {
-          inline_keyboard: filteredButtons.length > 0 ? filteredButtons : []
-        });
-
         markPremiumClick(userId, data);
         await sendMessage(userId, response);
       } catch (err) {
         console.error("❌ Premium handler error:", err);
         await sendMessage(userId, `⚠️ Failed to load: ${data}`);
       }
+      return;
     }
   }
 }
@@ -155,3 +163,4 @@ async function updateMessageButtons(chatId, messageId, reply_markup) {
 }
 
 module.exports = { handleTelegramUpdate };
+
