@@ -129,14 +129,16 @@ async function handleTelegramUpdate(update) {
     return;
   }
   // 点击目录导航
-  if(data.startsWith('nav_')) {
-    const key=data.replace('nav_','');
-    const {responses}=getDirectoryData(userId);
-    const content=responses[key]||'No content cached.';
-    await answerCb(cb.id,'',false);
-    // 编辑目录消息为内容+目录上下文
-    const dirMarkup=renderDirectoryButtons(userId);
-    await editMessageText(userId,msgId,content,dirMarkup);
+  if (data.startsWith('nav_')) {
+    const key = data.replace('nav_','');
+    const { responses } = getDirectoryData(userId);
+    const content = responses[key] || 'No content cached.';
+    // 这里移除 await，避免在非 async 环境报错
+    answerCb(cb.id,'',false);
+    // 编辑消息为内容 + 目录
+    const dirMarkup = renderDirectoryButtons(userId);
+    await editMessageText(userId, msgId, content, dirMarkup);
+  }(userId,msgId,content,dirMarkup);
   }
 }
 module.exports={handleTelegramUpdate};
