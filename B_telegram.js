@@ -1,7 +1,7 @@
 // ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
 // - tarot-handler/B_telegram.js
 
-// B_telegram.js - v1.5.16
+// B_telegram.js - v1.5.18
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -21,12 +21,8 @@ const loadHistory = {};
 
 async function answerCallbackQuery(id, text = '', alert = false) {
   try {
-    await axios.post(`${API_URL}/answerCallbackQuery`, {
-      callback_query_id: id,
-      text,
-      show_alert: alert
-    });
-  } catch {}
+    await axios.post(`${API_URL}/answerCallbackQuery`, { callback_query_id: id, text, show_alert: alert });
+  } catch {} // ignore
 }
 
 function escapeMarkdown(text) {
@@ -35,12 +31,8 @@ function escapeMarkdown(text) {
 
 async function editReplyMarkup(chatId, messageId, reply_markup) {
   try {
-    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup
-    });
-  } catch {}
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, { chat_id: chatId, message_id: messageId, reply_markup });
+  } catch {} // ignore
 }
 
 async function sendMessage(chatId, text, reply_markup = null) {
@@ -48,7 +40,7 @@ async function sendMessage(chatId, text, reply_markup = null) {
   if (reply_markup) payload.reply_markup = reply_markup;
   try {
     await axios.post(`${API_URL}/sendMessage`, payload);
-  } catch {}
+  } catch {} // ignore
 }
 
 // 基础版模块按钮
@@ -91,24 +83,34 @@ async function handleTelegramUpdate(update) {
   const msgId  = cb.message.message_id;
   const session= getSession(userId);
 
-  // 基础版模块点击
+  // 🔒 基础版访问高级模块 → 补差价
+  if (premiumHandlers[data] && session.amount < 30) {
+    await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
+    await sendMessage(userId, 'Please complete payment to unlock this module:', { inline_keyboard:[[
+      { text: `Pay ${30 - session.amount} USDT`, url: 'https://divinepay.onrender.com/' }
+    ]]});
+    return;
+  }
+
+  // 🧚 基础版模块点击
   if (data.startsWith('basic_')) {
     session._basicHandled = session._basicHandled || new Set();
     if (session._basicHandled.has(data)) return;
     session._basicHandled.add(data);
 
-    // 倒计时逻辑
+    // 动态倒计时
     const history   = loadHistory[data] || [];
-    const avgMs     = history.length ? history.reduce((a,b)=>a+b,0)/history.length : DEFAULT_MS;
-    const countdown = Math.ceil((avgMs + BUFFER_MS)/1000);
+    const avgMs     = history.length ? history.reduce((a,b) => a + b, 0) / history.length : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
+
     await answerCallbackQuery(cb.id, '', false);
-    await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text:`Fetching insight... ${countdown}s`, callback_data:data }]] });
+    await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem = countdown;
     const iv = setInterval(async () => {
       rem--;
       if (rem >= 0) {
-        await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text:`Fetching insight... ${rem}s`, callback_data:data }]] });
+        await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text: `Fetching insight... ${rem}s`, callback_data: data }]] });
       }
       if (rem < 0) clearInterval(iv);
     }, 1000);
@@ -122,7 +124,9 @@ async function handleTelegramUpdate(update) {
     try {
       const result = await handler();
       const duration = Date.now() - start;
-      loadHistory[data] = loadHistory[data]||[]; loadHistory[data].push(duration);
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(duration);
+
       clearInterval(iv);
       const remainingKb = removeClickedButton(cb.message.reply_markup, data);
       await editReplyMarkup(userId, msgId, remainingKb);
@@ -135,16 +139,9 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 高级版解锁提示
-  if (premiumHandlers[data] && session.amount < 30) {
-    await answerCallbackQuery(cb.id, `Unlock by paying ${30-session.amount} USDT`, true);
-    await sendMessage(userId, 'Please complete payment to unlock:', { inline_keyboard:[[{ text:`Pay ${30-session.amount} USDT`, url:'https://divinepay.onrender.com/' }]] });
-    return;
-  }
-
-  // 抽牌逻辑
+  // ♠️ 抽牌逻辑
   if (data.startsWith('card_')) {
-    const idx = parseInt(data.split('_')[1],10);
+    const idx = parseInt(data.split('_')[1], 10);
     try {
       const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
@@ -154,13 +151,18 @@ async function handleTelegramUpdate(update) {
       if (!isSessionComplete(userId)) {
         await editReplyMarkup(userId, msgId, renderCardButtons(session));
       } else {
-        await editReplyMarkup(userId, msgId, { inline_keyboard:[] });
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
         if (session.amount < 30) {
+          // 基础版：仅基础按钮
           await sendMessage(userId, '✨ Explore your guidance modules:', renderBasicButtons());
           markStep(userId, 'basicButtonsShown');
         } else {
-          await sendMessage(userId, '✨ Unlock your deeper guidance:', renderPremiumButtonsInline());
-          markStep(userId, 'premiumButtonsShown');
+          // 高级版：基础+高级按钮
+          const basicKb   = renderBasicButtons().inline_keyboard;
+          const premiumKb = renderPremiumButtonsInline().inline_keyboard;
+          const combined  = basicKb.concat(premiumKb);
+          await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: combined });
+          markStep(userId, 'bothButtonsShown');
         }
       }
     } catch (err) {
@@ -169,38 +171,40 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 高级版模块点击
+  // 🌟 高级版模块点击
   if (premiumHandlers[data] && session.amount >= 30) {
-    session._premiumHandled = session._premiumHandled||new Set();
+    session._premiumHandled = session._premiumHandled || new Set();
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
 
-    const history   = loadHistory[data]||[];
-    const avgMs     = history.length ? history.reduce((a,b)=>a+b,0)/history.length : DEFAULT_MS;
-    const countdown = Math.ceil((avgMs+BUFFER_MS)/1000);
-    await answerCallbackQuery(cb.id,'',false);
-    await editReplyMarkup(userId,msgId,{ inline_keyboard:[[{ text:`Fetching insight... ${countdown}s`, callback_data:data }]]});
+    const history   = loadHistory[data] || [];
+    const avgMs     = history.length ? history.reduce((a,b) => a + b, 0) / history.length : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
+    await answerCallbackQuery(cb.id, '', false);
+    await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem2 = countdown;
-    const iv2 = setInterval(async ()=>{
+    const iv2 = setInterval(async () => {
       rem2--;
-      if(rem2>=0) await editReplyMarkup(userId,msgId,{ inline_keyboard:[[{ text:`Fetching insight... ${rem2}s`, callback_data:data }]]});
-      if(rem2<0) clearInterval(iv2);
-    },1000);
+      if (rem2 >= 0) await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
+      if (rem2 < 0) clearInterval(iv2);
+    }, 1000);
 
     const start2 = Date.now();
     try {
       const res = await premiumHandlers[data](userId);
-      const dur = Date.now()-start2;
-      loadHistory[data] = loadHistory[data]||[]; loadHistory[data].push(dur);
+      const dur = Date.now() - start2;
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(dur);
+
       clearInterval(iv2);
-      const rb = removeClickedButton(cb.message.reply_markup,data);
-      await editReplyMarkup(userId,msgId,rb);
-      await sendMessage(userId,res);
-      markPremiumClick(userId,data);
+      const rb = removeClickedButton(cb.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, rb);
+      await sendMessage(userId, res);
+      markPremiumClick(userId, data);
     } catch {
       clearInterval(iv2);
-      await sendMessage(userId,`⚠️ Failed to load: ${data}`);
+      await sendMessage(userId, `⚠️ Failed to load: ${data}`);
     }
     return;
   }
