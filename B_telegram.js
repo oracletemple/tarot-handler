@@ -62,23 +62,36 @@ async function handleTelegramUpdate(update) {
     await sendMessage(userId,'Complete payment:',{inline_keyboard:[[{text:`Pay ${30-session.amount} USDT`,url:'https://divinepay.onrender.com/'}]]}); return;
   }
   // 抽卡互动
-  if(data.startsWith('card_')) {
-    const idx=+data.split('_')[1];
+  if (data.startsWith('card_')) {
+    let session = getSession(userId);
+    // 如果无会话，则自动启动基础版会话
+    if (!session) {
+      startFlow(userId);
+      session = startSession(userId, 12);
+      await sendMessage(userId, "⚠️ Session not found. Auto-started a 🌟 12 USDT session for you. Please draw your cards:", renderCardButtons(session));
+      return;
+    }
+    const idx = +data.split('_')[1];
     try {
-      const card=getCard(userId,idx), meaning=getCardMeaning(card,idx);
-      await sendMessage(userId,meaning);
+      const card = getCard(userId, idx);
+      const meaning = getCardMeaning(card, idx);
+      await sendMessage(userId, meaning);
       incrementDraw(userId);
-      if(!isSessionComplete(userId)) await editReplyMarkup(userId,msgId,renderCardButtons(session));
-      else {
-        await editReplyMarkup(userId,msgId,{inline_keyboard:[]});
-        await sendMessage(userId,await getSpiritGuide()); markStep(userId,'spiritGuide');
-        await sendMessage(userId,await getLuckyHints());  markStep(userId,'luckyHints');
-        await sendMessage(userId,await getMoonAdvice());  markStep(userId,'moonAdvice');
-        await sendMessage(userId,'✨ Unlock deeper guidance:',renderPremiumButtonsInline());
-        markStep(userId,'premiumButtonsShown');
+      if (!isSessionComplete(userId)) {
+        await editReplyMarkup(userId, msgId, renderCardButtons(session));
+      } else {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
+        await sendMessage(userId, await getSpiritGuide()); markStep(userId, 'spiritGuide');
+        await sendMessage(userId, await getLuckyHints());  markStep(userId, 'luckyHints');
+        await sendMessage(userId, await getMoonAdvice());  markStep(userId, 'moonAdvice');
+        await sendMessage(userId, '✨ Unlock deeper guidance:', renderPremiumButtonsInline());
+        markStep(userId, 'premiumButtonsShown');
       }
-    } catch(e) { await sendMessage(userId,`⚠️ ${e.message}`); }
+    } catch (e) {
+      await sendMessage(userId, `⚠️ ${e.message}`);
+    }
     return;
+  }
   }
   // 高级模块点击+倒计时
   if(premiumHandlers[data]&&session.amount>=30) {
