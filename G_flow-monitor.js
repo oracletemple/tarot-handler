@@ -1,94 +1,60 @@
-// G_flow-monitor.js - v1.1.0
-
-const flowStatus = new Map(); // key: userId, value: { stage: string, steps: object }
-// List of all premium step keys
-const PREMIUM_KEYS = [
-  "premium_pastlife",
-  "premium_mirror",
-  "premium_energy",
-  "premium_purpose",
-  "premium_spirit",
-  "premium_symbol",
-  "premium_timing",
-  "premium_oracle",
-  "premium_higher"
-];
+// -- G_flow-monitor.js - v1.0.1
+// 增加对话记录，模块流程跟踪与导航数据存储
+const sessions = new Map();
+const flowData = new Map();
 
 function startFlow(userId) {
-  flowStatus.set(userId, {
-    stage: "START",
-    steps: {
-      started: true,
-      drawnCards: 0,
-      tarotComplete: false,
-      spiritGuide: false,
-      luckyHints: false,
-      moonAdvice: false,
-      premiumButtonsShown: false,
-      premiumClicks: {},
-    },
-  });
+  sessions.set(userId, { steps: [] });
+  flowData.set(userId, { sequence: [], responses: {} });
+}
+
+function getSession(userId) {
+  return sessions.get(userId);
+}
+
+function isSessionComplete(userId) {
+  const s = sessions.get(userId);
+  return s && s.steps.includes('premiumButtonsShown');
 }
 
 function incrementDraw(userId) {
-  const flow = flowStatus.get(userId);
-  if (flow) {
-    flow.steps.drawnCards += 1;
-    if (flow.steps.drawnCards >= 3) {
-      flow.steps.tarotComplete = true;
-      flow.stage = "TAROT_DONE";
-    }
-  }
+  const s = sessions.get(userId);
+  s.steps.push('draw_' + (s.steps.filter(st => st.startsWith('draw_')).length + 1));
 }
 
 function markStep(userId, step) {
-  const flow = flowStatus.get(userId);
-  if (flow && Object.prototype.hasOwnProperty.call(flow.steps, step)) {
-    flow.steps[step] = true;
-  }
+  const s = sessions.get(userId);
+  s.steps.push(step);
 }
 
-function markPremiumClick(userId, key) {
-  const flow = flowStatus.get(userId);
-  if (flow) {
-    flow.steps.premiumClicks[key] = true;
-  }
+// 记录高级模块点击及其返回内容
+function markPremiumClick(userId, moduleKey, responseText) {
+  const data = flowData.get(userId);
+  if (!data.sequence.includes(moduleKey)) data.sequence.push(moduleKey);
+  data.responses[moduleKey] = responseText;
 }
 
-function getFlowStatus(userId) {
-  return flowStatus.get(userId);
+// 获取导航目录数据
+function getDirectoryData(userId) {
+  const keys = ['pastlife','mirror','energy','purpose','spirit','symbol','timing','oracle','higher'];
+  const data = flowData.get(userId) || { sequence: [], responses: {} };
+  const clicked = data.sequence;
+  const pending = keys.filter(k => !clicked.includes(k));
+  return { clicked, pending, responses: data.responses };
 }
 
 function debugFlow(userId) {
-  const flow = flowStatus.get(userId);
-  if (!flow) return "❌ No session found.";
-  const steps = flow.steps;
-
-  const missing = [];
-  if (!steps.tarotComplete) missing.push("[Tarot not complete]");
-  if (!steps.spiritGuide) missing.push("[Spirit guide not sent]");
-  if (!steps.luckyHints) missing.push("[Lucky hints not sent]");
-  if (!steps.moonAdvice) missing.push("[Moon advice not sent]");
-  if (!steps.premiumButtonsShown) missing.push("[Premium buttons not shown]");
-
-  // Check premium clicks
-  if (steps.premiumButtonsShown) {
-    const unclicked = PREMIUM_KEYS.filter(key => !steps.premiumClicks[key]);
-    unclicked.forEach(key => missing.push(`[Premium not clicked: ${key}]`));
-  }
-
-  if (missing.length === 0) {
-    return "✅ All flow steps completed.";
-  } else {
-    return "⚠️ Incomplete flow:" + missing.join(" ");
-  }
+  const s = sessions.get(userId) || {};
+  return `Steps: ${s.steps || []}`;
 }
 
 module.exports = {
   startFlow,
+  getSession,
+  isSessionComplete,
   incrementDraw,
   markStep,
   markPremiumClick,
-  getFlowStatus,
-  debugFlow,
+  getDirectoryData,
+  debugFlow
 };
