@@ -10,7 +10,7 @@ const { getLuckyHints } = require('./G_lucky-hints');
 const { getMoonAdvice } = require('./G_moon-advice');
 const { renderPremiumButtonsInline, premiumHandlers, removeClickedButton } = require('./G_premium-buttons');
 const { renderDirectoryButtons } = require('./G_premium-directory');
-const { startFlow, getSession: getFlowSession, isSessionComplete, incrementDraw, markStep, markPremiumClick, getDirectoryData, debugFlow } = require('./G_flow-monitor');
+const { startFlow, getSession: getFlowSession, incrementDraw, markStep, markPremiumClick, getDirectoryData, debugFlow } = require('./G_flow-monitor');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
