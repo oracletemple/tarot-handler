@@ -1,5 +1,3 @@
-// -- G_flow-monitor.js - v1.0.1
-// 增加对话记录，模块流程跟踪与导航数据存储
 const sessions = new Map();
 const flowData = new Map();
 
@@ -19,7 +17,8 @@ function isSessionComplete(userId) {
 
 function incrementDraw(userId) {
   const s = sessions.get(userId);
-  s.steps.push('draw_' + (s.steps.filter(st => st.startsWith('draw_')).length + 1));
+  const count = (s.steps.filter(st => st.startsWith('draw_')).length || 0) + 1;
+  s.steps.push('draw_' + count);
 }
 
 function markStep(userId, step) {
@@ -27,25 +26,24 @@ function markStep(userId, step) {
   s.steps.push(step);
 }
 
-// 记录高级模块点击及其返回内容
 function markPremiumClick(userId, moduleKey, responseText) {
   const data = flowData.get(userId);
   if (!data.sequence.includes(moduleKey)) data.sequence.push(moduleKey);
   data.responses[moduleKey] = responseText;
+  markStep(userId, `premium_${moduleKey}`);
 }
 
-// 获取导航目录数据
 function getDirectoryData(userId) {
-  const keys = ['pastlife','mirror','energy','purpose','spirit','symbol','timing','oracle','higher'];
+  const allKeys = ['pastlife','mirror','energy','purpose','spirit','symbol','timing','oracle','higher'];
   const data = flowData.get(userId) || { sequence: [], responses: {} };
   const clicked = data.sequence;
-  const pending = keys.filter(k => !clicked.includes(k));
+  const pending = allKeys.filter(k => !clicked.includes(k));
   return { clicked, pending, responses: data.responses };
 }
 
 function debugFlow(userId) {
-  const s = sessions.get(userId) || {};
-  return `Steps: ${s.steps || []}`;
+  const s = sessions.get(userId) || { steps: [] };
+  return `Steps: ${s.steps.join(', ')}`;
 }
 
 module.exports = {
@@ -58,3 +56,4 @@ module.exports = {
   getDirectoryData,
   debugFlow
 };
+
