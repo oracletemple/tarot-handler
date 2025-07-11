@@ -1,7 +1,4 @@
-// ⚠️ 本次生成的 B_telegram.js 文件需覆盖上传到以下位置：
-// - tarot-handler/B_telegram.js
-
-// B_telegram.js - v1.5.20
+// B_telegram.js — v1.5.21
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -14,6 +11,7 @@ const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = requ
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const BASE_URL = process.env.BASE_URL; // 静态资源根 URL
 const DEFAULT_MS = 15000;
 const BUFFER_MS = 2000;
 // 记录各模块加载时长的历史数组
@@ -40,6 +38,20 @@ async function sendMessage(chatId, text, reply_markup = null) {
   if (reply_markup) payload.reply_markup = reply_markup;
   try {
     await axios.post(`${API_URL}/sendMessage`, payload);
+  } catch {} // ignore
+}
+
+// ⚠️ 本次新增：发送图片方法，使用静态资源 URL
+async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
+  const payload = {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: escapeMarkdown(caption),
+    parse_mode: "MarkdownV2"
+  };
+  if (reply_markup) payload.reply_markup = reply_markup;
+  try {
+    await axios.post(`${API_URL}/sendPhoto`, payload);
   } catch {} // ignore
 }
 
@@ -98,7 +110,6 @@ async function handleTelegramUpdate(update) {
     if (session._basicHandled.has(data)) return;
     session._basicHandled.add(data);
 
-    // 动态倒计时
     const history   = loadHistory[data] || [];
     const avgMs     = history.length ? history.reduce((a,b) => a + b, 0) / history.length : DEFAULT_MS;
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
@@ -145,7 +156,9 @@ async function handleTelegramUpdate(update) {
     try {
       const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
-      await sendMessage(userId, meaning);
+      // ⚠️ 本次修改：发送卡牌图片及解读
+      const imageUrl = `${BASE_URL}/tarot-images/${card.image}`;
+      await sendPhoto(userId, imageUrl, meaning);
       incrementDraw(userId);
 
       if (!isSessionComplete(userId)) {
@@ -154,10 +167,8 @@ async function handleTelegramUpdate(update) {
         await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
         const basicKb   = renderBasicButtons().inline_keyboard;
         const premiumKb = renderPremiumButtonsInline().inline_keyboard;
-        // 分隔线行
         const separator = [[{ text: '── Advanced Exclusive Insights ──', callback_data: 'noop' }]];
         const combined  = basicKb.concat(separator, premiumKb);
-
         await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: combined });
         markStep(userId, 'bothButtonsShown');
       }
