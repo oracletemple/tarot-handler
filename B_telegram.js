@@ -1,5 +1,5 @@
-// B_telegram.js — v1.5.26
-// Updated fallback for sendPhoto in card handler
+// B_telegram.js — v1.5.27
+// Core Telegram update handler with word-limited API modules
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -55,7 +55,6 @@ async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
     await axios.post(`${API_URL}/sendPhoto`, payload);
   } catch (err) {
     console.error("[sendPhoto error]", err.response ? err.response.data : err.message);
-    // fallback to text-only if image fails
     await sendMessage(chatId, caption);
   }
 }
@@ -96,12 +95,12 @@ async function handleTelegramUpdate(update) {
   }
 
   if (!cb) return;
-  const userId = cb.from.id;
-  const data   = cb.data;
-  const msgId  = cb.message.message_id;
-  const session= getSession(userId);
+  const userId  = cb.from.id;
+  const data    = cb.data;
+  const msgId   = cb.message.message_id;
+  const session = getSession(userId);
 
-  // 🔒 基础版访问高级模块 → 补差价
+  // 🔒 Unlock prompt for premium content
   if (premiumHandlers[data] && session.amount < 30) {
     await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
     await sendMessage(userId, "Please complete payment to unlock this module:", {
@@ -110,16 +109,14 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 🧚 基础版模块点击
+  // 🧚 Basic modules
   if (data.startsWith("basic_")) {
     session._basicHandled = session._basicHandled || new Set();
     if (session._basicHandled.has(data)) return;
     session._basicHandled.add(data);
 
-    const history   = loadHistory[data] || [];
-    const avgMs     = history.length
-      ? history.reduce((a,b) => a + b, 0) / history.length
-      : DEFAULT_MS;
+    const history  = loadHistory[data] || [];
+    const avgMs    = history.length ? history.reduce((a,b) => a + b, 0) / history.length : DEFAULT_MS;
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
 
     await answerCallbackQuery(cb.id);
@@ -142,13 +139,11 @@ async function handleTelegramUpdate(update) {
 
     try {
       const result = await handler();
-      const duration = Date.now() - start;
       loadHistory[data] = loadHistory[data] || [];
-      loadHistory[data].push(duration);
-
+      loadHistory[data].push(Date.now() - start);
       clearInterval(iv);
-      const remainingKb = removeClickedButton(cb.message.reply_markup, data);
-      await editReplyMarkup(userId, msgId, remainingKb);
+      const kb = removeClickedButton(cb.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, kb);
       await sendMessage(userId, result);
       markStep(userId, data);
     } catch (err) {
@@ -158,7 +153,7 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // ♠️ 抽牌逻辑
+  // ♠️ Card drawing
   if (data.startsWith("card_")) {
     await answerCallbackQuery(cb.id);
     const idx = parseInt(data.split("_")[1], 10);
@@ -166,16 +161,9 @@ async function handleTelegramUpdate(update) {
       const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
       const imageUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
-      // Try sending photo; if it fails, fallback to text only
-      try {
-        await sendPhoto(userId, imageUrl, meaning);
-      } catch (photoErr) {
-        console.warn("[sendPhoto fallback]", photoErr);
-        await sendMessage(userId, meaning);
-      }
+      await sendPhoto(userId, imageUrl, meaning);
 
       incrementDraw(userId);
-
       if (!isSessionComplete(userId)) {
         await editReplyMarkup(userId, msgId, renderCardButtons(session));
       } else {
@@ -194,16 +182,14 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 🌟 高级版模块点击
+  // 🌟 Premium modules
   if (premiumHandlers[data] && session.amount >= 30) {
     session._premiumHandled = session._premiumHandled || new Set();
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
 
     const history   = loadHistory[data] || [];
-    const avgMs     = history.length
-      ? history.reduce((a,b) => a + b, 0) / history.length
-      : DEFAULT_MS;
+    const avgMs     = history.length ? history.reduce((a,b) => a + b, 0) / history.length : DEFAULT_MS;
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
 
     await answerCallbackQuery(cb.id);
@@ -220,10 +206,14 @@ async function handleTelegramUpdate(update) {
 
     const start2 = Date.now();
     try {
-      const res = await premiumHandlers[data](userId);
-      const dur = Date.now() - start2;
+      let res;
+      if (data === 'premium_summary') {
+        res = await premiumHandlers[data](userId, session);
+      } else {
+        res = await premiumHandlers[data](userId);
+      }
       loadHistory[data] = loadHistory[data] || [];
-      loadHistory[data].push(dur);
+      loadHistory[data].push(Date.now() - start2);
 
       clearInterval(iv2);
       const rb = removeClickedButton(cb.message.reply_markup, data);
