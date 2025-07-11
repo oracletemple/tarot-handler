@@ -3,133 +3,133 @@ module.exports = [
     "id": 0,
     "name": "The Fool",
     "meaning": "The symbolic meaning of The Fool.",
-    "image": "0 The Fool.jpg"
+    "image": "The Fool.jpg"
   },
   {
     "id": 1,
     "name": "The Magician",
     "meaning": "The symbolic meaning of The Magician.",
-    "image": "1 The Magician.jpg"
+    "image": "The Magician.jpg"
   },
   {
     "id": 2,
     "name": "The High Priestess",
     "meaning": "The symbolic meaning of The High Priestess.",
-    "image": "2 The High Priestess.jpg"
+    "image": "The High Priestess.jpg"
   },
   {
     "id": 3,
     "name": "The Empress",
     "meaning": "The symbolic meaning of The Empress.",
-    "image": "3 The Empress.jpg"
+    "image": "The Empress.jpg"
   },
   {
     "id": 4,
     "name": "The Emperor",
     "meaning": "The symbolic meaning of The Emperor.",
-    "image": "4 The Emperor.jpg"
+    "image": "The Emperor.jpg"
   },
   {
     "id": 5,
     "name": "The Hierophant",
     "meaning": "The symbolic meaning of The Hierophant.",
-    "image": "5 The Hierophant.jpg"
+    "image": "The Hierophant.jpg"
   },
   {
     "id": 6,
     "name": "The Lovers",
     "meaning": "The symbolic meaning of The Lovers.",
-    "image": "6 The Lovers.jpg"
+    "image": "The Lovers.jpg"
   },
   {
     "id": 7,
     "name": "The Chariot",
     "meaning": "The symbolic meaning of The Chariot.",
-    "image": "7 The Chariot.jpg"
+    "image": "The Chariot.jpg"
   },
   {
     "id": 8,
     "name": "Strength",
     "meaning": "The symbolic meaning of Strength.",
-    "image": "8 The Justice.jpg"
+    "image": "The Justice.jpg"
   },
   {
     "id": 9,
     "name": "The Hermit",
     "meaning": "The symbolic meaning of The Hermit.",
-    "image": "9 The Hermit.jpg"
+    "image": "The Hermit.jpg"
   },
   {
     "id": 10,
     "name": "Wheel of Fortune",
     "meaning": "The symbolic meaning of Wheel of Fortune.",
-    "image": "10 Wheel of Fortune.jpg"
+    "image": "Wheel of Fortune.jpg"
   },
   {
     "id": 11,
     "name": "Justice",
     "meaning": "The symbolic meaning of Justice.",
-    "image": "11 Strength.jpg"
+    "image": "Strength.jpg"
   },
   {
     "id": 12,
     "name": "The Hanged Man",
     "meaning": "The symbolic meaning of The Hanged Man.",
-    "image": "12 The Hanged_Man.jpg"
+    "image": "The Hanged_Man.jpg"
   },
   {
     "id": 13,
     "name": "Death",
     "meaning": "The symbolic meaning of Death.",
-    "image": "13 Death.jpg"
+    "image": "Death.jpg"
   },
   {
     "id": 14,
     "name": "Temperance",
     "meaning": "The symbolic meaning of Temperance.",
-    "image": "14 Temperance.jpg"
+    "image": "Temperance.jpg"
   },
   {
     "id": 15,
     "name": "The Devil",
     "meaning": "The symbolic meaning of The Devil.",
-    "image": "15 The Devil.jpg"
+    "image": "The Devil.jpg"
   },
   {
     "id": 16,
     "name": "The Tower",
     "meaning": "The symbolic meaning of The Tower.",
-    "image": "16 The Tower.jpg"
+    "image": "The Tower.jpg"
   },
   {
     "id": 17,
     "name": "The Star",
     "meaning": "The symbolic meaning of The Star.",
-    "image": "17 The Star.jpg"
+    "image": "The Star.jpg"
   },
   {
     "id": 18,
     "name": "The Moon",
     "meaning": "The symbolic meaning of The Moon.",
-    "image": "18 The Moon.jpg"
+    "image": "The Moon.jpg"
   },
   {
     "id": 19,
     "name": "The Sun",
     "meaning": "The symbolic meaning of The Sun.",
-    "image": "19 The Sun.jpg"
+    "image": "The Sun.jpg"
   },
   {
     "id": 20,
     "name": "Judgement",
     "meaning": "The symbolic meaning of Judgement.",
-    "image": "20 Judgement.jpg"
+    "image": "Judgement.jpg"
   },
   {
     "id": 21,
     "name": "The World",
     "meaning": "The symbolic meaning of The World.",
-    "image": "21 The World.jpg"
+    "image": "The World.jpg"
   },
   {
     "id": 22,
