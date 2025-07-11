@@ -1,10 +1,17 @@
-// -- G_higher-self.js - v1.0.1
-const { getDeepseekReply: _higher } = require("./G_deepseek");
-
-async function getPremiumHigher(userId) {
-  const prompt = "Channel guidance from the higher self, offering profound introspection and encouragement for the user's personal evolution and spiritual growth.";
-  const reply = await _higher(prompt);
-  return `🧘 Higher Self\n\n${reply}`;
+ G_higher-self.js - v1.1.1
+ Always fetch via API. Higher Self insight capped at 100 words.
+*/
+const { getDeepseekReply } = require("./G_deepseek");
+const MAX_WORDS_HIGHER = 100;
+function enforceWordLimitHigher(text, maxWords) {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
 }
-
-module.exports = { getPremiumHigher };
+async function getHigherSelf(userId) {
+  const prompt = `A user has requested their Higher Self insight. Provide a deeply connective, guiding message from the higher self perspective. Limit your response to no more than ${MAX_WORDS_HIGHER} words.`;
+  const reply = await getDeepseekReply(prompt);
+  const result = `🧘 Higher Self\n\n${reply}`;
+  return enforceWordLimitHigher(result, MAX_WORDS_HIGHER);
+}
+module.exports = { getHigherSelf };
