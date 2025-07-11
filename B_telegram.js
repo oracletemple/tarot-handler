@@ -50,7 +50,7 @@ async function sendMessage(chatId, text, reply_markup = null) {
 async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
   try {
     console.log(`[sendPhoto] chatId=${chatId}, url=${photoUrl}`);
-    const payload = { chat_id: chatId, photo: photoUrl, caption };
+    const payload = { chat_id: chatId, photo: photoUrl, caption: escapeMarkdown(caption) };
     if (reply_markup) payload.reply_markup = reply_markup;
     await axios.post(`${API_URL}/sendPhoto`, payload);
   } catch (err) {
@@ -162,12 +162,10 @@ async function handleTelegramUpdate(update) {
   // ♠️ 抽牌逻辑
   if (data.startsWith("card_")) {
     await answerCallbackQuery(cb.id);
-
     const idx = parseInt(data.split("_")[1], 10);
     try {
       const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
-      // ⚠️ 编码文件名，避免空格导致URL错误
       const imageUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
       await sendPhoto(userId, imageUrl, meaning);
 
@@ -197,5 +195,42 @@ async function handleTelegramUpdate(update) {
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
 
-    const history   = loadHistory[data] || []; continued...
-```
+    const history   = loadHistory[data] || [];
+    const avgMs     = history.length
+      ? history.reduce((a,b) => a + b, 0) / history.length
+      : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
+    await answerCallbackQuery(cb.id);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
+
+    let rem2 = countdown;
+    const iv2 = setInterval(async () => {
+      rem2--;
+      if (rem2 >= 0) {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
+      }
+      if (rem2 < 0) clearInterval(iv2);
+    }, 1000);
+
+    const start2 = Date.now();
+    try {
+      const res = await premiumHandlers[data](userId);
+      const dur = Date.now() - start2;
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(dur);
+
+      clearInterval(iv2);
+      const rb = removeClickedButton(cb.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, rb);
+      await sendMessage(userId, res);
+      markPremiumClick(userId, data);
+    } catch (err) {
+      clearInterval(iv2);
+      console.error("[premium handling error]", err);
+      await sendMessage(userId, `⚠️ Failed to load: ${data}`);
+    }
+    return;
+  }
+}
+
+module.exports = { handleTelegramUpdate };
