@@ -1,10 +1,18 @@
-// -- G_pastlife.js - v1.0.0
+/*
+ G_pastlife.js - v1.0.1
+ Always fetch via API. Past Life Echoes insight capped at 100 words.
+*/
 const { getDeepseekReply } = require("./G_deepseek");
-
-async function getPremiumPastLife(userId) {
-  const prompt = "Provide a rich, symbolic, and introspective past life echo reading for the user, reflecting on themes of karmic patterns, soul lessons, and how past experiences inform their present journey.";
-  const reply = await getDeepseekReply(prompt);
-  return `🧿 Past Life Echoes\n\n${reply}`;
+const MAX_WORDS = 100;
+function enforceWordLimit(text, maxWords) {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
 }
-
-module.exports = { getPremiumPastLife };
+async function getPastLifeEchoes(userId) {
+  const prompt = `A user has requested their Past Life Echoes insight. Provide a symbolic, reflective message exploring prior life echoes and their relevance today. Limit your response to no more than ${MAX_WORDS} words.`;
+  const reply = await getDeepseekReply(prompt);
+  const result = `🧿 Past Life Echoes\n\n${reply}`;
+  return enforceWordLimit(result, MAX_WORDS);
+}
+module.exports = { getPastLifeEchoes };
