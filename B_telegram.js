@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.25
+// B_telegram.js — v1.5.26
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -46,7 +46,6 @@ async function sendMessage(chatId, text, reply_markup = null) {
   }
 }
 
-// ⚠️ 本次升级：发送图片方法
 async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
   try {
     console.log(`[sendPhoto] chatId=${chatId}, url=${photoUrl}`);
@@ -60,7 +59,7 @@ async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
 }
 
 // 辅助：按最大长度分割文本
-function splitText(text, maxLen = 900) {
+function splitText(text, maxLen = 2000) {
   const parts = [];
   let start = 0;
   while (start < text.length) {
@@ -75,7 +74,6 @@ function splitText(text, maxLen = 900) {
   return parts;
 }
 
-// 基础版模块按钮
 function renderBasicButtons() {
   return { inline_keyboard: [
     [{ text: "🧚 Spirit Guide", callback_data: "basic_spirit" }],
@@ -115,14 +113,12 @@ async function handleTelegramUpdate(update) {
   const msgId = cb.message.message_id;
   const session = getSession(userId);
 
-  // 🔒 基础版访问高级模块
   if (premiumHandlers[data] && session.amount < 30) {
     await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
     await sendMessage(userId, "Please complete payment to unlock this module:", { inline_keyboard: [[{ text: `Pay ${30 - session.amount} USDT`, url: "https://divinepay.onrender.com/" }]] });
     return;
   }
 
-  // 🧚 基础版模块点击
   if (data.startsWith("basic_")) {
     session._basicHandled = session._basicHandled || new Set();
     if (session._basicHandled.has(data)) return;
@@ -133,12 +129,12 @@ async function handleTelegramUpdate(update) {
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
 
     await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, { inline_keyboard:[[ { text:`Fetching insight... ${countdown}s`, callback_data:data } ]] });
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem = countdown;
     const iv = setInterval(async()=>{
       rem--;
-      if(rem>=0) await editReplyMarkup(userId, msgId, { inline_keyboard:[[ { text:`Fetching insight... ${rem}s`, callback_data:data } ]] });
+      if(rem>=0) await editReplyMarkup(userId,msgId,{inline_keyboard:[[ { text:`Fetching insight... ${rem}s`, callback_data:data } ]]});
       if(rem<0) clearInterval(iv);
     },1000);
 
@@ -151,12 +147,12 @@ async function handleTelegramUpdate(update) {
     try{
       const result = await handler();
       const duration = Date.now()-start;
-      loadHistory[data]=(loadHistory[data]||[]).concat(duration);
+      loadHistory[data] = (loadHistory[data]||[]).concat(duration);
 
       clearInterval(iv);
-      const kb = removeClickedButton(cb.message.reply_markup, data);
-      await editReplyMarkup(userId, msgId, kb);
-      await sendMessage(userId, result);
+      const kb = removeClickedButton(cb.message.reply_markup,data);
+      await editReplyMarkup(userId,msgId,kb);
+      await sendMessage(userId,result);
       markStep(userId,data);
     }catch(e){
       clearInterval(iv);
@@ -165,7 +161,6 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // ♠️ 抽牌逻辑
   if(data.startsWith("card_")){
     await answerCallbackQuery(cb.id);
     const idx = parseInt(data.split('_')[1],10);
@@ -177,7 +172,7 @@ async function handleTelegramUpdate(update) {
       incrementDraw(userId);
       if(!isSessionComplete(userId)){
         await editReplyMarkup(userId,msgId,renderCardButtons(session));
-      }else{
+      } else {
         await editReplyMarkup(userId,msgId,{inline_keyboard:[]});
         const basicKb=renderBasicButtons().inline_keyboard;
         const premiumKb=renderPremiumButtonsInline().inline_keyboard;
@@ -192,7 +187,6 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 🌟 高级版模块点击
   if(premiumHandlers[data] && session.amount>=30){
     session._premiumHandled=session._premiumHandled||new Set();
     if(session._premiumHandled.has(data))return;
@@ -202,10 +196,10 @@ async function handleTelegramUpdate(update) {
     const history=loadHistory[data]||[];
     const avgMs=history.length?history.reduce((a,b)=>a+b,0)/history.length:DEFAULT_MS;
     const countdown=Math.ceil((avgMs+BUFFER_MS)/1000);
-    await editReplyMarkup(userId,msgId,{inline_keyboard:[[{text:`Fetching insight... ${countdown}s`,callback_data:data}]]});
+    await editReplyMarkup(userId,msgId,{inline_keyboard:[[ { text:`Fetching insight... ${countdown}s`, callback_data:data } ]]});
 
     let rem2=countdown;
-    const iv2=setInterval(async()=>{rem2--;if(rem2>=0)await editReplyMarkup(userId,msgId,{inline_keyboard:[[{text:`Fetching insight... ${rem2}s`,callback_data:data}]]});if(rem2<0)clearInterval(iv2);},1000);
+    const iv2=setInterval(async()=>{rem2--;if(rem2>=0)await editReplyMarkup(userId,msgId,{inline_keyboard:[[ { text:`Fetching insight... ${rem2}s`, callback_data:data } ]]});if(rem2<0)clearInterval(iv2);},1000);
 
     const start2=Date.now();
     try{
@@ -216,8 +210,7 @@ async function handleTelegramUpdate(update) {
       clearInterval(iv2);
       const rb=removeClickedButton(cb.message.reply_markup,data);
       await editReplyMarkup(userId,msgId,rb);
-      // ⚠️ 处理长文本拆分发送
-      const parts=splitText(res,900);
+      const parts=splitText(res,2000);
       for(const part of parts) await sendMessage(userId,part);
       markPremiumClick(userId,data);
     }catch(err){
