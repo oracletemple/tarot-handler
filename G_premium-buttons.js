@@ -1,4 +1,4 @@
-// G_premium-buttons.js — v1.4.1
+// G_premium-buttons.js — v1.4.2
 const { getPastLife } = require("./G_pastlife");
 const { getMirrorMessage } = require("./G_mirror-message");
 const { getKarmicCycle } = require("./G_karmic-cycle");
@@ -11,6 +11,15 @@ const { getOracleCard } = require("./G_oracle-card");
 const { getHigherSelf } = require("./G_higher-self");
 const { getTarotSummary } = require("./G_tarot-summary");
 const { getSession } = require("./G_tarot-session");
+
+// 定义移除已点击按钮的工具函数
+function removeClickedButton(replyMarkup, callbackData) {
+  if (!replyMarkup || !replyMarkup.inline_keyboard) return { inline_keyboard: [] };
+  const newKeyboard = replyMarkup.inline_keyboard
+    .map(row => row.filter(btn => btn.callback_data !== callbackData))
+    .filter(row => row.length > 0);
+  return { inline_keyboard: newKeyboard };
+}
 
 const premiumButtons = [
   [{ text: "🧿 Past Life Echoes",      callback_data: "premium_pastlife" }],
@@ -47,4 +56,4 @@ function renderPremiumButtonsInline() {
   return { inline_keyboard: premiumButtons };
 }
 
-module.exports = { renderPremiumButtonsInline, premiumHandlers };
+module.exports = { renderPremiumButtonsInline, premiumHandlers, removeClickedButton };
