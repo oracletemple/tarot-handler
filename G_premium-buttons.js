@@ -1,4 +1,4 @@
-// G_premium-buttons.js — v1.4.0
+// G_premium-buttons.js — v1.4.1
 const { getPastLife } = require("./G_pastlife");
 const { getMirrorMessage } = require("./G_mirror-message");
 const { getKarmicCycle } = require("./G_karmic-cycle");
@@ -23,12 +23,11 @@ const premiumButtons = [
   [{ text: "⏳ Divine Timing",          callback_data: "premium_timing" }],
   [{ text: "🪄 Oracle Card",            callback_data: "premium_oracle" }],
   [{ text: "🧘 Higher Self",            callback_data: "premium_higher" }],
-  // 新增 Tarot Summary 按钮
   [{ text: "🧾 Tarot Summary",          callback_data: "premium_summary" }]
 ];
 
 const premiumHandlers = {
-  premium_pastlife:    getPastLifeEchoes || getPastLife,
+  premium_pastlife:    getPastLife,
   premium_mirror:      getMirrorMessage,
   premium_karma:       getKarmicCycle,
   premium_energy:      getEnergyReading,
@@ -38,10 +37,8 @@ const premiumHandlers = {
   premium_timing:      getDivineTiming,
   premium_oracle:      getOracleCard,
   premium_higher:      getHigherSelf,
-  // 新增 Tarot Summary handler，传入 userId 和已经抽好的三张牌
   premium_summary:     async (userId) => {
     const session = getSession(userId);
-    // session.cards 应为 [{name, meaning, image}, ...] 的数组
     return getTarotSummary(userId, session.cards);
   }
 };
