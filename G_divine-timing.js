@@ -1,10 +1,18 @@
-// -- G_divine-timing.js - v1.0.1
-const { getDeepseekReply: _timing } = require("./G_deepseek");
-
-async function getPremiumTiming(userId) {
-  const prompt = "Offer divine timing insights, helping the user understand optimal moments for action, patience, or reflection based on spiritual rhythms and cosmic influences.";
-  const reply = await _timing(prompt);
-  return `⏳ Divine Timing\n\n${reply}`;
+/*
+ G_divine-timing.js - v1.0.1
+ Always fetch via API. Divine Timing insight capped at 100 words.
+*/
+const { getDeepseekReply } = require("./G_deepseek");
+const MAX_WORDS_TIMING = 100;
+function enforceWordLimitTiming(text, maxWords) {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
 }
-
-module.exports = { getPremiumTiming };
+async function getDivineTiming(userId) {
+  const prompt = `A user has requested their Divine Timing insight. Provide a timely, intuitive message about optimal moments and patience. Limit your response to no more than ${MAX_WORDS_TIMING} words.`;
+  const reply = await getDeepseekReply(prompt);
+  const result = `⏳ Divine Timing\n\n${reply}`;
+  return enforceWordLimitTiming(result, MAX_WORDS_TIMING);
+}
+module.exports = { getDivineTiming };
