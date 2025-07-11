@@ -1,10 +1,18 @@
-// -- G_oracle-card.js - v1.2.1
-const { getDeepseekReply: _oracle } = require("./G_deepseek");
-
-async function getPremiumOracle(userId) {
-  const prompt = "Draw upon the wisdom of an oracle card to deliver a concise, powerful message for the user, focusing on clarity, empowerment, and next steps.";
-  const reply = await _oracle(prompt);
-  return `🪄 Oracle Card\n\n${reply}`;
+/*
+ G_oracle-card.js - v1.2.1
+ Always fetch via API. Oracle Card insight capped at 100 words.
+*/
+const { getDeepseekReply } = require("./G_deepseek");
+const MAX_WORDS_ORACLE = 100;
+function enforceWordLimitOracle(text, maxWords) {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
 }
-
-module.exports = { getPremiumOracle };
+async function getOracleCard(userId) {
+  const prompt = `A user has requested their Oracle Card insight. Provide a mystical, poetic message drawing on oracular wisdom. Limit your response to no more than ${MAX_WORDS_ORACLE} words.`;
+  const reply = await getDeepseekReply(prompt);
+  const result = `🪄 Oracle Card\n\n${reply}`;
+  return enforceWordLimitOracle(result, MAX_WORDS_ORACLE);
+}
+module.exports = { getOracleCard };
