@@ -1,5 +1,5 @@
-// B_telegram.js — v1.5.25
-// Updated imports to use API‑based modules with word limits
+// B_telegram.js — v1.5.26
+// Updated fallback for sendPhoto in card handler
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -27,7 +27,7 @@ async function answerCallbackQuery(id, text = "", alert = false) {
 }
 
 function escapeMarkdown(text) {
-  return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, "\\$1");
+  return text.replace(/([_*!\[\]()~`>#+\-=|{}\.\!])/g, "\\$1");
 }
 
 async function editReplyMarkup(chatId, messageId, reply_markup) {
@@ -55,6 +55,7 @@ async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
     await axios.post(`${API_URL}/sendPhoto`, payload);
   } catch (err) {
     console.error("[sendPhoto error]", err.response ? err.response.data : err.message);
+    // fallback to text-only if image fails
     await sendMessage(chatId, caption);
   }
 }
@@ -100,6 +101,7 @@ async function handleTelegramUpdate(update) {
   const msgId  = cb.message.message_id;
   const session= getSession(userId);
 
+  // 🔒 基础版访问高级模块 → 补差价
   if (premiumHandlers[data] && session.amount < 30) {
     await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
     await sendMessage(userId, "Please complete payment to unlock this module:", {
@@ -108,18 +110,132 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
+  // 🧚 基础版模块点击
   if (data.startsWith("basic_")) {
-    // ... existing basic handling ...
-  }
+    session._basicHandled = session._basicHandled || new Set();
+    if (session._basicHandled.has(data)) return;
+    session._basicHandled.add(data);
 
-  if (data.startsWith("card_")) {
-    // ... existing card handling, then after completion:
-    await sendMessage(userId, "✨ Explore your guidance modules:", { inline_keyboard: renderPremiumButtonsInline() });
+    const history   = loadHistory[data] || [];
+    const avgMs     = history.length
+      ? history.reduce((a,b) => a + b, 0) / history.length
+      : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
+
+    await answerCallbackQuery(cb.id);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
+
+    let rem = countdown;
+    const iv = setInterval(async () => {
+      rem--;
+      if (rem >= 0) {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem}s`, callback_data: data }]] });
+      }
+      if (rem < 0) clearInterval(iv);
+    }, 1000);
+
+    const start = Date.now();
+    let handler;
+    if (data === "basic_spirit") handler = () => getSpiritGuide(userId);
+    if (data === "basic_lucky")  handler = () => getLuckyHints(userId);
+    if (data === "basic_moon")   handler = () => getMoonAdvice(userId);
+
+    try {
+      const result = await handler();
+      const duration = Date.now() - start;
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(duration);
+
+      clearInterval(iv);
+      const remainingKb = removeClickedButton(cb.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, remainingKb);
+      await sendMessage(userId, result);
+      markStep(userId, data);
+    } catch (err) {
+      clearInterval(iv);
+      await sendMessage(userId, `⚠️ Failed to load: ${data}`);
+    }
     return;
   }
 
+  // ♠️ 抽牌逻辑
+  if (data.startsWith("card_")) {
+    await answerCallbackQuery(cb.id);
+    const idx = parseInt(data.split("_")[1], 10);
+    try {
+      const card    = getCard(userId, idx);
+      const meaning = getCardMeaning(card, idx);
+      const imageUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
+      // Try sending photo; if it fails, fallback to text only
+      try {
+        await sendPhoto(userId, imageUrl, meaning);
+      } catch (photoErr) {
+        console.warn("[sendPhoto fallback]", photoErr);
+        await sendMessage(userId, meaning);
+      }
+
+      incrementDraw(userId);
+
+      if (!isSessionComplete(userId)) {
+        await editReplyMarkup(userId, msgId, renderCardButtons(session));
+      } else {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
+        const basicKb   = renderBasicButtons().inline_keyboard;
+        const premiumKb = renderPremiumButtonsInline().inline_keyboard;
+        const separator = [[{ text: "── Advanced Exclusive Insights ──", callback_data: "noop" }]];
+        const combined  = basicKb.concat(separator, premiumKb);
+        await sendMessage(userId, "✨ Explore your guidance modules:", { inline_keyboard: combined });
+        markStep(userId, "bothButtonsShown");
+      }
+    } catch (err) {
+      console.error("[card handling error]", err);
+      await sendMessage(userId, `⚠️ ${err.message}`);
+    }
+    return;
+  }
+
+  // 🌟 高级版模块点击
   if (premiumHandlers[data] && session.amount >= 30) {
-    // ... existing premium handling ...
+    session._premiumHandled = session._premiumHandled || new Set();
+    if (session._premiumHandled.has(data)) return;
+    session._premiumHandled.add(data);
+
+    const history   = loadHistory[data] || [];
+    const avgMs     = history.length
+      ? history.reduce((a,b) => a + b, 0) / history.length
+      : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
+
+    await answerCallbackQuery(cb.id);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
+
+    let rem2 = countdown;
+    const iv2 = setInterval(async () => {
+      rem2--;
+      if (rem2 >= 0) {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
+      }
+      if (rem2 < 0) clearInterval(iv2);
+    }, 1000);
+
+    const start2 = Date.now();
+    try {
+      const res = await premiumHandlers[data](userId);
+      const dur = Date.now() - start2;
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(dur);
+
+      clearInterval(iv2);
+      const rb = removeClickedButton(cb.message.reply_markup, data);
+      await editReplyMarkup(userId, msgId, rb);
+      await sendMessage(userId, res);
+      markPremiumClick(userId, data);
+    } catch (err) {
+      clearInterval(iv2);
+      console.error("[premium handling error]", err);
+      await sendMessage(userId, `⚠️ Failed to load: ${data}`);
+    }
+    return;
   }
 }
 
