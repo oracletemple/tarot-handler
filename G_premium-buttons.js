@@ -1,54 +1,53 @@
-// -- G_premium-buttons.js - v1.3.5
-const { getPremiumPastLife } = require("./G_pastlife");
-const { getPremiumMirror } = require("./G_mirror-message");
-const { getPremiumEnergy } = require("./G_energy-reading");
-const { getPremiumPurpose } = require("./G_soul-purpose");
-const { getPremiumSpirit } = require("./G_message-spirit");
-const { getPremiumSymbol } = require("./G_sacred-symbol");
-const { getPremiumTiming } = require("./G_divine-timing");
-const { getPremiumOracle } = require("./G_oracle-card");
-const { getPremiumHigher } = require("./G_higher-self");
+// G_premium-buttons.js — v1.4.0
+const { getPastLife } = require("./G_pastlife");
+const { getMirrorMessage } = require("./G_mirror-message");
+const { getKarmicCycle } = require("./G_karmic-cycle");
+const { getEnergyReading } = require("./G_energy-reading");
+const { getSoulPurpose } = require("./G_soul-purpose");
+const { getMessageSpirit } = require("./G_message-spirit");
+const { getSacredSymbol } = require("./G_sacred-symbol");
+const { getDivineTiming } = require("./G_divine-timing");
+const { getOracleCard } = require("./G_oracle-card");
+const { getHigherSelf } = require("./G_higher-self");
+const { getTarotSummary } = require("./G_tarot-summary");
+const { getSession } = require("./G_tarot-session");
 
-function renderPremiumButtonsInline() {
-  const modules = [
-    { key: 'pastlife', label: '🧿 Past Life Echoes' },
-    { key: 'mirror',  label: '🪞 Mirror Message'       },
-    { key: 'energy',  label: '🌀 Energy Reading'    },
-    { key: 'purpose', label: '🔭 Soul Purpose'        },
-    { key: 'spirit',  label: '🌬 Message from Spirit'  },
-    { key: 'symbol',  label: '⛩ Sacred Symbol'        },
-    { key: 'timing',  label: '⏳ Divine Timing'       },
-    { key: 'oracle',  label: '🪄 Oracle Card'         },
-    { key: 'higher',  label: '🧘 Higher Self'         }
-  ];
-
-  return {
-    inline_keyboard: modules.map(m => [{ text: m.label, callback_data: `premium_${m.key}` }])
-  };
-}
+const premiumButtons = [
+  [{ text: "🧿 Past Life Echoes",      callback_data: "premium_pastlife" }],
+  [{ text: "🪞 Mirror Message",        callback_data: "premium_mirror" }],
+  [{ text: "🕯 Karmic Cycle",           callback_data: "premium_karma" }],
+  [{ text: "🌀 Energy Reading",         callback_data: "premium_energy" }],
+  [{ text: "🔭 Soul Purpose",           callback_data: "premium_purpose" }],
+  [{ text: "🌬 Message from Spirit",    callback_data: "premium_spirit" }],
+  [{ text: "⛩ Sacred Symbol",          callback_data: "premium_symbol" }],
+  [{ text: "⏳ Divine Timing",          callback_data: "premium_timing" }],
+  [{ text: "🪄 Oracle Card",            callback_data: "premium_oracle" }],
+  [{ text: "🧘 Higher Self",            callback_data: "premium_higher" }],
+  // 新增 Tarot Summary 按钮
+  [{ text: "🧾 Tarot Summary",          callback_data: "premium_summary" }]
+];
 
 const premiumHandlers = {
-  premium_pastlife: getPremiumPastLife,
-  premium_mirror:  getPremiumMirror,
-  premium_energy:  getPremiumEnergy,
-  premium_purpose: getPremiumPurpose,
-  premium_spirit:  getPremiumSpirit,
-  premium_symbol:  getPremiumSymbol,
-  premium_timing:  getPremiumTiming,
-  premium_oracle:  getPremiumOracle,
-  premium_higher:  getPremiumHigher
+  premium_pastlife:    getPastLifeEchoes || getPastLife,
+  premium_mirror:      getMirrorMessage,
+  premium_karma:       getKarmicCycle,
+  premium_energy:      getEnergyReading,
+  premium_purpose:     getSoulPurpose,
+  premium_spirit:      getMessageSpirit,
+  premium_symbol:      getSacredSymbol,
+  premium_timing:      getDivineTiming,
+  premium_oracle:      getOracleCard,
+  premium_higher:      getHigherSelf,
+  // 新增 Tarot Summary handler，传入 userId 和已经抽好的三张牌
+  premium_summary:     async (userId) => {
+    const session = getSession(userId);
+    // session.cards 应为 [{name, meaning, image}, ...] 的数组
+    return getTarotSummary(userId, session.cards);
+  }
 };
 
-function removeClickedButton(currentMarkup, callbackDataToRemove) {
-  if (!currentMarkup?.inline_keyboard) return { inline_keyboard: [] };
-  const newKb = currentMarkup.inline_keyboard
-    .map(row => row.filter(b => b.callback_data !== callbackDataToRemove))
-    .filter(row => row.length);
-  return { inline_keyboard: newKb };
+function renderPremiumButtonsInline() {
+  return { inline_keyboard: premiumButtons };
 }
 
-module.exports = {
-  renderPremiumButtonsInline,
-  premiumHandlers,
-  removeClickedButton
-};
+module.exports = { renderPremiumButtonsInline, premiumHandlers };
