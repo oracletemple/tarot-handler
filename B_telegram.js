@@ -11,7 +11,7 @@ const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = requ
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const BASE_URL = process.env.BASE_URL; // 静态资源根 URL
+const BASE_URL = process.env.BASE_URL;
 const DEFAULT_MS = 15000;
 const BUFFER_MS = 2000;
 // 记录各模块加载时长的历史数组
@@ -98,9 +98,9 @@ async function handleTelegramUpdate(update) {
   // 🔒 基础版访问高级模块 → 补差价
   if (premiumHandlers[data] && session.amount < 30) {
     await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
-    await sendMessage(userId, 'Please complete payment to unlock this module:', { inline_keyboard:[[
-      { text: `Pay ${30 - session.amount} USDT`, url: 'https://divinepay.onrender.com/' }
-    ]]});
+    await sendMessage(userId, 'Please complete payment to unlock this module:', { inline_keyboard:[[{
+      text: `Pay ${30 - session.amount} USDT`, url: 'https://divinepay.onrender.com/'
+    }]]});
     return;
   }
 
@@ -152,13 +152,15 @@ async function handleTelegramUpdate(update) {
 
   // ♠️ 抽牌逻辑
   if (data.startsWith('card_')) {
+    await answerCallbackQuery(cb.id, '', false);
+
     const idx = parseInt(data.split('_')[1], 10);
     try {
       const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
-      // ⚠️ 本次修改：发送卡牌图片及解读
       const imageUrl = `${BASE_URL}/tarot-images/${card.image}`;
       await sendPhoto(userId, imageUrl, meaning);
+
       incrementDraw(userId);
 
       if (!isSessionComplete(userId)) {
@@ -193,7 +195,7 @@ async function handleTelegramUpdate(update) {
     let rem2 = countdown;
     const iv2 = setInterval(async () => {
       rem2--;
-      if (rem2 >= 0) await editReplyMarkup(userId, msgId, { inline_keyboard:[[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
+      if (rem2 >= 0) await editReplyMarkup(userId, msgId, { inline_keyboard:=[[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
       if (rem2 < 0) clearInterval(iv2);
     }, 1000);
 
