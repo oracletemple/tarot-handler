@@ -1,7 +1,7 @@
-// B_index.js - v1.2.9
-
+// B_index.js — v1.2.10
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const bodyParser = require("body-parser");
 
 const { handleTelegramUpdate } = require("./B_telegram");
@@ -10,6 +10,12 @@ const { startSession } = require("./G_tarot-session");
 
 const app = express();
 app.use(bodyParser.json());
+
+// ⚠️ 本次新增：暴露 tarot-cards 静态资源
+app.use(
+  "/tarot-images",
+  express.static(path.join(__dirname, "assets", "tarot-cards"))
+);
 
 // ✅ Webhook 主入口（修复超时）
 app.post("/webhook", async (req, res) => {
