@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.22
+// B_telegram.js — v1.5.23
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -18,52 +18,46 @@ const loadHistory = {};
 
 async function answerCallbackQuery(id, text = "", alert = false) {
   try {
-    await axios.post(`${API_URL}/answerCallbackQuery`, {
-      callback_query_id: id,
-      text,
-      show_alert: alert
-    });
-  } catch {}
+    await axios.post(`${API_URL}/answerCallbackQuery`, { callback_query_id: id, text, show_alert: alert });
+  } catch (err) {
+    console.error("[answerCallbackQuery error]", err.response ? err.response.data : err.message);
+  }
 }
 
 function escapeMarkdown(text) {
-  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+  return text.replace(/([_*\[\]()~`>#+\-=|{}.!])/g, "\\$1");
 }
 
 async function editReplyMarkup(chatId, messageId, reply_markup) {
   try {
-    await axios.post(`${API_URL}/editMessageReplyMarkup`, {
-      chat_id: chatId,
-      message_id: messageId,
-      reply_markup
-    });
-  } catch {}
+    await axios.post(`${API_URL}/editMessageReplyMarkup`, { chat_id: chatId, message_id: messageId, reply_markup });
+  } catch (err) {
+    console.error("[editReplyMarkup error]", err.response ? err.response.data : err.message);
+  }
 }
 
 async function sendMessage(chatId, text, reply_markup = null) {
-  const payload = {
-    chat_id: chatId,
-    text: escapeMarkdown(text),
-    parse_mode: "MarkdownV2"
-  };
+  const payload = { chat_id: chatId, text: escapeMarkdown(text), parse_mode: "MarkdownV2" };
   if (reply_markup) payload.reply_markup = reply_markup;
   try {
     await axios.post(`${API_URL}/sendMessage`, payload);
-  } catch {}
+  } catch (err) {
+    console.error("[sendMessage error]", err.response ? err.response.data : err.message);
+  }
 }
 
-// ⚠️ 本次新增：发送图片方法，使用静态资源 URL
+// ⚠️ 本次升级：sendPhoto 增加日志 & fallback
 async function sendPhoto(chatId, photoUrl, caption, reply_markup = null) {
-  const payload = {
-    chat_id: chatId,
-    photo: photoUrl,
-    caption: escapeMarkdown(caption),
-    parse_mode: "MarkdownV2"
-  };
-  if (reply_markup) payload.reply_markup = reply_markup;
   try {
+    console.log(`[sendPhoto] chatId=${chatId}, url=${photoUrl}`);
+    const payload = { chat_id: chatId, photo: photoUrl, caption };
+    if (reply_markup) payload.reply_markup = reply_markup;
     await axios.post(`${API_URL}/sendPhoto`, payload);
-  } catch {}
+  } catch (err) {
+    console.error("[sendPhoto error]", err.response ? err.response.data : err.message);
+    // fallback to text-only if image fails
+    await sendMessage(chatId, caption);
+  }
 }
 
 // 基础版模块按钮
@@ -112,9 +106,7 @@ async function handleTelegramUpdate(update) {
   if (premiumHandlers[data] && session.amount < 30) {
     await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
     await sendMessage(userId, "Please complete payment to unlock this module:", {
-      inline_keyboard: [[
-        { text: `Pay ${30 - session.amount} USDT`, url: "https://divinepay.onrender.com/" }
-      ]]
+      inline_keyboard: [[{ text: `Pay ${30 - session.amount} USDT`, url: "https://divinepay.onrender.com/" }]]
     });
     return;
   }
@@ -132,17 +124,13 @@ async function handleTelegramUpdate(update) {
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
 
     await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, {
-      inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]]
-    });
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem = countdown;
     const iv = setInterval(async () => {
       rem--;
       if (rem >= 0) {
-        await editReplyMarkup(userId, msgId, {
-          inline_keyboard: [[{ text: `Fetching insight... ${rem}s`, callback_data: data }]]
-        });
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem}s`, callback_data: data }]] });
       }
       if (rem < 0) clearInterval(iv);
     }, 1000);
@@ -164,7 +152,7 @@ async function handleTelegramUpdate(update) {
       await editReplyMarkup(userId, msgId, remainingKb);
       await sendMessage(userId, result);
       markStep(userId, data);
-    } catch {
+    } catch (err) {
       clearInterval(iv);
       await sendMessage(userId, `⚠️ Failed to load: ${data}`);
     }
@@ -173,6 +161,7 @@ async function handleTelegramUpdate(update) {
 
   // ♠️ 抽牌逻辑
   if (data.startsWith("card_")) {
+    // 回答 callback，避免按钮持续 loading 状态
     await answerCallbackQuery(cb.id);
 
     const idx = parseInt(data.split("_")[1], 10);
@@ -192,12 +181,11 @@ async function handleTelegramUpdate(update) {
         const premiumKb = renderPremiumButtonsInline().inline_keyboard;
         const separator = [[{ text: "── Advanced Exclusive Insights ──", callback_data: "noop" }]];
         const combined  = basicKb.concat(separator, premiumKb);
-        await sendMessage(userId, "✨ Explore your guidance modules:", {
-          inline_keyboard: combined
-        });
+        await sendMessage(userId, "✨ Explore your guidance modules:", { inline_keyboard: combined });
         markStep(userId, "bothButtonsShown");
       }
     } catch (err) {
+      console.error("[card handling error]", err);
       await sendMessage(userId, `⚠️ ${err.message}`);
     }
     return;
@@ -215,17 +203,13 @@ async function handleTelegramUpdate(update) {
       : DEFAULT_MS;
     const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
     await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, {
-      inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]]
-    });
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem2 = countdown;
     const iv2 = setInterval(async () => {
       rem2--;
       if (rem2 >= 0) {
-        await editReplyMarkup(userId, msgId, {
-          inline_keyboard: [[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]]
-        });
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem2}s`, callback_data: data }]] });
       }
       if (rem2 < 0) clearInterval(iv2);
     }, 1000);
@@ -242,8 +226,9 @@ async function handleTelegramUpdate(update) {
       await editReplyMarkup(userId, msgId, rb);
       await sendMessage(userId, res);
       markPremiumClick(userId, data);
-    } catch {
+    } catch (err) {
       clearInterval(iv2);
+      console.error("[premium handling error]", err);
       await sendMessage(userId, `⚠️ Failed to load: ${data}`);
     }
     return;
