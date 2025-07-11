@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.29
+// B_telegram.js — v1.5.30
 const axios = require("axios");
 const { getSession, startSession, getCard, isSessionComplete } = require("./G_tarot-session");
 const { getCardMeaning } = require("./G_tarot-engine");
@@ -14,6 +14,7 @@ const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const BASE_URL = process.env.BASE_URL;
 const DEFAULT_MS = 15000;
 const BUFFER_MS = 2000;
+const loadHistory = {};
 
 async function answerCallbackQuery(id, text = "", alert = false) {
   try {
@@ -73,7 +74,6 @@ async function sendPhoto(chatId, photoUrl, caption) {
     });
   } catch (err) {
     console.error("[sendPhoto error]", err.response?.data || err.message);
-    // fallback to text
     await sendMessage(chatId, caption);
   }
 }
@@ -87,7 +87,9 @@ function renderBasicButtons() {
 }
 
 async function handleTelegramUpdate(update) {
-  const { message: msg, callback_query: cb } = update;
+  const msg = update.message;
+  const cb = update.callback_query;
+
   if (msg) {
     const { id: chatId } = msg.chat;
     const text = msg.text;
@@ -116,43 +118,59 @@ async function handleTelegramUpdate(update) {
   const data = cb.data;
   const msgId = cb.message.message_id;
 
-  // 基础版模块点击逻辑省略…
-  if (data.startsWith('basic_')) {
-    // …保持不变
+  // Card drawing logic
+  if (data.startsWith("card_")) {
+    await answerCallbackQuery(cb.id);
+    const idx = parseInt(data.split("_")[1], 10);
+    try {
+      const card = getCard(userId, idx);
+      const meaning = getCardMeaning(card, idx);
+      const imageUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
+      await sendPhoto(userId, imageUrl, meaning);
+      incrementDraw(userId);
+      if (!isSessionComplete(userId)) {
+        await editReplyMarkup(userId, msgId, renderCardButtons(session));
+      } else {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
+        const basicKb = renderBasicButtons().inline_keyboard;
+        const premiumKb = renderPremiumButtonsInline().inline_keyboard;
+        const separator = [[{ text: "── Advanced Exclusive Insights ──", callback_data: "noop" }]];
+        const combined = basicKb.concat(separator, premiumKb);
+        await sendMessage(userId, "✨ Explore your guidance modules:", { inline_keyboard: combined });
+        markStep(userId, "bothButtonsShown");
+      }
+    } catch (err) {
+      console.error("[card handling error]", err);
+      await sendMessage(userId, `⚠️ ${err.message}`);
+    }
     return;
   }
 
-  // 抽牌逻辑省略…
-  if (data.startsWith('card_')) {
-    // …保持不变
-    return;
-  }
-
-  // 高级模块点击：带倒计时和隐藏按钮
+  // Premium modules with countdown
   if (premiumHandlers[data]) {
-    // 防重点
+    await answerCallbackQuery(cb.id);
+    if (!session || session.amount < 30) {
+      await sendMessage(userId, `Unlock by paying ${30 - (session?.amount || 0)} USDT.`, { inline_keyboard: [[
+        { text: `Pay ${30 - (session?.amount || 0)} USDT`, url: 'https://divinepay.onrender.com/' }
+      ]] });
+      return;
+    }
     session._premiumHandled = session._premiumHandled || new Set();
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
 
-    // 计时器
     const history = loadHistory[data] || [];
-    const avgMs = history.length ? history.reduce((a,b) => a+b,0)/history.length : DEFAULT_MS;
-    const countdown = Math.ceil((avgMs + BUFFER_MS)/1000);
-
-    await answerCallbackQuery(cb.id);
+    const avgMs = history.length ? history.reduce((a, b) => a + b, 0) / history.length : DEFAULT_MS;
+    const countdown = Math.ceil((avgMs + BUFFER_MS) / 1000);
     await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${countdown}s`, callback_data: data }]] });
 
     let rem = countdown;
     const iv = setInterval(async () => {
       rem--;
-      if (rem >= 0) {
-        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem}s`, callback_data: data }]] });
-      }
+      if (rem >= 0) await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight... ${rem}s`, callback_data: data }]] });
       if (rem < 0) clearInterval(iv);
     }, 1000);
 
-    // 执行处理
     const start = Date.now();
     try {
       const res = await premiumHandlers[data](userId);
