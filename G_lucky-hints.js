@@ -1,13 +1,23 @@
-// G_lucky-hints.js - v1.1.0
+/*
+ G_lucky-hints.js - v1.0.3
+ Always fetch via API. Lucky Hints capped at 80 words.
+*/
 const { getDeepseekReply } = require("./G_deepseek");
 
-/**
- * Generates a personalized Lucky Hints message with color and number based on user energy.
- */
+const MAX_WORDS_HINTS = 80;
+
+function enforceWordLimit(text, maxWords) {
+  const words = text.split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
+}
+
 async function getLuckyHints(userId) {
-  const prompt = "Generate a personalized lucky hint for the user, including a vibrant color and a meaningful number, inspired by their energy and the current date.";
+  const prompt = `A user has requested their Lucky Hints. Provide a concise, uplifting hint involving color, number, or symbol to enhance daily fortune. Limit your response to no more than ${MAX_WORDS_HINTS} words.`;
   const reply = await getDeepseekReply(prompt);
-  return `🎨 Lucky Hints\n\n${reply}`;
+  const result = `🎨 Lucky Hints\n\n${reply}`;
+  return enforceWordLimit(result, MAX_WORDS_HINTS);
 }
 
 module.exports = { getLuckyHints };
+
