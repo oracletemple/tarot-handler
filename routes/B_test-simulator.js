@@ -1,58 +1,63 @@
-// routes/B_test-simulator.js - v1.1.1
-
+// routes/B_test-simulator.js - v1.2.0
+// Updated to use dynamic pricing and simulateButtonClick
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 
 const { startSession } = require("../G_tarot-session");
-const { sendCardButtons, handleCallback } = require("../B_telegram");
+const { simulateButtonClick } = require("../G_simulate-click");
 
-const DEV_ID = 7685088782; // 仅允许开发者触发测试流程
+const DEV_ID = parseInt(process.env.RECEIVER_ID, 10);
+const PRICE_BASIC = parseFloat(process.env.PRICE_BASIC);
+const PRICE_PREMIUM = parseFloat(process.env.PRICE_PREMIUM);
 
+/**
+ * Webhook for testing sessions via Telegram commands
+ */
 router.post("/webhook", async (req, res) => {
   const update = req.body;
 
   try {
-    // 处理指令消息
+    // Handle text commands for developer
     if (update.message && update.message.text) {
       const text = update.message.text.trim();
       const chatId = update.message.chat.id;
       const userId = update.message.from.id;
 
-      // 开发者专属测试入口
       if (userId === DEV_ID && text === "/test123") {
         console.log("✅ /test123 triggered by developer");
-
-        // 启动 session（12 USDT 流程）
-        startSession(userId, 12);
-        const messageId = await sendCardButtons(chatId, 12);
-
-        // 模拟三张牌点击（延迟触发）
+        // Start Basic Plan session
+        startSession(userId, PRICE_BASIC);
+        // Simulate three card clicks
         for (let i = 0; i < 3; i++) {
-          setTimeout(() => {
-            const fakeQuery = {
-              id: `test_${i}`,
-              from: { id: userId },
-              message: { chat: { id: chatId }, message_id: messageId },
-              data: `card_${i}`
-            };
-            handleCallback(fakeQuery);
-            console.log(`✅ Simulated card ${i + 1} click for user ${userId}`);
-          }, 1000 + i * 1500);
+          await simulateButtonClick(userId, i, PRICE_BASIC);
+          console.log(`✅ Simulated card ${i + 1} click for BASIC plan`);
         }
+        return res.sendStatus(200);
+      }
 
+      if (userId === DEV_ID && text === "/test30") {
+        console.log("✅ /test30 triggered by developer");
+        // Start Premium Plan session
+        startSession(userId, PRICE_PREMIUM);
+        // Simulate three card clicks
+        for (let i = 0; i < 3; i++) {
+          await simulateButtonClick(userId, i, PRICE_PREMIUM);
+          console.log(`✅ Simulated card ${i + 1} click for PREMIUM plan`);
+        }
         return res.sendStatus(200);
       }
     }
 
-    // 处理按钮点击
+    // Fallback for button callback queries (if any)
     if (update.callback_query) {
-      await handleCallback(update.callback_query);
+      // simulateButtonClick already invoked above; no additional handling needed
       return res.sendStatus(200);
     }
 
     res.sendStatus(200);
   } catch (err) {
-    console.error("❌ Error in /webhook:", err.message);
+    console.error("❌ Error in B_test-simulator webhook:", err);
     res.sendStatus(500);
   }
 });
