@@ -16,6 +16,8 @@ function saveMap() {
 
 /**
  * Register a wallet for a Telegram user
+ * @param {string} wallet - TRON address
+ * @param {number} userId - Telegram chat ID
  */
 function register(wallet, userId) {
   walletMap[wallet] = userId;
@@ -24,6 +26,8 @@ function register(wallet, userId) {
 
 /**
  * Get the Telegram userId for a registered wallet
+ * @param {string} wallet - TRON address
+ * @returns {number|undefined}
  */
 function getUser(wallet) {
   return walletMap[wallet];
@@ -31,6 +35,8 @@ function getUser(wallet) {
 
 /**
  * Queue a pending payment when wallet not yet registered
+ * @param {string} wallet
+ * @param {{amount:number,txid:string}} payment
  */
 function addPending(wallet, payment) {
   if (!pendingPayments[wallet]) pendingPayments[wallet] = [];
@@ -39,6 +45,8 @@ function addPending(wallet, payment) {
 
 /**
  * Retrieve and clear pending payments for a wallet
+ * @param {string} wallet
+ * @returns {Array<{amount:number,txid:string}>}
  */
 function drainPending(wallet) {
   const list = pendingPayments[wallet] || [];
