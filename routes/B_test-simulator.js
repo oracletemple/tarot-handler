@@ -5,7 +5,7 @@ const express = require("express");
 const router = express.Router();
 
 const { startSession } = require("../G_tarot-session");
-const { simulateButtonClick } = require("../G_simulate-click");
+const { simulateButtonClick } = require("../utils/G_simulate-click");
 const { markUserAsPremium } = require("../B_telegram"); // 新增自动解锁
 
 const DEV_ID = parseInt(process.env.RECEIVER_ID, 10);
