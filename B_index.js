@@ -80,3 +80,22 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// ================= 新增：升级为高级版接口 =================
+const { markUserAsPremium } = require('./B_telegram');
+
+// POST /mark-premium  { chatId: 123456 }
+app.post('/mark-premium', (req, res) => {
+  const { chatId } = req.body;
+  if (!chatId) return res.status(400).json({ error: "chatId required" });
+
+  markUserAsPremium(Number(chatId));
+  console.log(`🎉 [mark-premium] User ${chatId} marked as premium!`);
+  res.json({ success: true });
+});
+
+// ================== 启动服务 ==================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
