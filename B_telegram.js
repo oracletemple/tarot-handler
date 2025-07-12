@@ -1,6 +1,4 @@
 // B_telegram.js — v1.5.33
-// Core Telegram update handler with wallet registration, pending support, and module interactions
-
 require('dotenv').config();
 const axios = require('axios');
 const { getSession, startSession, getCard, isSessionComplete } = require('./G_tarot-session');
@@ -17,21 +15,14 @@ const { register, drainPending } = require('./utils/G_wallet-map');
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const BASE_URL = process.env.BASE_URL;
+const loadHistory = {};
 const DEFAULT_MS = 15000;
 const BUFFER_MS = 2000;
-const loadHistory = {};
 
 // 内存 Map 存储已解锁高级版的用户
 const premiumUnlock = new Map();
-
-// ✅ 标记用户已补差价/解锁高级版
-function markUserAsPremium(userId, isPremium) {
-  premiumUnlock.set(userId, !!isPremium);
-}
-// ✅ 检查用户是否已解锁高级版
-function isUserPremium(userId) {
-  return !!premiumUnlock.get(userId);
-}
+function markUserAsPremium(userId) { premiumUnlock.set(userId, true); }
+function isUserPremium(userId) { return !!premiumUnlock.get(userId); }
 
 // Regex for pure TRON address
 const ADDRESS_RE = /^T[1-9A-Za-z]{33}$/;
@@ -72,13 +63,24 @@ function renderBasicButtons() {
   ]};
 }
 
+// 优化后的补差价提醒，钱包地址有复制按钮
 async function sendUpgradeNotice(chatId) {
-  await sendMessage(chatId,
-    `🔒 This is a premium module.\n\nTo unlock all advanced features, please send *24 USDT* (fees included) to:\n\n\`TYQQ3QigecskEi4B41BKDoTsmZf9BaFTbU\`\n\nAfter payment, reply with your TRON address to receive your advanced reading.`
-  );
+  const walletAddr = process.env.WALLET_ADDRESS;
+  await sendMessage(
+    chatId,
+    `🔒 This is a premium module.\n\nTo unlock all advanced features, please send *24 USDT* (fees included) to the address below:`
+  , {
+    inline_keyboard: [
+      [{ text: walletAddr, callback_data: 'copy_wallet' }],
+      [{ text: 'Copy Address', callback_data: 'copy_wallet' }]
+    ]
+  });
 }
 
-// ================= 主体逻辑 =================
+// 处理复制钱包地址弹窗
+async function handleCopyWalletCallback(cb) {
+  await answerCallbackQuery(cb.id, `Wallet Address:\n${process.env.WALLET_ADDRESS}`, true);
+}
 
 async function handleTelegramUpdate(update) {
   const msg = update.message;
@@ -87,24 +89,22 @@ async function handleTelegramUpdate(update) {
   // Message-based logic (registration & test commands)
   if (msg && msg.text) {
     const t = msg.text.trim();
-    // 1️⃣ Register TRON address
+    const chatId = msg.chat.id;
     if (ADDRESS_RE.test(t)) {
-      register(t, msg.chat.id);
-      await sendMessage(msg.chat.id,
+      register(t, chatId);
+      await sendMessage(chatId,
         `✅ Registered TRON address:\n${t}\n\nOnce payment arrives, I’ll send you the draw buttons automatically.`
       );
-      // Drain and handle any pending payments
       const pendings = drainPending(t);
       for (const { amount, txid } of pendings) {
-        await sendMessage(msg.chat.id,
+        await sendMessage(chatId,
           `🙏 Detected past payment of ${amount} USDT (tx: ${txid}). Please draw your cards:`
         );
-        await sendMessage(msg.chat.id, '🃏 Please draw your cards:', renderCardButtons(getSession(msg.chat.id)));
+        await sendMessage(chatId, '🃏 Please draw your cards:', renderCardButtons(getSession(chatId)));
       }
       return;
     }
-    // 2️⃣ Dev test commands
-    const chatId = msg.chat.id;
+    // Dev test commands
     if ((t === '/test123' || t === '/test12') && chatId == process.env.RECEIVER_ID) {
       startFlow(chatId);
       markUserAsPremium(chatId, false); // 基础版测试指令不解锁高级
@@ -122,9 +122,11 @@ async function handleTelegramUpdate(update) {
     // 新增 /test27：模拟补差价，直接解锁高级
     if (t === '/test27' && chatId == process.env.RECEIVER_ID) {
       markUserAsPremium(chatId, true);
-      await sendMessage(chatId, '✅ Premium upgrade simulated! High-end modules unlocked.');
-      const session = getSession(chatId) || startSession(chatId, 25);
-      await sendMessage(chatId, '🃏 Please draw your cards:', renderCardButtons(session));
+      await sendMessage(
+        chatId,
+        "🔮 You’re all set! Feel free to explore your unlocked premium insights for further inspiration.",
+        { inline_keyboard: renderPremiumButtonsInline().inline_keyboard }
+      );
       return;
     }
     if (t === '/debugflow' && chatId == process.env.RECEIVER_ID) {
@@ -141,7 +143,13 @@ async function handleTelegramUpdate(update) {
   const msgId  = cb.message.message_id;
   const session= getSession(userId);
 
-  // 3️⃣ Basic modules
+  // 钱包地址复制按钮弹窗
+  if (data === "copy_wallet") {
+    await handleCopyWalletCallback(cb);
+    return;
+  }
+
+  // Basic modules
   if (data.startsWith('basic_')) {
     session._basicHandled = session._basicHandled || new Set();
     if (session._basicHandled.has(data)) return;
@@ -178,7 +186,7 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 4️⃣ Card drawing logic
+  // Card drawing logic
   if (data.startsWith('card_')) {
     await answerCallbackQuery(cb.id);
     const idx = parseInt(data.split('_')[1],10);
@@ -204,9 +212,8 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 5️⃣ Premium modules
+  // Premium modules
   if (premiumHandlers[data]) {
-    // 判断是否已补差价（已解锁高级），否则提示
     if (!isUserPremium(userId)) {
       await answerCallbackQuery(cb.id, '🔒 Upgrade required');
       await sendUpgradeNotice(userId);
@@ -216,7 +223,7 @@ async function handleTelegramUpdate(update) {
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
     const history = loadHistory[data]||[];
-    const avgMs   = history.length ? history.reduce((a,b) => a+b)/history.length : DEFAULT_MS;
+    const avgMs   = history.length ? history.reduce((a,b)=>a+b)/history.length : DEFAULT_MS;
     const cd      = Math.ceil((avgMs + BUFFER_MS)/1000);
     await answerCallbackQuery(cb.id);
     await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text:`Fetching... ${cd}s`, callback_data: data }]] });
