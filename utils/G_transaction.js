@@ -28,15 +28,13 @@ async function getUSDTTransactions(address, sinceTxId = null) {
   const data = resp.data.data || [];
 
   // Map to simplified format and filter by sinceTxId
-  const txs = data
+  return data
     .filter(tx => !sinceTxId || tx.transaction_id > sinceTxId)
     .map(tx => ({
       txid: tx.transaction_id,
       from: tx.from,
       amount: parseInt(tx.value, 10) / 1e6, // USDT TRC20 has 6 decimals
     }));
-
-  return txs;
 }
 
 // Existing helper functions
