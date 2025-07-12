@@ -60,6 +60,8 @@ function renderBasicButtons() {
 }
 
 async function handleTelegramUpdate(update) {
+  console.log('🔔 handleTelegramUpdate received:', JSON.stringify(update));
+  try {
   const msg = update.message;
   const cb  = update.callback_query;
 
@@ -157,6 +159,11 @@ async function handleTelegramUpdate(update) {
       await sendMessage(userId, `⚠️ Failed: ${data}`);
     }
     return;
+  }
+}
+
+  } catch(err) {
+    console.error('❌ Error in handleTelegramUpdate:', err);
   }
 }
 
