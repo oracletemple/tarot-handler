@@ -267,7 +267,7 @@ module.exports = [
     "id": 44,
     "name": "Nine of Cups",
     "meaning": "The symbolic meaning of Nine of Cups.",
-    "image": "Nine_of_Cups"
+    "image": "Nine_of_Cups.jpg"
   },
   {
     "id": 45,
