@@ -1,25 +1,25 @@
 // B_index.js — v1.2.12
-// tarot-handler Webhook entry: delegates incoming Telegram updates, serves assets, provides test and upgrade endpoints
+// tarot-handler Webhook entry: delegates incoming Telegram updates, serves assets, and provides test endpoints
 
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 
-const { handleTelegramUpdate, markUserAsPremium } = require('./B_telegram');
+const { handleTelegramUpdate } = require('./B_telegram');
 const { simulateButtonClick } = require('./utils/G_simulate-click');
 const { startSession } = require('./G_tarot-session');
 
 const app = express();
 app.use(bodyParser.json());
 
-// Serve tarot images
+// ====== 静态图片服务 ======
 app.use(
   '/tarot-images',
   express.static(path.join(__dirname, 'assets', 'tarot-cards'))
 );
 
-// Telegram Webhook
+// ====== 主 Webhook 路由 ======
 app.post('/webhook', async (req, res) => {
   try {
     console.log('📥 Received Webhook Payload:', JSON.stringify(req.body, null, 2));
@@ -31,7 +31,7 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-// Dev test endpoints
+// ====== 测试开发入口 ======
 app.get('/test123', async (req, res) => {
   const devId = parseInt(process.env.RECEIVER_ID, 10);
   try {
@@ -39,7 +39,7 @@ app.get('/test123', async (req, res) => {
     await simulateButtonClick(devId, 0, 12);
     await simulateButtonClick(devId, 1, 12);
     await simulateButtonClick(devId, 2, 12);
-    res.send('✅ Test session triggered (card 1, 2, 3, amount 12).');
+    res.send('✅ Test session triggered (card 1, 2, 3).');
   } catch (err) {
     console.error('❌ Test123 error:', err);
     res.status(500).send('❌ Failed to trigger test123.');
@@ -49,7 +49,7 @@ app.get('/test123', async (req, res) => {
 app.get('/test30', async (req, res) => {
   const devId = parseInt(process.env.RECEIVER_ID, 10);
   try {
-    startSession(devId, 25);
+    startSession(devId, 25); // 25 U 是高级测试金额
     await simulateButtonClick(devId, 0, 25);
     await simulateButtonClick(devId, 1, 25);
     await simulateButtonClick(devId, 2, 25);
@@ -60,6 +60,7 @@ app.get('/test30', async (req, res) => {
   }
 });
 
+// ====== 动态卡牌模拟 ======
 app.get('/simulate', async (req, res) => {
   const userId = parseInt(req.query.userId, 10);
   const cardIndex = parseInt(req.query.cardIndex, 10);
@@ -77,7 +78,9 @@ app.get('/simulate', async (req, res) => {
   }
 });
 
-// ================= 新增：升级为高级版接口 =================
+// ====== 新增：升级为高级版接口 ======
+const { markUserAsPremium } = require('./B_telegram');
+
 // POST /mark-premium  { chatId: 123456 }
 app.post('/mark-premium', (req, res) => {
   const { chatId } = req.body;
@@ -88,7 +91,10 @@ app.post('/mark-premium', (req, res) => {
   res.json({ success: true });
 });
 
-// ================== 启动服务 ==================
+// ====== 挂载 /test-sim 模拟路由（适配 POST /test-sim/webhook）======
+app.use('/test-sim', require('./routes/B_test-simulator'));
+
+// ====== 启动服务 ======
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
