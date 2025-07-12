@@ -1,5 +1,4 @@
-// G_send-message.js - v1.1.3
-
+// utils/G_send-message.js - v1.1.3
 const axios = require("axios");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
