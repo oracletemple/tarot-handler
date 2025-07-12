@@ -1,16 +1,22 @@
-// B_telegram.js — v1.5.30
+// B_telegram.js — v1.5.31
 // Core Telegram update handler with wallet registration, pending support, and module interactions
 require('dotenv').config();
 const axios = require('axios');
-const { getSession, startSession, getCard, isSessionComplete } = require('./G_tarot-session');
+const {
+  getSession, startSession, getCard, isSessionComplete
+} = require('./G_tarot-session');
 const { getCardMeaning } = require('./G_tarot-engine');
 const { renderCardButtons } = require('./G_button-render');
 const { getSpiritGuide } = require('./G_spirit-guide');
 const { getLuckyHints } = require('./G_lucky-hints');
 const { getMoonAdvice } = require('./G_moon-advice');
 const { getTarotSummary } = require('./G_tarot-summary');
-const { renderPremiumButtonsInline, premiumHandlers, removeClickedButton } = require('./G_premium-buttons');
-const { startFlow, incrementDraw, markStep, markPremiumClick, debugFlow } = require('./G_flow-monitor');
+const {
+  renderPremiumButtonsInline, premiumHandlers, removeClickedButton
+} = require('./G_premium-buttons');
+const {
+  startFlow, incrementDraw, markStep, markPremiumClick, debugFlow
+} = require('./G_flow-monitor');
 const { register, drainPending } = require('./utils/G_wallet-map');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -23,6 +29,7 @@ const loadHistory = {};
 // Regex for pure TRON address
 const ADDRESS_RE = /^T[1-9A-Za-z]{33}$/;
 
+// Escape for MarkdownV2
 function escapeMarkdown(text) {
   return text.replace(/([_*!\[\]()~`>#+\-=|{}\.\!])/g, '\\$1');
 }
@@ -55,27 +62,25 @@ function renderBasicButtons() {
   return {
     inline_keyboard: [
       [{ text: '🧚 Spirit Guide', callback_data: 'basic_spirit' }],
-      [{ text: '🎨 Lucky Hints',   callback_data: 'basic_lucky' }],
-      [{ text: '🌕 Moon Advice',   callback_data: 'basic_moon' }]
+      [{ text: '🎨 Lucky Hints', callback_data: 'basic_lucky' }],
+      [{ text: '🌕 Moon Advice', callback_data: 'basic_moon' }]
     ]
   };
 }
 
 async function handleTelegramUpdate(update) {
   const msg = update.message;
-  const cb  = update.callback_query;
+  const cb = update.callback_query;
 
-  // 1️⃣ Message-based logic (registration & test commands)
+  // 1️⃣ Message-based logic
   if (msg && msg.text) {
     const t = msg.text.trim();
-    // Register TRON address
     if (ADDRESS_RE.test(t)) {
       register(t, msg.chat.id);
       await sendMessage(
         msg.chat.id,
         `✅ Registered TRON address:\n${t}\n\nOnce payment arrives, I’ll send you the draw buttons automatically.`
       );
-      // Drain and handle any pending payments
       const pendings = drainPending(t);
       for (const { amount, txid } of pendings) {
         await sendMessage(
@@ -86,7 +91,6 @@ async function handleTelegramUpdate(update) {
       }
       return;
     }
-    // Dev test commands
     const chatId = msg.chat.id;
     if ((t === '/test123' || t === '/test12') && chatId == process.env.RECEIVER_ID) {
       startFlow(chatId);
@@ -110,9 +114,9 @@ async function handleTelegramUpdate(update) {
   // 2️⃣ Callback-based logic
   if (!cb) return;
   const userId = cb.from.id;
-  const data   = cb.data;
-  const msgId  = cb.message.message_id;
-  const session= getSession(userId);
+  const data = cb.data;
+  const msgId = cb.message.message_id;
+  const session = getSession(userId);
 
   // 3️⃣ Basic modules
   if (data.startsWith('basic_')) {
@@ -120,27 +124,28 @@ async function handleTelegramUpdate(update) {
     if (session._basicHandled.has(data)) return;
     session._basicHandled.add(data);
     const history = loadHistory[data] || [];
-    const avgMs   = history.length ? history.reduce((a,b) => a+b)/history.length : DEFAULT_MS;
-    const cd      = Math.ceil((avgMs + BUFFER_MS)/1000);
+    const avgMs = history.length ? history.reduce((a, b) => a + b) / history.length : DEFAULT_MS;
+    const cd = Math.ceil((avgMs + BUFFER_MS) / 1000);
     await answerCallbackQuery(cb.id);
     await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${cd}s`, callback_data: data }]] });
     let rem = cd;
-    const iv = setInterval(async ()=>{
+    const iv = setInterval(async () => {
       rem--;
-      if(rem>=0) await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${rem}s`, callback_data: data }]] });
-      if(rem<0) clearInterval(iv);
-    },1000);
+      if (rem >= 0) {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${rem}s`, callback_data: data }]] });
+      } else clearInterval(iv);
+    }, 1000);
     const start = Date.now();
     const handler = {
       basic_spirit: getSpiritGuide,
-      basic_lucky:  getLuckyHints,
-      basic_moon:   getMoonAdvice
+      basic_lucky: getLuckyHints,
+      basic_moon: getMoonAdvice
     }[data];
     try {
       const res = await handler(userId);
       clearInterval(iv);
-      loadHistory[data] = loadHistory[data]||[];
-      loadHistory[data].push(Date.now()-start);
+      loadHistory[data] = loadHistory[data] || [];
+      loadHistory[data].push(Date.now() - start);
       await editReplyMarkup(userId, msgId, removeClickedButton(cb.message.reply_markup, data));
       await sendMessage(userId, res);
       markStep(userId, data);
@@ -154,22 +159,22 @@ async function handleTelegramUpdate(update) {
   // 4️⃣ Card drawing logic
   if (data.startsWith('card_')) {
     await answerCallbackQuery(cb.id);
-    const idx = parseInt(data.split('_')[1],10);
+    const idx = parseInt(data.split('_')[1], 10);
     try {
-      const card    = getCard(userId, idx);
+      const card = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
-      const imgUrl  = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
+      const imgUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
       await sendPhoto(userId, imgUrl, meaning);
       incrementDraw(userId);
       if (!isSessionComplete(userId)) {
         await editReplyMarkup(userId, msgId, renderCardButtons(session));
       } else {
         await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
-        const basicKb   = renderBasicButtons().inline_keyboard;
+        const basicKb = renderBasicButtons().inline_keyboard;
         const premiumKb = renderPremiumButtonsInline().inline_keyboard;
-        const sep       = [[{ text:'── Advanced Insights ──', callback_data:'noop' }]];
-        await sendMessage(userId,'✨ Explore your guidance modules:', { inline_keyboard: basicKb.concat(sep,premiumKb) });
-        markStep(userId,'bothButtonsShown');
+        const sep = [[{ text: '── Advanced Insights ──', callback_data: 'noop' }]];
+        await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: basicKb.concat(sep, premiumKb) });
+        markStep(userId, 'bothButtonsShown');
       }
     } catch (err) {
       await sendMessage(userId, `⚠️ ${err.message}`);
@@ -178,34 +183,67 @@ async function handleTelegramUpdate(update) {
   }
 
   // 5️⃣ Premium modules
+  // Restrict premium access if amount < 30
+  if (session.amount < 30) {
+    await answerCallbackQuery(cb.id, `Unlock by paying ${30 - session.amount} USDT`, true);
+    await sendMessage(userId, `To access premium insights, please upgrade by paying the remaining ${30 - session.amount} USDT.`);
+    return;
+  }
+  if (premiumHandlers[data]) { — zero-gap + visible countdown
   if (premiumHandlers[data]) {
-    session._premiumHandled = session._premiumHandled||new Set();
+    session._premiumHandled = session._premiumHandled || new Set();
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
-    const history = loadHistory[data]||[];
-    const avgMs   = history.length ? history.reduce((a,b)=>a+b)/history.length : DEFAULT_MS;
-    const cd      = Math.ceil((avgMs + BUFFER_MS)/1000);
-    await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text:`Fetching... ${cd}s`, callback_data: data }]] });
-    let rem2=cd;
-    const iv2 = setInterval(async()=>{
-      rem2--;
-      if(rem2>=0) await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text:`Fetching... ${rem2}s`, callback_data: data }]] });
-      if(rem2<0) clearInterval(iv2);
-    },1000);
-    const start2=Date.now();
+
+    // ① Loading feedback & clear buttons
+    await answerCallbackQuery(cb.id, 'Loading…', false);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
+
+    // ② Send countdown message
+    const history2 = loadHistory[data] || [];
+    const avg2 = history2.length ? history2.reduce((a, b) => a + b) / history2.length : DEFAULT_MS;
+    let seconds = Math.ceil((avg2 + BUFFER_MS) / 1000);
+    const cdResp = await axios.post(`${API_URL}/sendMessage`, {
+      chat_id: userId,
+      text: `⏳ Loading… ${seconds}s`,
+      parse_mode: 'MarkdownV2'
+    });
+    const cdMsgId = cdResp.data.result.message_id;
+
+    const timer = setInterval(async () => {
+      seconds--;
+      if (seconds > 0) {
+        await axios.post(`${API_URL}/editMessageText`, {
+          chat_id: userId,
+          message_id: cdMsgId,
+          text: `⏳ Loading… ${seconds}s`,
+          parse_mode: 'MarkdownV2'
+        });
+      } else {
+        clearInterval(timer);
+        await axios.post(`${API_URL}/deleteMessage`, {
+          chat_id: userId,
+          message_id: cdMsgId
+        });
+      }
+    }, 1000);
+
+    // ③ Call handler
+    const start2 = Date.now();
     try {
-      const res = data==='premium_summary'
+      const res = data === 'premium_summary'
         ? await premiumHandlers[data](userId, session)
         : await premiumHandlers[data](userId);
-      clearInterval(iv2);
-      loadHistory[data]=loadHistory[data]||[];
-      loadHistory[data].push(Date.now()-start2);
-      await editReplyMarkup(userId, msgId, removeClickedButton(cb.message.reply_markup,data));
-      await sendMessage(userId,res);
-      markPremiumClick(userId,data);
-    } catch {
-      clearInterval(iv2);
+      clearInterval(timer);
+      await axios.post(`${API_URL}/deleteMessage`, { chat_id: userId, message_id: cdMsgId });
+      loadHistory[data] = history2;
+      loadHistory[data].push(Date.now() - start2);
+      await sendMessage(userId, res);
+      markPremiumClick(userId, data);
+    } catch (err) {
+      clearInterval(timer);
+      await axios.post(`${API_URL}/deleteMessage`, { chat_id: userId, message_id: cdMsgId });
+      console.error('❌ Premium handler error for', data, err);
       await sendMessage(userId, `⚠️ Failed: ${data}`);
     }
     return;
