@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.32
+// B_telegram.js — v1.5.33
 // Core Telegram update handler with wallet registration, pending support, and module interactions
 
 require('dotenv').config();
@@ -21,12 +21,12 @@ const DEFAULT_MS = 15000;
 const BUFFER_MS = 2000;
 const loadHistory = {};
 
-// 新增：内存 Map 存储已解锁高级版的用户
+// 内存 Map 存储已解锁高级版的用户
 const premiumUnlock = new Map();
 
 // ✅ 标记用户已补差价/解锁高级版
-function markUserAsPremium(userId) {
-  premiumUnlock.set(userId, true);
+function markUserAsPremium(userId, isPremium) {
+  premiumUnlock.set(userId, !!isPremium);
 }
 // ✅ 检查用户是否已解锁高级版
 function isUserPremium(userId) {
@@ -73,12 +73,12 @@ function renderBasicButtons() {
 }
 
 async function sendUpgradeNotice(chatId) {
-  // ⚠️ 这里按你新版定价/二维码流程写明，按钮/二维码可调整
   await sendMessage(chatId,
     `🔒 This is a premium module.\n\nTo unlock all advanced features, please send *24 USDT* (fees included) to:\n\n\`TYQQ3QigecskEi4B41BKDoTsmZf9BaFTbU\`\n\nAfter payment, reply with your TRON address to receive your advanced reading.`
   );
-  // 可以附带二维码/按钮，也可以直接一句英文说明
 }
+
+// ================= 主体逻辑 =================
 
 async function handleTelegramUpdate(update) {
   const msg = update.message;
@@ -107,14 +107,14 @@ async function handleTelegramUpdate(update) {
     const chatId = msg.chat.id;
     if ((t === '/test123' || t === '/test12') && chatId == process.env.RECEIVER_ID) {
       startFlow(chatId);
-      markUserAsPremium(chatId, false); // ⚠️ 基础版测试指令不解锁高级
+      markUserAsPremium(chatId, false); // 基础版测试指令不解锁高级
       const session = startSession(chatId, 12);
       await sendMessage(chatId, '🃏 Please draw your cards:', renderCardButtons(session));
       return;
     }
     if (t === '/test30' && chatId == process.env.RECEIVER_ID) {
       startFlow(chatId);
-      markUserAsPremium(chatId, true); // ⚠️ 高级版测试指令自动解锁
+      markUserAsPremium(chatId, true); // 高级版测试指令自动解锁
       const session = startSession(chatId, 25); // 按后台激活金额设置
       await sendMessage(chatId, '🃏 Please draw your cards:', renderCardButtons(session));
       return;
@@ -123,7 +123,6 @@ async function handleTelegramUpdate(update) {
     if (t === '/test27' && chatId == process.env.RECEIVER_ID) {
       markUserAsPremium(chatId, true);
       await sendMessage(chatId, '✅ Premium upgrade simulated! High-end modules unlocked.');
-      // 直接推送抽牌或高级按钮
       const session = getSession(chatId) || startSession(chatId, 25);
       await sendMessage(chatId, '🃏 Please draw your cards:', renderCardButtons(session));
       return;
@@ -217,7 +216,7 @@ async function handleTelegramUpdate(update) {
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
     const history = loadHistory[data]||[];
-    const avgMs   = history.length ? history.reduce((a,b)=>a+b)/history.length : DEFAULT_MS;
+    const avgMs   = history.length ? history.reduce((a,b) => a+b)/history.length : DEFAULT_MS;
     const cd      = Math.ceil((avgMs + BUFFER_MS)/1000);
     await answerCallbackQuery(cb.id);
     await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text:`Fetching... ${cd}s`, callback_data: data }]] });
