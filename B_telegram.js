@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.31
+// B_telegram.js — v1.5.36
 // Core Telegram update handler with wallet registration, pending support, and module interactions
 require('dotenv').config();
 const axios = require('axios');
@@ -189,7 +189,7 @@ async function handleTelegramUpdate(update) {
     await sendMessage(userId, `To access premium insights, please upgrade by paying the remaining ${30 - session.amount} USDT.`);
     return;
   }
-  if (premiumHandlers[data]) { — zero-gap + visible countdown
+  if (premiumHandlers[data]) {
   if (premiumHandlers[data]) {
     session._premiumHandled = session._premiumHandled || new Set();
     if (session._premiumHandled.has(data)) return;
