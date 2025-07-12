@@ -1,4 +1,4 @@
-// utils/G_send-message.js - v1.1.3
+// utils/G_send-message.js - v1.1.5
 const axios = require("axios");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -14,10 +14,10 @@ async function sendText(chatId, text) {
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
       text,
-      parse_mode: "Markdown"
+      parse_mode: "MarkdownV2"
     });
   } catch (err) {
-    console.error("❌ sendText error:", err.response?.data || err.message);
+    console.error(`❌ sendText error [chatId=${chatId}]:`, err.response?.data || err.message);
   }
 }
 
@@ -32,13 +32,13 @@ async function sendButtons(chatId, text, buttons) {
     await axios.post(`${API_URL}/sendMessage`, {
       chat_id: chatId,
       text,
-      parse_mode: "Markdown",
+      parse_mode: "MarkdownV2",
       reply_markup: {
         inline_keyboard: buttons
       }
     });
   } catch (err) {
-    console.error("❌ sendButtons error:", err.response?.data || err.message);
+    console.error(`❌ sendButtons error [chatId=${chatId}]:`, err.response?.data || err.message);
   }
 }
 
@@ -54,10 +54,10 @@ async function sendImage(chatId, imageUrl, caption = "") {
       chat_id: chatId,
       photo: imageUrl,
       caption,
-      parse_mode: "Markdown"
+      parse_mode: "MarkdownV2"
     });
   } catch (err) {
-    console.error("❌ sendImage error:", err.response?.data || err.message);
+    console.error(`❌ sendImage error [chatId=${chatId}]:`, err.response?.data || err.message);
   }
 }
 
