@@ -173,26 +173,7 @@ async function handleTelegramUpdate(update) {
     return;
   }
 
-  // 5️⃣ Mirror Message module (explicit handler)
-  if (data === 'premium_mirror') {
-    await answerCallbackQuery(cb.id);
-    const mirror = await premiumHandlers.premium_mirror(userId);
-    await sendMessage(userId, mirror);
-    markPremiumClick(userId, data);
-    return;
-  }
-  
-  // 6️⃣ Soul Purpose module (explicit handler)
-  if (data === 'premium_purpose') {
-    await answerCallbackQuery(cb.id);
-    const purpose = await premiumHandlers.premium_purpose(userId);
-    await sendMessage(userId, purpose);
-    markPremiumClick(userId, data);
-    return;
-  }
-
-  // 7️⃣ Premium modules
-  if (premiumHandlers[data])
+  // 5️⃣ Premium modules
   if (premiumHandlers[data]) {
     session._premiumHandled = session._premiumHandled||new Set();
     if (session._premiumHandled.has(data)) return;
