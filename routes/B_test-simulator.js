@@ -1,15 +1,16 @@
-// routes/B_test-simulator.js - v1.2.0
-// Updated to use dynamic pricing and simulateButtonClick
+// routes/B_test-simulator.js - v1.2.2
+// Simulate basic/premium plan via webhook for dev, now includes test27 for premium unlock
 require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 
 const { startSession } = require("../G_tarot-session");
 const { simulateButtonClick } = require("../G_simulate-click");
+const { markUserAsPremium } = require("../B_telegram"); // 新增自动解锁
 
 const DEV_ID = parseInt(process.env.RECEIVER_ID, 10);
-const PRICE_BASIC = parseFloat(process.env.PRICE_BASIC);
-const PRICE_PREMIUM = parseFloat(process.env.PRICE_PREMIUM);
+const PRICE_BASIC = parseFloat(process.env.PRICE_BASIC || "12");
+const PRICE_PREMIUM = parseFloat(process.env.PRICE_PREMIUM || "24");
 
 /**
  * Webhook for testing sessions via Telegram commands
@@ -18,43 +19,38 @@ router.post("/webhook", async (req, res) => {
   const update = req.body;
 
   try {
-    // Handle text commands for developer
     if (update.message && update.message.text) {
       const text = update.message.text.trim();
       const chatId = update.message.chat.id;
       const userId = update.message.from.id;
 
+      // /test123 = Basic
       if (userId === DEV_ID && text === "/test123") {
-        console.log("✅ /test123 triggered by developer");
-        // Start Basic Plan session
         startSession(userId, PRICE_BASIC);
-        // Simulate three card clicks
         for (let i = 0; i < 3; i++) {
           await simulateButtonClick(userId, i, PRICE_BASIC);
-          console.log(`✅ Simulated card ${i + 1} click for BASIC plan`);
         }
         return res.sendStatus(200);
       }
-
+      // /test30 = Premium
       if (userId === DEV_ID && text === "/test30") {
-        console.log("✅ /test30 triggered by developer");
-        // Start Premium Plan session
+        markUserAsPremium(userId); // 自动解锁
         startSession(userId, PRICE_PREMIUM);
-        // Simulate three card clicks
         for (let i = 0; i < 3; i++) {
           await simulateButtonClick(userId, i, PRICE_PREMIUM);
-          console.log(`✅ Simulated card ${i + 1} click for PREMIUM plan`);
         }
+        return res.sendStatus(200);
+      }
+      // /test27 = 补差价/升级（直接解锁 premium）
+      if (userId === DEV_ID && text === "/test27") {
+        markUserAsPremium(userId);
+        // 也可以模拟 session/init
+        startSession(userId, PRICE_PREMIUM);
         return res.sendStatus(200);
       }
     }
 
-    // Fallback for button callback queries (if any)
-    if (update.callback_query) {
-      // simulateButtonClick already invoked above; no additional handling needed
-      return res.sendStatus(200);
-    }
-
+    // 支持 callback_query 测试（可选，实际不会模拟点击按钮）
     res.sendStatus(200);
   } catch (err) {
     console.error("❌ Error in B_test-simulator webhook:", err);
