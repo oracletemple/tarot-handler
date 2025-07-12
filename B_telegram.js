@@ -1,4 +1,4 @@
-// B_telegram.js — v1.5.31
+// B_telegram.js — v1.5.30
 // Core Telegram update handler with wallet registration, pending support, and module interactions
 require('dotenv').config();
 const axios = require('axios');
@@ -60,8 +60,6 @@ function renderBasicButtons() {
 }
 
 async function handleTelegramUpdate(update) {
-  console.log('🔔 handleTelegramUpdate received:', JSON.stringify(update));
-  try {
   const msg = update.message;
   const cb  = update.callback_query;
 
@@ -114,19 +112,69 @@ async function handleTelegramUpdate(update) {
 
   // 3️⃣ Basic modules
   if (data.startsWith('basic_')) {
-    // ... existing basic logic ...
+    session._basicHandled = session._basicHandled || new Set();
+    if (session._basicHandled.has(data)) return;
+    session._basicHandled.add(data);
+    const history = loadHistory[data] || [];
+    const avgMs   = history.length ? history.reduce((a,b) => a+b)/history.length : DEFAULT_MS;
+    const cd      = Math.ceil((avgMs + BUFFER_MS)/1000);
+    await answerCallbackQuery(cb.id);
+    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${cd}s`, callback_data: data }]] });
+    let rem = cd;
+    const iv = setInterval(async ()=>{
+      rem--;
+      if(rem>=0) await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${rem}s`, callback_data: data }]] });
+      if(rem<0) clearInterval(iv);
+    },1000);
+    const start = Date.now();
+    let handler = {
+      basic_spirit: getSpiritGuide,
+      basic_lucky:  getLuckyHints,
+      basic_moon:   getMoonAdvice
+    }[data];
+    try {
+      const res = await handler(userId);
+      clearInterval(iv);
+      loadHistory[data] = loadHistory[data]||[];
+      loadHistory[data].push(Date.now()-start);
+      await editReplyMarkup(userId, msgId, removeClickedButton(cb.message.reply_markup, data));
+      await sendMessage(userId, res);
+      markStep(userId, data);
+    } catch {
+      clearInterval(iv);
+      await sendMessage(userId, `⚠️ Failed: ${data}`);
+    }
     return;
   }
 
   // 4️⃣ Card drawing logic
   if (data.startsWith('card_')) {
-    // ... existing card logic ...
+    await answerCallbackQuery(cb.id);
+    const idx = parseInt(data.split('_')[1],10);
+    try {
+      const card    = getCard(userId, idx);
+      const meaning = getCardMeaning(card, idx);
+      const imgUrl  = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
+      await sendPhoto(userId, imgUrl, meaning);
+      incrementDraw(userId);
+      if (!isSessionComplete(userId)) {
+        await editReplyMarkup(userId, msgId, renderCardButtons(session));
+      } else {
+        await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
+        const basicKb   = renderBasicButtons().inline_keyboard;
+        const premiumKb = renderPremiumButtonsInline().inline_keyboard;
+        const sep       = [[{ text:'── Advanced Insights ──', callback_data:'noop' }]];
+        await sendMessage(userId,'✨ Explore你的 guidance modules:', { inline_keyboard: basicKb.concat(sep,premiumKb) });
+        markStep(userId,'bothButtonsShown');
+      }
+    } catch (err) {
+      await sendMessage(userId, `⚠️ ${err.message}`);
+    }
     return;
   }
 
   // 5️⃣ Premium modules
   if (premiumHandlers[data]) {
-    console.log('🚀 Premium handler hit:', data, 'for user', userId);
     session._premiumHandled = session._premiumHandled||new Set();
     if (session._premiumHandled.has(data)) return;
     session._premiumHandled.add(data);
@@ -146,24 +194,17 @@ async function handleTelegramUpdate(update) {
       const res = data==='premium_summary'
         ? await premiumHandlers[data](userId, session)
         : await premiumHandlers[data](userId);
-      console.log('🔍 Handler result for', data, ':', res);
       clearInterval(iv2);
       loadHistory[data]=loadHistory[data]||[];
       loadHistory[data].push(Date.now()-start2);
       await editReplyMarkup(userId, msgId, removeClickedButton(cb.message.reply_markup,data));
       await sendMessage(userId,res);
       markPremiumClick(userId,data);
-    } catch (err) {
+    } catch {
       clearInterval(iv2);
-      console.error('❌ Premium handler error for', data, err);
       await sendMessage(userId, `⚠️ Failed: ${data}`);
     }
     return;
-  }
-}
-
-  } catch(err) {
-    console.error('❌ Error in handleTelegramUpdate:', err);
   }
 }
 
