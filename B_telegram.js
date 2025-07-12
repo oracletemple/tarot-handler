@@ -20,17 +20,18 @@ const {
 const { register, drainPending } = require('./utils/G_wallet-map');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const BASE_URL = process.env.BASE_URL;
+const API_URL   = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const BASE_URL  = process.env.BASE_URL;
 const DEFAULT_MS = 15000;
-const BUFFER_MS = 2000;
+const BUFFER_MS  = 2000;
 const loadHistory = {};
 
-// Regex for pure TRON address\ nconst ADDRESS_RE = /^T[1-9A-Za-z]{33}$/;
+// Regex for pure TRON address
+const ADDRESS_RE = /^T[1-9A-Za-z]{33}$/;
 
 // Escape for MarkdownV2
 function escapeMarkdown(text) {
-  return text.replace(/([_*!\[\]()~`>#+\-=|{}\.\!])/g, '\\$1');
+  return text.replace(/([_*!\\[\\]()~`>#+\\-=|{}\\.\\!])/g, '\\$1');
 }
 
 async function sendMessage(chatId, text, reply_markup = null) {
@@ -61,29 +62,27 @@ function renderBasicButtons() {
   return {
     inline_keyboard: [
       [{ text: '🧚 Spirit Guide', callback_data: 'basic_spirit' }],
-      [{ text: '🎨 Lucky Hints', callback_data: 'basic_lucky' }],
-      [{ text: '🌕 Moon Advice', callback_data: 'basic_moon' }]
+      [{ text: '🎨 Lucky Hints',   callback_data: 'basic_lucky' }],
+      [{ text: '🌕 Moon Advice',   callback_data: 'basic_moon' }]
     ]
   };
 }
 
 async function handleTelegramUpdate(update) {
   const msg = update.message;
-  const cb = update.callback_query;
+  const cb  = update.callback_query;
 
   // 1️⃣ Message-based logic
   if (msg && msg.text) {
     const t = msg.text.trim();
     if (ADDRESS_RE.test(t)) {
       register(t, msg.chat.id);
-      await sendMessage(
-        msg.chat.id,
+      await sendMessage(msg.chat.id,
         `✅ Registered TRON address:\n${t}\n\nOnce payment arrives, I’ll send you the draw buttons automatically.`
       );
       const pendings = drainPending(t);
       for (const { amount, txid } of pendings) {
-        await sendMessage(
-          msg.chat.id,
+        await sendMessage(msg.chat.id,
           `🙏 Detected past payment of ${amount} USDT (tx: ${txid}). Please draw your cards:`
         );
         await sendMessage(msg.chat.id, '🃏 Please draw your cards:', renderCardButtons(getSession(msg.chat.id)));
@@ -112,9 +111,9 @@ async function handleTelegramUpdate(update) {
 
   // 2️⃣ Callback-based logic
   if (!cb) return;
-  const userId = cb.from.id;
-  const data = cb.data;
-  const msgId = cb.message.message_id;
+  const userId  = cb.from.id;
+  const data    = cb.data;
+  const msgId   = cb.message.message_id;
   const session = getSession(userId);
 
   // 3️⃣ Basic modules
@@ -122,24 +121,35 @@ async function handleTelegramUpdate(update) {
     session._basicHandled = session._basicHandled || new Set();
     if (session._basicHandled.has(data)) return;
     session._basicHandled.add(data);
+
     const history = loadHistory[data] || [];
-    const avgMs = history.length ? history.reduce((a, b) => a + b) / history.length : DEFAULT_MS;
+    const avgMs   = history.length
+      ? history.reduce((a,b) => a + b) / history.length
+      : DEFAULT_MS;
     const cd = Math.ceil((avgMs + BUFFER_MS) / 1000);
+
     await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${cd}s`, callback_data: data }]] });
+    await editReplyMarkup(userId, msgId, {
+      inline_keyboard: [[{ text: `Fetching... ${cd}s`, callback_data: data }]]
+    });
+
     let rem = cd;
     const iv = setInterval(async () => {
       rem--;
       if (rem >= 0) {
-        await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching... ${rem}s`, callback_data: data }]] });
+        await editReplyMarkup(userId, msgId, {
+          inline_keyboard: [[{ text: `Fetching... ${rem}s`, callback_data: data }]]
+        });
       } else clearInterval(iv);
     }, 1000);
+
     const start = Date.now();
     const handler = {
       basic_spirit: getSpiritGuide,
-      basic_lucky: getLuckyHints,
-      basic_moon: getMoonAdvice
+      basic_lucky:  getLuckyHints,
+      basic_moon:   getMoonAdvice
     }[data];
+
     try {
       const res = await handler(userId);
       clearInterval(iv);
@@ -160,18 +170,19 @@ async function handleTelegramUpdate(update) {
     await answerCallbackQuery(cb.id);
     const idx = parseInt(data.split('_')[1], 10);
     try {
-      const card = getCard(userId, idx);
+      const card    = getCard(userId, idx);
       const meaning = getCardMeaning(card, idx);
-      const imgUrl = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
+      const imgUrl  = `${BASE_URL}/tarot-images/${encodeURIComponent(card.image)}`;
       await sendPhoto(userId, imgUrl, meaning);
       incrementDraw(userId);
+
       if (!isSessionComplete(userId)) {
         await editReplyMarkup(userId, msgId, renderCardButtons(session));
       } else {
         await editReplyMarkup(userId, msgId, { inline_keyboard: [] });
-        const basicKb = renderBasicButtons().inline_keyboard;
+        const basicKb   = renderBasicButtons().inline_keyboard;
         const premiumKb = renderPremiumButtonsInline().inline_keyboard;
-        const sep = [[{ text: '── Advanced Insights ──', callback_data: 'noop' }]];
+        const sep       = [[{ text: '── Advanced Insights ──', callback_data: 'noop' }]];
         await sendMessage(userId, '✨ Explore your guidance modules:', { inline_keyboard: basicKb.concat(sep, premiumKb) });
         markStep(userId, 'bothButtonsShown');
       }
@@ -213,10 +224,7 @@ async function handleTelegramUpdate(update) {
         });
       } else {
         clearInterval(timer);
-        await axios.post(`${API_URL}/deleteMessage`, {
-          chat_id: userId,
-          message_id: cdMsgId
-        });
+        await axios.post(`${API_URL}/deleteMessage`, { chat_id: userId, message_id: cdMsgId });
       }
     }, 1000);
 
