@@ -1,8 +1,12 @@
-// G_flow-monitor.js - v1.1.0
-
+/*
+ G_flow-monitor.js - v1.1.1
+ Tracks end-to-end flow including Tarot Summary as premium step
+*/
 const flowStatus = new Map(); // key: userId, value: { stage: string, steps: object }
+
 // List of all premium step keys
 const PREMIUM_KEYS = [
+  "premium_summary",
   "premium_pastlife",
   "premium_mirror",
   "premium_energy",
@@ -71,9 +75,14 @@ function debugFlow(userId) {
   if (!steps.moonAdvice) missing.push("[Moon advice not sent]");
   if (!steps.premiumButtonsShown) missing.push("[Premium buttons not shown]");
 
-  // Check premium clicks
+  // Check premium summary click
+  if (steps.premiumButtonsShown && !steps.premiumClicks["premium_summary"]) {
+    missing.push("[Premium not clicked: premium_summary]");
+  }
+
+  // Check other premium clicks
   if (steps.premiumButtonsShown) {
-    const unclicked = PREMIUM_KEYS.filter(key => !steps.premiumClicks[key]);
+    const unclicked = PREMIUM_KEYS.slice(1).filter(key => !steps.premiumClicks[key]);
     unclicked.forEach(key => missing.push(`[Premium not clicked: ${key}]`));
   }
 
