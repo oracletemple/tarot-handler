@@ -1,5 +1,7 @@
-// === G_premium-buttons.js (v1.3.2) ===
-// Add Tarot Summary button
+/*
+ G_premium-buttons.js - v1.3.2
+ Renders premium module buttons and maps callback_data to handlers
+*/
 const { getTarotSummary } = require("./G_tarot-summary");
 const { getPastLifeEchoes } = require("./G_pastlife");
 const { getMirrorMessage } = require("./G_mirror-message");
@@ -55,39 +57,3 @@ function removeClickedButton(reply_markup, data) {
 }
 
 module.exports = { renderPremiumButtonsInline, premiumHandlers, removeClickedButton };
-
-
-// === B_telegram.js Premium Handling Update (v1.5.27) ===
-// In the premium module click section, use session-aware handlers
-// Replace the premium handling block with:
-
-  // 🌟 高级版模块点击
-  if (premiumHandlers[data] && session.amount >= 30) {
-    session._premiumHandled = session._premiumHandled || new Set();
-    if (session._premiumHandled.has(data)) return;
-    session._premiumHandled.add(data);
-
-    await answerCallbackQuery(cb.id);
-    await editReplyMarkup(userId, msgId, { inline_keyboard: [[{ text: `Fetching insight...`, callback_data: data }]] });
-
-    try {
-      // Use handler with session for summary, or basic userId
-      let res;
-      if (data === 'premium_summary') {
-        res = await premiumHandlers[data](userId, session);
-      } else {
-        res = await premiumHandlers[data](userId);
-      }
-
-      clearInterval(iv2);
-      const rb = removeClickedButton(cb.message.reply_markup, data);
-      await editReplyMarkup(userId, msgId, rb);
-      await sendMessage(userId, res);
-      markPremiumClick(userId, data);
-    } catch (err) {
-      clearInterval(iv2);
-      console.error("[premium handling error]", err);
-      await sendMessage(userId, `⚠️ Failed to load: ${data}`);
-    }
-    return;
-  }
